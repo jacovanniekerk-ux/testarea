@@ -5,115 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WCED 4P Culture Diagnostic & Observation Tool</title>
     
-    <!-- Supabase Client -->
+    <!-- ONLY ONE Supabase script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/minimal.min.css" />
     
     <style>
-      :root {
-        --primary: #001489;
-        --primary-light: #000e60;
-        --secondary: #FFC600;
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --text: #1e293b;
-      }
-      
-      * {
-        box-sizing: border-box;
-      }
-      
+      * { box-sizing: border-box; }
       body {
         font-family: 'Inter', system-ui, sans-serif;
-        background: var(--bg);
-        color: var(--text);
+        background: #f8fafc;
+        color: #1e293b;
         min-height: 100vh;
       }
-      
-      .btn-primary {
-        background: var(--primary);
-        color: white;
-        transition: background 0.2s;
-      }
-      .btn-primary:hover {
-        background: var(--primary-light);
-      }
-      
-      .btn-secondary {
-        background: var(--secondary);
-        color: #1e293b;
-        font-weight: 600;
-      }
-      
-      .card {
-        background: var(--card);
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      }
-      
-      .nav-link {
-        color: var(--text);
-        text-decoration: none;
-        transition: color 0.2s;
-      }
-      .nav-link:hover {
-        color: var(--primary);
-      }
+      .btn-primary { background: #001489; color: white; }
+      .btn-primary:hover { background: #000e60; }
+      .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     </style>
   </head>
   <body class="min-h-screen">
     
-    <!-- ============================================================
-         LOGIN SCREEN
-    ============================================================ -->
+    <!-- LOGIN SCREEN -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
         <div class="text-center mb-8">
           <div class="w-14 h-14 rounded-2xl bg-[#001489] text-white flex items-center justify-center mx-auto mb-4">
             <i class="fa-solid fa-brain fa-5x"></i>
           </div>
-          <h1 className="text-3xl font-bold text-[#001489]">WCED 4P Diagnostic</h1>
-          <p className="text-[16px] text-[600] text-slate-600 mt-2">Affective Transformation Model Diagnostic</p>
+          <h1 class="text-3xl font-bold text-[#001489]">WCED 4P Diagnostic</h1>
+          <p class="text-[16px] text-slate-600 mt-2">Affective Transformation Model Diagnostic</p>
         </div>
         
         <form id="login-form" class="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-slate-600">WCED Email Address</label>
-            <input type="email" id="email-input" required 
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#001489] transition"
-              placeholder="e.g. advisor@wced.gov.za" />
+            <label class="block text-sm font-medium mb-2 text-slate-600">WCED Email Address</label>
+            <input type="email" id="email-input" required
+              class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#001489] transition"
+              placeholder="advisor@wced.gov.za" />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2 text-slate-600">Password</label>
+            <label class="block text-sm font-medium mb-2 text-slate-600">Password</label>
             <input type="password" id="password-input" required
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#001489] transition"
+              class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#001489] transition"
               placeholder="Your password" />
           </div>
           
-          <button type="submit" 
-            className="w-full bg-[#001489] text-white py-3 px-6 rounded-lg font-bold hover:bg-[#000e60] transition uppercase text-sm">
+          <button type="submit"
+            class="w-full bg-[#001489] text-white py-3 px-6 rounded-lg font-bold hover:bg-[#000e60] transition uppercase text-sm">
             <i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In
           </button>
         </form>
         
         <div id="error-message" class="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm hidden">
-          <i class="fa-solid fa-circle-exclamation mr-2"></i>Invalid email or password. Please try again.
+          <i class="fa-solid fa-circle-exclamation mr-2"></i>
+          <span id="error-text">Invalid email or password.</span>
         </div>
       </div>
     </div>
     
-    <!-- ============================================================
-         DASHBOARD (shown after login)
-    ============================================================ -->
+    <!-- DASHBOARD -->
     <div id="dashboard" class="min-h-screen hidden">
-      <!-- Top bar -->
       <header class="bg-[#001489] text-white py-3 px-6 shadow-sm">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
           <div class="flex items-center gap-4">
@@ -126,91 +78,64 @@
               <span id="user-district" class="font-medium"></span>
             </div>
           </div>
-          <div class="hidden md:block">
-            <a href="#" id="logout-btn" class="text-white/80 hover:text-white transition">
-              <i class="fa-solid-from-the-browser-door fa-right-from-bracket text-lg"></i>
-            </a>
-          </div>
+          <button id="logout-btn" class="text-white/80 hover:text-white transition text-sm">
+            <i class="fa-solid fa-right-from-bracket mr-1"></i>Logout
+          </button>
         </div>
       </header>
       
-      <!-- Main content -->
       <main class="max-w-7xl mx-auto p-4 md:p-6">
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Dashboard</h1>
+        <p class="text-slate-500 mb-6">Select an option below to continue</p>
+        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <!-- Culture Walkthrough Card -->
-          <a href="/culture-walkthrough" class="group card hover:shadow-lg transition">
-            <div class="p-6 flex flex-col justify-between">
+          <a href="#" id="culture-walkthrough-link" class="card hover:shadow-lg transition cursor-pointer">
+            <div class="p-6 flex flex-col justify-between h-full">
               <div>
-                <h3 class="text-xl font-bold text-[#001489]">Culture Walkthrough</h3>
-                <p class="text-slate-500 mt-1">School culture assessment (PEOPLE, PRACTICES & PLATFORMS)</p>
+                <h3 class="text-xl font-bold text-[#001489] mb-2">Culture Walkthrough</h3>
+                <p class="text-slate-500 text-sm">School culture assessment across the 4P pillars</p>
               </div>
-              <div class="mt-3">
-                <i class="fa-solid fa-user-group text-2xl text-[#001489]"></i>
-              </div>
+              <div class="mt-4"><i class="fa-solid fa-user-group text-3xl text-[#001489]"></i></div>
             </div>
           </a>
           
-          <!-- School Report Card -->
-          <a href="/school-report" class="group card hover:shadow-lg transition">
-            <div class="p-6 flex flex-col justify-between">
+          <a href="#" id="school-report-link" class="card hover:shadow-lg transition cursor-pointer">
+            <div class="p-6 flex flex-col justify-between h-full">
               <div>
-                <h3 class="text-xl font-bold text-emerald-600">School Report</h3>
-                <p class="text-slate-500 mt-1">Standalone school report (same tool as walkthrough)</p>
+                <h3 class="text-xl font-bold text-emerald-600 mb-2">School Report</h3>
+                <p class="text-slate-500 text-sm">Standalone school report (same tool)</p>
               </div>
-              <div class="mt-3">
-                <i class="fa-solid fa-file-text text-2xl text-emerald-600"></i>
-              </div>
+              <div class="mt-4"><i class="fa-solid fa-file-text text-3xl text-emerald-600"></i></div>
             </div>
           </a>
           
-          <!-- Past Reports Card -->
-          <a href="/past-reports" class="group card hover:shadow-lg transition">
-            <div class="p-6 flex flex-col justify-between">
+          <a href="#" id="past-reports-link" class="card hover:shadow-lg transition cursor-pointer">
+            <div class="p-6 flex flex-col justify-between h-full">
               <div>
-                <h3 class="text-xl font-bold text-purple-600">Past Reports</h3>
-                <p class="text-slate-500 mt-1">List of reports in your district for editing</p>
+                <h3 class="text-xl font-bold text-purple-600 mb-2">Past Reports</h3>
+                <p class="text-slate-500 text-sm">View and edit your previous reports</p>
               </div>
-              <div class="mt-3">
-                <i class="fa-solid fa-folder-text text-2xl text-purple-600"></i>
-              </div>
+              <div class="mt-4"><i class="fa-solid fa-folder-text text-3xl text-purple-600"></i></div>
             </div>
           </a>
         </div>
         
-        <!-- Section content will load here -->
-        <div id="section-content" class="prose lg:prose-xl max-w-2xl mx-auto"></div>
+        <div id="section-content"></div>
       </main>
     </div>
     
-    <!-- ============================================================
-         FOOTER
-    ============================================================ -->
-    <footer class="bg-slate-50 border-t border-slate-200 p-4 text-center text-sm text-slate-500">
-      <p>WCED eLearning Directorate • 4P Affective Transformation Model • 2026</p>
-    </footer>
-    
     <script>
     // ============================================================
-    // SUPABASE SETUP
+    // SUPABASE - SINGLE INITIALIZATION
     // ============================================================
-    const supabase = supabase.createClient(
-      'https://nnsxmrbmnymggdapkktl.supabase.co', // Replace with your project URL
-      'sb_publishable_Gh8ouV1INceQG9S_2Csi5A_eMYFZKgs' // Replace with your anon key
-    );
+    const supabaseUrl = 'https://nnsxmrbmnymggdapkktl.supabase.co';
+    const supabaseAnonKey = 'sb_publishable_Gh8ouV1INceQG9S_2Csi5A_eMYFZKgs';
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
     
     // ============================================================
     // STATE
     // ============================================================
     let advisor = null;
-    let token = null;
-    
-    // Fixed list of valid WCED emails (you populate these)
-    const VALID_EMAILS = [
-      'advisor1@wced.gov.za',
-      'advisor2@wced.gov.za', 
-      'advisor3@wced.gov.za',
-      // Add all your advisors here
-    ];
     
     // ============================================================
     // ELEMENT REFERENCES
@@ -219,10 +144,25 @@
     const dashboard = document.getElementById('dashboard');
     const loginForm = document.getElementById('login-form');
     const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
     const userName = document.getElementById('user-name');
     const userDistrict = document.getElementById('user-district');
     const logoutBtn = document.getElementById('logout-btn');
     const sectionContent = document.getElementById('section-content');
+    
+    // ============================================================
+    // PASSWORD VERIFICATION
+    // ============================================================
+    // For internal tool with fixed user list, simple comparison works.
+    // In production, use bcrypt for proper hashing.
+    async function verifyPassword(password, storedHash) {
+      // Option A: Plain text (simplest - you control the password)
+      return password === storedHash;
+      
+      // Option B: Bcrypt (more secure - uncomment if using bcryptjs)
+      // const bcrypt = dcodeIO.bcrypt;
+      // return await bcrypt.compare(password, storedHash);
+    }
     
     // ============================================================
     // LOGIN HANDLER
@@ -233,46 +173,42 @@
       const email = document.getElementById('email-input').value.trim().toLowerCase();
       const password = document.getElementById('password-input').value;
       
-      // 1. Validate email is in fixed list
-      if (!VALID_EMAILS.includes(email)) {
-        showError('Email not recognized. Please use your WCED email address.');
+      if (!email || !password) {
+        showError('Please enter both email and password.');
         return;
       }
       
-      // 2. Check Supabase for advisor record
+      // 1. Query Supabase for this email
       const { data, error } = await supabase
         .from('advisors')
-        .select('*')
+        .select('id, full_name, email, district, password_hash')
         .eq('email', email)
         .single();
       
+      // 2. If no record found → invalid
       if (error || !data) {
-        showError('Unable to locate your advisor record. Contact IT support.');
+        showError('Invalid email or password.');
         return;
       }
       
-      // 2.5. Verify password (simple comparison - you manage passwords)
-      // In production, use bcrypt comparison. For now, simple check:
-      const passwordValid = password === 'TempPass123' || data.password_hash.includes(password);
+      // 3. Verify password
+      const passwordValid = await verifyPassword(password, data.password_hash);
       
       if (!passwordValid) {
-        showError('Incorrect password. Please try again.');
+        showError('Invalid email or password.');
         return;
       }
       
-      // 3. Login successful
+      // 4. Login successful - remove password before storing
+      delete data.password_hash;
       advisor = data;
-      token = Math.random().toString(36).substring(2, 15);
       
-      // Store in localStorage
-      localStorage.setItem('advisor_token', token);
+      // Store minimal session (NO PASSWORD)
       localStorage.setItem('advisor_data', JSON.stringify(advisor));
       
-      // Update UI
+      // 5. Show dashboard
       loginScreen.classList.add('hidden');
       dashboard.classList.remove('hidden');
-      
-      // Update UI elements
       userName.textContent = advisor.full_name;
       userDistrict.textContent = advisor.district;
     });
@@ -281,46 +217,38 @@
     // LOGIN HELPERS
     // ============================================================
     function showError(message) {
+      errorText.textContent = message;
       errorMessage.classList.remove('hidden');
-      errorMessage.textContent = message;
-    }
-    
-    function hideError() {
-      errorMessage.classList.add('hidden');
     }
     
     // ============================================================
     // LOGOUT HANDLER
     // ============================================================
     logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('advisor_token');
       localStorage.removeItem('advisor_data');
       advisor = null;
-      token = null;
       loginScreen.classList.remove('hidden');
       dashboard.classList.add('hidden');
       document.getElementById('email-input').value = '';
       document.getElementById('password-input').value = '';
-      hideError();
+      errorMessage.classList.add('hidden');
+      sectionContent.innerHTML = '';
     });
     
     // ============================================================
     // NAVIGATION
     // ============================================================
-    // Culture Walkthrough
-    document.querySelector('a[href="/culture-walkthrough"]').addEventListener('click', (e) => {
+    document.getElementById('culture-walkthrough-link').addEventListener('click', (e) => {
       e.preventDefault();
       loadSection('culture-walkthrough');
     });
     
-    // School Report
-    document.querySelector('a[href="/school-report"]').addEventListener('click', (e) => {
+    document.getElementById('school-report-link').addEventListener('click', (e) => {
       e.preventDefault();
       loadSection('school-report');
     });
     
-    // Past Reports
-    document.querySelector('a[href="/past-reports"]').addEventListener('click', (e) => {
+    document.getElementById('past-reports-link').addEventListener('click', (e) => {
       e.preventDefault();
       loadSection('past-reports');
     });
@@ -329,75 +257,46 @@
     // SECTION LOADING
     // ============================================================
     function loadSection(section) {
-      // Show loading state
-      sectionContent.innerHTML = '<p class="text-slate-500">Loading...</p>';
-      
-      // Simple routing - show different content based on section
-      // In a real app, you'd fetch from API routes
       const routes = {
         'culture-walkthrough': `
-          <div class="bg-white rounded-xl p-6 shadow-sm">
+          <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
             <h2 class="text-2xl font-bold text-[#001489] mb-6">Culture Walkthrough</h2>
             <p class="text-slate-500 mb-4">School culture walkthrough assessment</p>
             <p class="text-slate-500">This section will evaluate the school across the 4P pillars: People, Practices, Pedagogy, and Platforms.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div class="p-4 rounded-lg border-l-4 border-[#001489]">
-                <h4>PEOPLE</h4>
-                <p>Psychological safety & digital confidence</p>
+              <div class="p-4 rounded-lg border-l-4 border-[#001489] bg-blue-50">
+                <h4 class="font-bold text-[#001489]">PEOPLE</h4>
+                <p class="text-sm text-slate-500">Psychological safety & digital confidence</p>
               </div>
-              <div class="p-4 rounded-lg border-l-4 border-emerald-500">
-                <h4>PRACTICES</h4>
-                <p>Collaboration & professional development</p>
+              <div class="p-4 rounded-lg border-l-4 border-emerald-500 bg-emerald-50">
+                <h4 class="font-bold text-emerald-600">PRACTICES</h4>
+                <p class="text-sm text-slate-500">Collaboration & professional development</p>
               </div>
-              <div class="p-4 rounded-lg border-l-4 border-[#00A1A3]">
-                <h4>PLATFORMS</h4>
-                <p>Resource scheduling & ePortal</p>
+              <div class="p-4 rounded-lg border-l-4 border-[#00A1A3] bg-teal-50">
+                <h4 class="font-bold text-[#00A1A3]">PEDAGOGY</h4>
+                <p class="text-sm text-slate-500">Lesson design & learner agency</p>
+              </div>
+              <div class="p-4 rounded-lg border-l-4 border-purple-500 bg-purple-50">
+                <h4 class="font-bold text-purple-600">PLATFORMS</h4>
+                <p class="text-sm text-slate-500">Resource scheduling & ePortal</p>
               </div>
             </div>
+            <p class="text-slate-500 mt-6 text-sm">Full form coming in next iteration.</p>
           </div>
         `,
         'school-report': `
-          <div class="bg-white rounded-xl p-6 shadow-sm">
+          <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
             <h2 class="text-2xl font-bold text-[#001489] mb-6">School Report</h2>
-            <p class="text-slate-500 mb-4">Standalone school report using the same diagnostic tool</p>
-            <p class="text-slate-500">This section allows you to capture school data independently of a culture walkthrough.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div>
-                <h4>School Name</h4>
-                <p>Select or enter school name</p>
-              </div>
-              <div>
-                <h4>District</h4>
-                <p>Auto-populated from your district</p>
-              </div>
-              <div>
-                <h4>Date of Visit</h4>
-                <p><input type="date" className="w-full px-3 py-2 border rounded" /></p>
-              </div>
-              <div>
-                <h4>Learners Count</h4>
-                <p><input type="number" className="w-full px-3 py-2 border rounded" min="1" /></p>
-              </div>
-            </div>
+            <p class="text-slate-500 mb-4">Standalone school report (uses same diagnostic tool as walkthrough)</p>
+            <p class="text-slate-500">Select a school and complete the diagnostic rubrics.</p>
+            <p class="text-slate-500 mt-6 text-sm">Full form coming in next iteration.</p>
           </div>
         `,
         'past-reports': `
-          <div class="bg-white rounded-xl p-6 shadow-sm">
+          <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
             <h2 class="text-2xl font-bold text-[#001489] mb-6">Past Reports</h2>
-            <p class="text-slate-500">Reports in your district for editing</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div class="p-3 rounded-lg border border-slate-200 hover:border-[#001489]">
-                <h4>Culture Walkthrough</h4>
-                <p>From: Metro Central PS</p>
-                <p class="text-xs text-slate-500">Submitted: Yes</p>
-              </div>
-              <div class="p-3 rounded-lg border border-slate-200 hover:border-[#001489]">
-                <h4>School Report</h4>
-                <p>From: Metro East PS</p>
-                <p class="text-xs text-slate-500">Submitted: No (draft)</p>
-              </div>
-            </div>
-            <p class="text-slate-500 mt-4 text-sm">No submitted reports found.</p>
+            <p class="text-slate-500">Your previous reports for editing or review</p>
+            <p class="text-slate-500 mt-6 text-sm">No reports found yet. Start by creating a Culture Walkthrough or School Report.</p>
           </div>
         `,
       };
@@ -406,31 +305,20 @@
     }
     
     // ============================================================
-    // INITIALIZE
+    // INITIALIZE - Check for existing session
     // ============================================================
-    // Check for existing session
-    const storedToken = localStorage.getItem('advisor_token');
     const storedAdvisor = localStorage.getItem('advisor_data');
     
-    if (storedToken && storedAdvisor) {
-      advisor = JSON.parse(storedAdvisor);
-      loginScreen.classList.add('hidden');
-      dashboard.classList.remove('hidden');
-      userName.textContent = advisor.full_name;
-      userDistrict.textContent = advisor.district;
-    }
-    
-    // Form handler
-    loginForm.addEventListener('submit', handleLoginSubmit);
-    
-    // Logout button
-    logoutBtn.addEventListener('click', handleLogout);
-    
-    // Initial load
-    if (!advisor) {
-      // Show login screen, hide dashboard
-      loginScreen.classList.remove('hidden');
-      dashboard.classList.add('hidden');
+    if (storedAdvisor) {
+      try {
+        advisor = JSON.parse(storedAdvisor);
+        loginScreen.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        userName.textContent = advisor.full_name;
+        userDistrict.textContent = advisor.district;
+      } catch (e) {
+        localStorage.removeItem('advisor_data');
+      }
     }
     </script>
   </body>
