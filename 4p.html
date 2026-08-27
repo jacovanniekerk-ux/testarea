@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WCED 4P Culture Diagnostic & Observation Tool</title>
-    
+
     <!-- ONLY ONE Supabase script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/minimal.min.css" />
-    
+
     <style>
       * { box-sizing: border-box; }
       body {
@@ -24,7 +24,7 @@
     </style>
   </head>
   <body class="min-h-screen">
-    
+
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
@@ -35,7 +35,7 @@
           <h1 class="text-3xl font-bold text-[#001489]">WCED 4P Diagnostic</h1>
           <p class="text-[16px] text-slate-600 mt-2">Affective Transformation Model Diagnostic</p>
         </div>
-        
+
         <form id="login-form" class="space-y-4">
           <div>
             <label class="block text-sm font-medium mb-2 text-slate-600">WCED Email Address</label>
@@ -43,27 +43,27 @@
               class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#001489] transition"
               placeholder="advisor@wced.gov.za" />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium mb-2 text-slate-600">Password</label>
             <input type="password" id="password-input" required
               class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#001489] transition"
               placeholder="Your password" />
           </div>
-          
-          <button type="submit"
+
+          <button type="submit" id="login-submit-btn"
             class="w-full bg-[#001489] text-white py-3 px-6 rounded-lg font-bold hover:bg-[#000e60] transition uppercase text-sm">
             <i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In
           </button>
         </form>
-        
+
         <div id="error-message" class="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm hidden">
           <i class="fa-solid fa-circle-exclamation mr-2"></i>
           <span id="error-text">Invalid email or password.</span>
         </div>
       </div>
     </div>
-    
+
     <!-- DASHBOARD -->
     <div id="dashboard" class="min-h-screen hidden">
       <header class="bg-[#001489] text-white py-3 px-6 shadow-sm">
@@ -83,11 +83,11 @@
           </button>
         </div>
       </header>
-      
+
       <main class="max-w-7xl mx-auto p-4 md:p-6">
         <h1 class="text-2xl font-bold text-slate-800 mb-2">Dashboard</h1>
         <p class="text-slate-500 mb-6">Select an option below to continue</p>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <a href="#" id="culture-walkthrough-link" class="card hover:shadow-lg transition cursor-pointer">
             <div class="p-6 flex flex-col justify-between h-full">
@@ -98,7 +98,7 @@
               <div class="mt-4"><i class="fa-solid fa-user-group text-3xl text-[#001489]"></i></div>
             </div>
           </a>
-          
+
           <a href="#" id="school-report-link" class="card hover:shadow-lg transition cursor-pointer">
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
@@ -108,7 +108,7 @@
               <div class="mt-4"><i class="fa-solid fa-file-text text-3xl text-emerald-600"></i></div>
             </div>
           </a>
-          
+
           <a href="#" id="past-reports-link" class="card hover:shadow-lg transition cursor-pointer">
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
@@ -119,100 +119,134 @@
             </div>
           </a>
         </div>
-        
+
         <div id="section-content"></div>
       </main>
     </div>
-    
+
     <script>
     // ============================================================
     // SUPABASE - SINGLE INITIALIZATION
+    // ------------------------------------------------------------
+    // FIX: the CDN script exposes a global object called `supabase`
+    // (window.supabase) with a .createClient() method on it. The
+    // original code did:
+    //     const supabase = supabase.createClient(...)
+    // which declares a NEW local variable also named `supabase`.
+    // Because `const`/`let` bindings are hoisted to the top of their
+    // scope (temporal dead zone), the `supabase` on the right-hand
+    // side referred to this not-yet-initialized local variable
+    // instead of the global CDN object, causing the
+    // "Identifier 'supabase' has already been declared" /
+    // "Cannot access 'supabase' before initialization" failure.
+    //
+    // The fix is simply to give the client a different name so it
+    // never shadows the global.
     // ============================================================
     const supabaseUrl = 'https://nnsxmrbmnymggdapkktl.supabase.co';
     const supabaseAnonKey = 'sb_publishable_Gh8ouV1INceQG9S_2Csi5A_eMYFZKgs';
-    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
-    
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
     // ============================================================
     // STATE
     // ============================================================
     let advisor = null;
-    
+
     // ============================================================
     // ELEMENT REFERENCES
     // ============================================================
     const loginScreen = document.getElementById('login-screen');
     const dashboard = document.getElementById('dashboard');
     const loginForm = document.getElementById('login-form');
+    const loginSubmitBtn = document.getElementById('login-submit-btn');
     const errorMessage = document.getElementById('error-message');
     const errorText = document.getElementById('error-text');
     const userName = document.getElementById('user-name');
     const userDistrict = document.getElementById('user-district');
     const logoutBtn = document.getElementById('logout-btn');
     const sectionContent = document.getElementById('section-content');
-    
-    // ============================================================
-    // PASSWORD VERIFICATION
-    // ============================================================
-    // For internal tool with fixed user list, simple comparison works.
-    // In production, use bcrypt for proper hashing.
-    async function verifyPassword(password, storedHash) {
-      // Option A: Plain text (simplest - you control the password)
-      return password === storedHash;
-      
-      // Option B: Bcrypt (more secure - uncomment if using bcryptjs)
-      // const bcrypt = dcodeIO.bcrypt;
-      // return await bcrypt.compare(password, storedHash);
-    }
-    
+
     // ============================================================
     // LOGIN HANDLER
+    // ------------------------------------------------------------
+    // NOTE (read this before you test):
+    // This currently uses real Supabase Auth (auth.signInWithPassword),
+    // NOT the old custom "query advisors table for password_hash and
+    // compare in JS" approach from the original file.
+    //
+    // Why the old approach was removed:
+    // 1. Your Data Architecture spec has RLS enabled on `advisors`
+    //    with policy `id = auth.uid()`. Before a user is authenticated,
+    //    auth.uid() is NULL, so a client-side SELECT against advisors
+    //    to fetch password_hash would be blocked by RLS and return
+    //    no rows — the login could never succeed even with a correct
+    //    password, once RLS is actually enforced.
+    // 2. Sending password_hash to the browser to compare client-side
+    //    exposes the hash to anyone inspecting network traffic,
+    //    which defeats the point of hashing it.
+    // 3. Your own spec (section 11) states the auth provider is
+    //    "Email and Password (Internal Managed Auth)" — i.e. Supabase
+    //    Auth itself, not a hand-rolled table check.
+    //
+    // For this to work as written below, each advisor needs a real
+    // Supabase Auth user (Authentication > Users) whose email matches
+    // their row in the `advisors` table, and full_name/district should
+    // be set as user_metadata at creation, OR fetched from the
+    // `advisors` table AFTER login (once auth.uid() is populated, RLS
+    // will correctly allow the advisor to read their own row).
     // ============================================================
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const email = document.getElementById('email-input').value.trim().toLowerCase();
       const password = document.getElementById('password-input').value;
-      
+
       if (!email || !password) {
         showError('Please enter both email and password.');
         return;
       }
-      
-      // 1. Query Supabase for this email
-      const { data, error } = await supabase
+
+      setLoading(true);
+
+      // 1. Authenticate with Supabase Auth
+      const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError || !authData?.user) {
+        setLoading(false);
+        showError('Invalid email or password.');
+        return;
+      }
+
+      // 2. Now that we're authenticated, auth.uid() is populated,
+      //    so RLS will allow us to read this advisor's own profile row.
+      const { data: profile, error: profileError } = await supabaseClient
         .from('advisors')
-        .select('id, full_name, email, district, password_hash')
-        .eq('email', email)
+        .select('id, full_name, email, district')
+        .eq('id', authData.user.id)
         .single();
-      
-      // 2. If no record found → invalid
-      if (error || !data) {
-        showError('Invalid email or password.');
+
+      setLoading(false);
+
+      if (profileError || !profile) {
+        showError('Signed in, but no advisor profile was found for this account.');
         return;
       }
-      
-      // 3. Verify password
-      const passwordValid = await verifyPassword(password, data.password_hash);
-      
-      if (!passwordValid) {
-        showError('Invalid email or password.');
-        return;
-      }
-      
-      // 4. Login successful - remove password before storing
-      delete data.password_hash;
-      advisor = data;
-      
-      // Store minimal session (NO PASSWORD)
+
+      advisor = profile;
+
+      // Store minimal session (NO PASSWORD, NO HASH)
       localStorage.setItem('advisor_data', JSON.stringify(advisor));
-      
-      // 5. Show dashboard
+
+      // 3. Show dashboard
       loginScreen.classList.add('hidden');
       dashboard.classList.remove('hidden');
       userName.textContent = advisor.full_name;
       userDistrict.textContent = advisor.district;
     });
-    
+
     // ============================================================
     // LOGIN HELPERS
     // ============================================================
@@ -220,11 +254,20 @@
       errorText.textContent = message;
       errorMessage.classList.remove('hidden');
     }
-    
+
+    function setLoading(isLoading) {
+      loginSubmitBtn.disabled = isLoading;
+      loginSubmitBtn.classList.toggle('opacity-60', isLoading);
+      loginSubmitBtn.innerHTML = isLoading
+        ? '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Signing in...'
+        : '<i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In';
+    }
+
     // ============================================================
     // LOGOUT HANDLER
     // ============================================================
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
       localStorage.removeItem('advisor_data');
       advisor = null;
       loginScreen.classList.remove('hidden');
@@ -234,7 +277,7 @@
       errorMessage.classList.add('hidden');
       sectionContent.innerHTML = '';
     });
-    
+
     // ============================================================
     // NAVIGATION
     // ============================================================
@@ -242,17 +285,17 @@
       e.preventDefault();
       loadSection('culture-walkthrough');
     });
-    
+
     document.getElementById('school-report-link').addEventListener('click', (e) => {
       e.preventDefault();
       loadSection('school-report');
     });
-    
+
     document.getElementById('past-reports-link').addEventListener('click', (e) => {
       e.preventDefault();
       loadSection('past-reports');
     });
-    
+
     // ============================================================
     // SECTION LOADING
     // ============================================================
@@ -300,26 +343,36 @@
           </div>
         `,
       };
-      
+
       sectionContent.innerHTML = routes[section] || '<p>Section not found</p>';
     }
-    
+
     // ============================================================
     // INITIALIZE - Check for existing session
     // ============================================================
-    const storedAdvisor = localStorage.getItem('advisor_data');
-    
-    if (storedAdvisor) {
-      try {
-        advisor = JSON.parse(storedAdvisor);
-        loginScreen.classList.add('hidden');
-        dashboard.classList.remove('hidden');
-        userName.textContent = advisor.full_name;
-        userDistrict.textContent = advisor.district;
-      } catch (e) {
-        localStorage.removeItem('advisor_data');
+    (async function initSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      if (session) {
+        const storedAdvisor = localStorage.getItem('advisor_data');
+        if (storedAdvisor) {
+          try {
+            advisor = JSON.parse(storedAdvisor);
+            loginScreen.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            userName.textContent = advisor.full_name;
+            userDistrict.textContent = advisor.district;
+            return;
+          } catch (e) {
+            localStorage.removeItem('advisor_data');
+          }
+        }
       }
-    }
+
+      // No valid session — make sure login screen is shown
+      loginScreen.classList.remove('hidden');
+      dashboard.classList.add('hidden');
+    })();
     </script>
   </body>
 </html>
