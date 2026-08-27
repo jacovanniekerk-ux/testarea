@@ -124,28 +124,15 @@
       </main>
     </div>
 
-    <script>
+    <script type="module">
     // ============================================================
-    // SUPABASE - SINGLE INITIALIZATION
-    // ------------------------------------------------------------
-    // FIX: the CDN script exposes a global object called `supabase`
-    // (window.supabase) with a .createClient() method on it. The
-    // original code did:
-    //     const supabase = supabase.createClient(...)
-    // which declares a NEW local variable also named `supabase`.
-    // Because `const`/`let` bindings are hoisted to the top of their
-    // scope (temporal dead zone), the `supabase` on the right-hand
-    // side referred to this not-yet-initialized local variable
-    // instead of the global CDN object, causing the
-    // "Identifier 'supabase' has already been declared" /
-    // "Cannot access 'supabase' before initialization" failure.
-    //
-    // The fix is simply to give the client a different name so it
-    // never shadows the global.
+    // This page now imports its Supabase client and session helpers
+    // from js/ instead of declaring them inline, so every other page
+    // (culture-walkthrough.html, classroom-report.html, past-reports.html)
+    // shares the exact same client setup and session logic.
     // ============================================================
-    const supabaseUrl = 'https://nnsxmrbmnymggdapkktl.supabase.co';
-    const supabaseAnonKey = 'sb_publishable_Gh8ouV1INceQG9S_2Csi5A_eMYFZKgs';
-    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+    import { supabaseClient } from './js/supabase-client.js';
+    import { saveSession, getSession, clearSession } from './js/session.js';
 
     // ============================================================
     // STATE
@@ -216,8 +203,7 @@
 
       advisor = profile; // { id, full_name, email, district } — no password, ever
 
-      // Store minimal "session" (NO PASSWORD, NO HASH)
-      localStorage.setItem('advisor_data', JSON.stringify(advisor));
+      saveSession(advisor);
 
       loginScreen.classList.add('hidden');
       dashboard.classList.remove('hidden');
@@ -245,7 +231,7 @@
     // LOGOUT HANDLER
     // ============================================================
     logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('advisor_data');
+      clearSession();
       advisor = null;
       loginScreen.classList.remove('hidden');
       dashboard.classList.add('hidden');
@@ -334,18 +320,14 @@
     // see who was last logged in. Consider adding a logout reminder
     // for shared/lab computers.
     // ============================================================
-    const storedAdvisor = localStorage.getItem('advisor_data');
+    const existingAdvisor = getSession();
 
-    if (storedAdvisor) {
-      try {
-        advisor = JSON.parse(storedAdvisor);
-        loginScreen.classList.add('hidden');
-        dashboard.classList.remove('hidden');
-        userName.textContent = advisor.full_name;
-        userDistrict.textContent = advisor.district;
-      } catch (e) {
-        localStorage.removeItem('advisor_data');
-      }
+    if (existingAdvisor) {
+      advisor = existingAdvisor;
+      loginScreen.classList.add('hidden');
+      dashboard.classList.remove('hidden');
+      userName.textContent = advisor.full_name;
+      userDistrict.textContent = advisor.district;
     }
     </script>
   </body>
