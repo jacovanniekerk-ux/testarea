@@ -169,31 +169,20 @@
     // ============================================================
     // LOGIN HANDLER
     // ------------------------------------------------------------
-    // NOTE (read this before you test):
-    // This currently uses real Supabase Auth (auth.signInWithPassword),
-    // NOT the old custom "query advisors table for password_hash and
-    // compare in JS" approach from the original file.
+    // Simple email + password check, but done SAFELY: the actual
+    // comparison happens inside a Postgres function (login_advisor),
+    // not via a direct SELECT from the browser. This means the anon
+    // key can never read the advisors table or its password column
+    // directly — see login_setup.sql for the one-time DB setup this
+    // depends on.
     //
-    // Why the old approach was removed:
-    // 1. Your Data Architecture spec has RLS enabled on `advisors`
-    //    with policy `id = auth.uid()`. Before a user is authenticated,
-    //    auth.uid() is NULL, so a client-side SELECT against advisors
-    //    to fetch password_hash would be blocked by RLS and return
-    //    no rows — the login could never succeed even with a correct
-    //    password, once RLS is actually enforced.
-    // 2. Sending password_hash to the browser to compare client-side
-    //    exposes the hash to anyone inspecting network traffic,
-    //    which defeats the point of hashing it.
-    // 3. Your own spec (section 11) states the auth provider is
-    //    "Email and Password (Internal Managed Auth)" — i.e. Supabase
-    //    Auth itself, not a hand-rolled table check.
-    //
-    // For this to work as written below, each advisor needs a real
-    // Supabase Auth user (Authentication > Users) whose email matches
-    // their row in the `advisors` table, and full_name/district should
-    // be set as user_metadata at creation, OR fetched from the
-    // `advisors` table AFTER login (once auth.uid() is populated, RLS
-    // will correctly allow the advisor to read their own row).
+    // This is NOT Supabase Auth. There is no JWT session, no
+    // auth.uid(). "Being logged in" just means we're holding a
+    // plain advisor profile object in localStorage. That's fine for
+    // an internal tool, but it does mean row-level security on other
+    // tables (culture_walkthroughs, classroom_observations) can't be
+    // scoped to "this specific advisor" at the database level the
+    // way the original spec assumed — see the note further down.
     // ============================================================
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -208,39 +197,28 @@
 
       setLoading(true);
 
-      // 1. Authenticate with Supabase Auth
-      const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password,
+      const { data, error } = await supabaseClient.rpc('login_advisor', {
+        p_email: email,
+        p_password: password,
       });
 
-      if (authError || !authData?.user) {
-        setLoading(false);
+      setLoading(false);
+
+      // login_advisor() returns a table (array of rows). No matching
+      // row = wrong email or wrong password (we don't say which, on
+      // purpose, so we don't help someone enumerate valid emails).
+      const profile = Array.isArray(data) ? data[0] : data;
+
+      if (error || !profile) {
         showError('Invalid email or password.');
         return;
       }
 
-      // 2. Now that we're authenticated, auth.uid() is populated,
-      //    so RLS will allow us to read this advisor's own profile row.
-      const { data: profile, error: profileError } = await supabaseClient
-        .from('advisors')
-        .select('id, full_name, email, district')
-        .eq('id', authData.user.id)
-        .single();
+      advisor = profile; // { id, full_name, email, district } — no password, ever
 
-      setLoading(false);
-
-      if (profileError || !profile) {
-        showError('Signed in, but no advisor profile was found for this account.');
-        return;
-      }
-
-      advisor = profile;
-
-      // Store minimal session (NO PASSWORD, NO HASH)
+      // Store minimal "session" (NO PASSWORD, NO HASH)
       localStorage.setItem('advisor_data', JSON.stringify(advisor));
 
-      // 3. Show dashboard
       loginScreen.classList.add('hidden');
       dashboard.classList.remove('hidden');
       userName.textContent = advisor.full_name;
@@ -266,8 +244,7 @@
     // ============================================================
     // LOGOUT HANDLER
     // ============================================================
-    logoutBtn.addEventListener('click', async () => {
-      await supabaseClient.auth.signOut();
+    logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('advisor_data');
       advisor = null;
       loginScreen.classList.remove('hidden');
@@ -348,31 +325,28 @@
     }
 
     // ============================================================
-    // INITIALIZE - Check for existing session
+    // INITIALIZE - Check for existing "session"
+    // ------------------------------------------------------------
+    // There's no server-verified session here (no Supabase Auth),
+    // just whatever advisor object we last stored in localStorage.
+    // Good enough for an internal tool; just be aware anyone with
+    // access to the browser's localStorage on a shared machine could
+    // see who was last logged in. Consider adding a logout reminder
+    // for shared/lab computers.
     // ============================================================
-    (async function initSession() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+    const storedAdvisor = localStorage.getItem('advisor_data');
 
-      if (session) {
-        const storedAdvisor = localStorage.getItem('advisor_data');
-        if (storedAdvisor) {
-          try {
-            advisor = JSON.parse(storedAdvisor);
-            loginScreen.classList.add('hidden');
-            dashboard.classList.remove('hidden');
-            userName.textContent = advisor.full_name;
-            userDistrict.textContent = advisor.district;
-            return;
-          } catch (e) {
-            localStorage.removeItem('advisor_data');
-          }
-        }
+    if (storedAdvisor) {
+      try {
+        advisor = JSON.parse(storedAdvisor);
+        loginScreen.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        userName.textContent = advisor.full_name;
+        userDistrict.textContent = advisor.district;
+      } catch (e) {
+        localStorage.removeItem('advisor_data');
       }
-
-      // No valid session — make sure login screen is shown
-      loginScreen.classList.remove('hidden');
-      dashboard.classList.add('hidden');
-    })();
+    }
     </script>
   </body>
 </html>
