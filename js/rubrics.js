@@ -116,3 +116,83 @@ export const PLATFORMS_EPORTAL_RUBRIC = [
   level(3, 'Explore', 'Active subject support. Teachers download ePortal revision guides and CAPS materials, while using digital tools to share interactive lessons, track practice, and collect weekly classwork or homework'),
   level(4, 'Lead', 'Effortless learning flow. ePortal resources and interactive tools integrate seamlessly into daily lessons. Learning and teaching flow naturally through active online discussions, digital work submissions, and continuous progress tracking.'),
 ];
+
+// ------------------------------------------------------------
+// WALKTHROUGH-LEVEL RUBRICS (whole-school, culture_walkthroughs table)
+// ------------------------------------------------------------
+
+// PEOPLE (Walkthrough) — Psychological Safety & Wellbeing
+export const PEOPLE_SAFETY_RUBRIC = [
+  level(1, 'Withdraw', 'Fear, immediate stress, and operational defeat. Technical glitches trigger visible distress, causing the teacher to shut down equipment, apologise, and retreat back into static paper/chalk work.'),
+  level(2, 'Stabilise', "Technology is only used to tick management's boxes; it is avoided or feared when unexpected tech issues happen."),
+  level(3, 'Explore', 'Building a positive attitude toward tech errors and mistakes. Tech issues are normalised. Teachers feel safe to troubleshoot live or laugh off small errors in front of learners without feeling that they are being judged.'),
+  level(4, 'Lead', 'Shared resilience. Teachers actively support each other through tech issues. Failures are treated strictly as data to troubleshoot together, not as a reflection of teaching ability.'),
+];
+
+// PEOPLE (Walkthrough) — Digital Confidence & Agency
+export const PEOPLE_CONFIDENCE_RUBRIC = [
+  level(1, 'Withdraw', 'Severe learned helplessness. The teacher feels totally unable to operate software and digital tool and relies completely on the physical presence of an ICT Champ or Lab Coordinator for the simplest tasks.'),
+  level(2, 'Stabilise', 'Strict step-following. Teachers follow a fixed routine and panic or get completely stuck when unexpected pop-ups or password prompts appear.'),
+  level(3, 'Explore', 'Basic self-troubleshooting. Teachers search for answers, check guides, try different browsers, or restart devices before requesting help.'),
+  level(4, 'Lead', 'Proactive system ownership. Teachers design custom digital solutions, find apps for everyday tasks, and share local cheat sheets with staff.'),
+];
+
+// PRACTICES — Collaboration & School Rituals
+export const PRACTICES_COLLAB_RUBRIC = [
+  level(1, 'Withdraw', 'Total paper reliance. All school documents and notices are physical paper only. Digital spaces are completely unused.'),
+  level(2, 'Stabilise', 'Total reliance on one or two persons. All tech falls on a single, overworked ICT Lead. If they are away, all digital systems stop working.'),
+  level(3, 'Explore', 'Unofficial sharing networks. Teachers use chat groups to swap lesson materials and coordinate schedules, though no formal school platform is set up.'),
+  level(4, 'Lead', 'Structured online systems. Shared platforms like Google Workspace or Teams are actively maintained, and teachers co-create lesson plans using online templates.'),
+];
+
+// PRACTICES — Professional Development & Learning Pathways
+export const PRACTICES_PD_RUBRIC = [
+  level(1, 'Withdraw', "Skipping development. Teachers actively avoid professional development and workshops, feeling burned out and assuming it won't be useful in the classroom."),
+  level(2, 'Stabilise', 'Compliance checkbox attendance. Teachers sit silently through mandatory training because SMT demands it. No evidence of these learnings ever shows up inside their classroom lessons.'),
+  level(3, 'Explore', 'Active self-learning. Teachers register for optional webinars, courses and complete online micro-learning sessions, and actively try some of the teachings and digital tools in their lessons.'),
+  level(4, 'Lead', 'Structured teacher support. Designated teachers mentor their peers through regular check-ins, meetings, classroom visits, and staff developmental sessions.'),
+];
+
+// PRACTICES — Cyber Wellness & Digital Citizenship
+export const PRACTICES_CYBER_RUBRIC = [
+  level(1, 'Withdraw', 'Fear-based rejection. Fears about viruses, tech failure, hacking, or online safety risks keep equipment and technology locked away. Cyber wellness is ignored or treated as too complex to manage.'),
+  level(2, 'Stabilise', 'Heavy-handed control. Tech is kept under lock and key, with sites blocked and tools restricted. Learners are treated as risks to manage rather than learners to trust.'),
+  level(3, 'Explore', 'Teaching digital safety directly. Safe passwords, login habits, and proper online behaviour are built into regular lessons, helping learners learn and follow basic safety rules.'),
+  level(4, 'Lead', 'Learner-led peer support. Learner and Teacher ambassadors assist with basic classroom tech setup, teach younger peers about their digital footprints, and lead by example in online ethics.'),
+];
+
+// PLATFORMS (Walkthrough) — Resource Scheduling, Rosters & Access Mechanics
+export const PLATFORMS_SCHEDULING_RUBRIC = [
+  level(1, 'Withdraw', 'Zero tech access. Computer rooms are kept locked, with no timetable, leaving equipment gathering dust while classes never use the space.'),
+  level(2, 'Stabilise', 'Guarded scheduling. Lab access is strictly gatekept and rarely available for regular lessons, saved mostly for testing, admin, and/or specific projects only.'),
+  level(3, 'Explore', 'Shared timetable access. Equipment and labs are booked on a clear schedule, giving multiple grades and classes steady, weekly access.'),
+  level(4, 'Lead', 'Always-accessible learning spaces. Labs run on seamless, flexible scheduling, allowing learners and classes full access anytime for lessons, projects, or self-study.'),
+];
+
+// Diagnostic Scenario: Operational Resilience — single-select, not a 2x2 grid
+// like the pillar rubrics (kept as its own shape since level/label differ).
+export const SCENARIO_OPTIONS = [
+  { value: 1, level: 1, label: 'Teacher feels defeated, turns off equipment, and reverts entirely to chalkboard. (Level 1: Withdraw)' },
+  { value: 2, level: 2, label: 'Lesson halts or stalls; teacher submits a technical ticket and waits for IT assistance. (Level 2: Stabilise)' },
+  { value: 3, level: 3, label: 'Teacher pivots dynamically to offline digital resources or runs are supported via a personal hotspot. (Level 3: Explore)' },
+  { value: 4, level: 4, label: 'School has systemic offline local backups (e.g. local servers, pre-cached content) deployed seamlessly. (Level 4: Lead)' },
+];
+
+export const PRIMARY_BARRIER_OPTIONS = [
+  'High anxiety / Fear of damaging hardware equipment',
+  'Lack of immediate physical on-site technical assistance',
+  'Overwhelming administrative and compliance workloads',
+  'Resistance to changing familiar paper-centric routines',
+  'Leadership Vacuum: Passive SMT guidance or lack of active dashboard support',
+  'Confidence Deficit: Self-doubt on personal digital fluency and lack of individual agency',
+  'Pedagogical Rigidity: High scheduling constraints and pressure to stick only to traditional exams',
+  'Stagnation Culture: Complete absence of peer support or appetite for digital innovation',
+  'None - Staff highly confident and receptive to digital changes',
+];
+
+export const COLLABORATION_CHANNEL_OPTIONS = [
+  'Silos & Fear: Protectionism of materials, isolation, and fear of peer judgment',
+  'Compliance-only Sharing: Materials are shared rigidly only under explicit top-down SMT directives',
+  'Organic Trust Circles: Informal peer networks comfortably co-planning, sharing lessons, and troubleshooting together',
+  'Generative Open Culture: High professional trust with active peer-mentoring, open classrooms, and shared lesson design',
+];
