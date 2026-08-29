@@ -92,9 +92,12 @@
           : '<span class="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-1 rounded-full bg-amber-50 text-amber-700"><i class="fa-solid fa-pen"></i> Draft</span>';
       }
 
-      function reportCardHtml({ schoolName, dateLabel, dateValue, submitted, resumeHref, typeLabel, subLabel }) {
+      function reportCardHtml({ schoolName, dateLabel, dateValue, submitted, resumeHref, reportHref, typeLabel, subLabel }) {
         const actionHtml = submitted
-          ? '<span class="text-[11px] text-slate-400 font-medium">Locked for audit</span>'
+          ? `<a href="${reportHref}" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition">
+               <span>View Report</span>
+               <i class="fa-solid fa-chart-simple"></i>
+             </a>`
           : `<a href="${resumeHref}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#001489] hover:text-[#000e60] transition">
                <span>Resume Editing</span>
                <i class="fa-solid fa-arrow-right"></i>
@@ -137,6 +140,7 @@
               dateValue: w.visit_date,
               submitted: w.submitted,
               resumeHref: `culture-walkthrough.html?id=${w.id}`,
+              reportHref: `report.html?type=walkthrough&id=${w.id}`,
             })
           )
           .join('');
@@ -165,6 +169,7 @@
               dateValue: c.created_at,
               submitted: c.submitted,
               resumeHref: `classroom-report.html?id=${c.id}`,
+              reportHref: `report.html?type=classroom&id=${c.id}`,
             })
           )
           .join('');
