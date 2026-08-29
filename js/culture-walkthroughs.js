@@ -73,3 +73,20 @@ export async function fetchWalkthroughsForAdvisor(advisorId) {
     .order('created_at', { ascending: false });
   return { data, error };
 }
+
+/**
+ * Fetch all culture_walkthroughs for schools within a given district
+ * (not scoped to a single advisor) — matches the "Past Reports shows
+ * everything in my district" requirement. Joins against schools to
+ * filter by district and to get the school name for display.
+ * @param {string} district
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function fetchWalkthroughsForDistrict(district) {
+  const { data, error } = await supabaseClient
+    .from('culture_walkthroughs')
+    .select('*, schools!inner(school_name, district)')
+    .eq('schools.district', district)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}

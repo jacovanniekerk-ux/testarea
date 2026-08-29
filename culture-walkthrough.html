@@ -95,7 +95,11 @@
       import { fetchSchoolsForDistrict } from './js/schools.js';
       import { createCultureWalkthrough } from './js/culture-walkthrough.js';
       import { createClassroomReport } from './js/classroom-report.js';
-      import { submitCultureWalkthrough } from './js/culture-walkthroughs.js';
+      import { submitCultureWalkthrough, fetchCultureWalkthroughById, fetchClassroomObservationsForWalkthrough } from './js/culture-walkthroughs.js';
+
+      // If opened as culture-walkthrough.html?id=<uuid> (from Past Reports),
+      // we're resuming an existing draft rather than starting fresh.
+      const resumeId = new URLSearchParams(window.location.search).get('id');
 
       const advisor = requireSession('4p.html');
       if (!advisor) {
@@ -161,7 +165,7 @@
         });
       }
 
-      function addClassroomInstance() {
+      function addClassroomInstance(existingRow = null) {
         const index = classroomInstances.length + 1;
 
         const wrapper = document.createElement('div');
@@ -185,6 +189,10 @@
           advisorId: advisor.id,
           cultureWalkthroughId: currentWalkthrough ? currentWalkthrough.getData().id : null,
         });
+
+        if (existingRow) {
+          report.loadData(existingRow);
+        }
 
         wrapper.querySelector('[data-remove-classroom-btn]').addEventListener('click', () => {
           if (classroomInstances.length <= 1) return; // guard: at least 1 required
@@ -231,15 +239,19 @@
         classroomsSection.classList.remove('hidden');
         walkthroughActions.classList.remove('hidden');
         saveStatus.textContent = '';
-
-        // A walkthrough always has at least one attached classroom
-        // observation now — start with one already mounted.
-        addClassroomInstance();
+        // NOTE: does NOT auto-add a classroom instance anymore — the
+        // caller (school-select handler for a fresh walkthrough, or
+        // init() when resuming a draft) decides what to seed in.
       }
 
       schoolSelect.addEventListener('change', (e) => {
         showSchoolError(null);
-        mountWalkthroughFor(e.target.value || null);
+        const cemis = e.target.value || null;
+        mountWalkthroughFor(cemis);
+        if (cemis) {
+          // A fresh walkthrough always starts with one blank classroom.
+          addClassroomInstance();
+        }
       });
 
       addClassroomBtn.addEventListener('click', () => addClassroomInstance());
@@ -322,7 +334,46 @@
       saveDraftBtn.addEventListener('click', () => handleSave({ submitted: false }));
       submitFinalBtn.addEventListener('click', () => handleSave({ submitted: true }));
 
-      loadSchools();
+      async function init() {
+        await loadSchools();
+
+        if (!resumeId) return;
+
+        const { data: walkthroughRecord, error: walkthroughError } = await fetchCultureWalkthroughById(resumeId);
+        if (walkthroughError || !walkthroughRecord) {
+          showSchoolError('Could not load the requested walkthrough. It may have been deleted.');
+          return;
+        }
+
+        const { data: classroomRows, error: classroomsError } = await fetchClassroomObservationsForWalkthrough(resumeId);
+        if (classroomsError) {
+          showSchoolError('Loaded the walkthrough, but could not load its classroom observations.');
+        }
+
+        schoolSelect.value = walkthroughRecord.school_cemis;
+        mountWalkthroughFor(walkthroughRecord.school_cemis);
+        currentWalkthrough.loadData(walkthroughRecord);
+
+        if (classroomRows && classroomRows.length > 0) {
+          classroomRows.forEach((row) => addClassroomInstance(row));
+        } else {
+          // Shouldn't normally happen (a walkthrough always has at
+          // least one linked classroom observation), but fall back to
+          // one blank instance rather than leaving the section empty.
+          addClassroomInstance();
+        }
+
+        if (walkthroughRecord.submitted) {
+          saveStatus.textContent = `Submitted at ${new Date(walkthroughRecord.submitted_at).toLocaleString()}. This walkthrough is locked for audit.`;
+          saveStatus.className = 'text-xs text-emerald-700 font-semibold';
+          lockEverything();
+        } else {
+          saveStatus.textContent = 'Resumed draft — continue editing below.';
+          saveStatus.className = 'text-xs text-slate-500';
+        }
+      }
+
+      init();
     </script>
   </body>
 </html>

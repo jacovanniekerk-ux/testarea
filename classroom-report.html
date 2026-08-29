@@ -78,7 +78,11 @@
       import { requireSession } from './js/session.js';
       import { fetchSchoolsForDistrict } from './js/schools.js';
       import { createClassroomReport } from './js/classroom-report.js';
-      import { saveClassroomObservation } from './js/classroom-observations.js';
+      import { saveClassroomObservation, fetchClassroomObservationById } from './js/classroom-observations.js';
+
+      // If opened as classroom-report.html?id=<uuid> (from Past Reports),
+      // we're resuming an existing draft rather than starting fresh.
+      const resumeId = new URLSearchParams(window.location.search).get('id');
 
       // Bounce to login if there's no session. requireSession() already
       // redirects; the null check just stops this script from doing any
@@ -209,7 +213,37 @@
       saveDraftBtn.addEventListener('click', () => handleSave({ submitted: false }));
       submitFinalBtn.addEventListener('click', () => handleSave({ submitted: true }));
 
-      loadSchools();
+      async function init() {
+        await loadSchools();
+
+        if (!resumeId) return;
+
+        const { data, error } = await fetchClassroomObservationById(resumeId);
+        if (error || !data) {
+          showSchoolError('Could not load the requested report. It may have been deleted.');
+          return;
+        }
+
+        schoolSelect.value = data.school_cemis;
+        mountReportFor(data.school_cemis);
+        currentReport.loadData(data);
+
+        if (data.submitted) {
+          // Submitted reports are read-only per the lifecycle rules —
+          // if someone lands here directly (e.g. a bookmarked link),
+          // show it but don't allow further edits.
+          saveStatus.textContent = `Submitted at ${new Date(data.submitted_at).toLocaleString()}. This report is locked for audit.`;
+          saveStatus.className = 'text-xs text-emerald-700 font-semibold';
+          saveDraftBtn.disabled = true;
+          submitFinalBtn.disabled = true;
+          schoolSelect.disabled = true;
+        } else {
+          saveStatus.textContent = 'Resumed draft — continue editing below.';
+          saveStatus.className = 'text-xs text-slate-500';
+        }
+      }
+
+      init();
     </script>
   </body>
 </html>

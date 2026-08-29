@@ -67,3 +67,20 @@ export async function fetchStandaloneObservationsForAdvisor(advisorId) {
     .order('created_at', { ascending: false });
   return { data, error };
 }
+
+/**
+ * Fetch all standalone classroom observations for schools within a
+ * given district (not scoped to a single advisor) — matches the
+ * "Past Reports shows everything in my district" requirement.
+ * @param {string} district
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function fetchStandaloneObservationsForDistrict(district) {
+  const { data, error } = await supabaseClient
+    .from('classroom_observations')
+    .select('*, schools!inner(school_name, district)')
+    .eq('schools.district', district)
+    .is('culture_walkthrough_id', null)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}

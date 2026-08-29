@@ -89,7 +89,7 @@
         <p class="text-slate-500 mb-6">Select an option below to continue</p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <a href="#" id="culture-walkthrough-link" class="card hover:shadow-lg transition cursor-pointer">
+          <a href="culture-walkthrough.html" id="culture-walkthrough-link" class="card hover:shadow-lg transition cursor-pointer">
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
                 <h3 class="text-xl font-bold text-[#001489] mb-2">Culture Walkthrough</h3>
@@ -99,7 +99,7 @@
             </div>
           </a>
 
-          <a href="#" id="school-report-link" class="card hover:shadow-lg transition cursor-pointer">
+          <a href="classroom-report.html" id="school-report-link" class="card hover:shadow-lg transition cursor-pointer">
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
                 <h3 class="text-xl font-bold text-emerald-600 mb-2">School Report</h3>
@@ -109,7 +109,7 @@
             </div>
           </a>
 
-          <a href="#" id="past-reports-link" class="card hover:shadow-lg transition cursor-pointer">
+          <a href="past-reports.html" id="past-reports-link" class="card hover:shadow-lg transition cursor-pointer">
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
                 <h3 class="text-xl font-bold text-purple-600 mb-2">Past Reports</h3>
@@ -240,75 +240,6 @@
       errorMessage.classList.add('hidden');
       sectionContent.innerHTML = '';
     });
-
-    // ============================================================
-    // NAVIGATION
-    // ============================================================
-    document.getElementById('culture-walkthrough-link').addEventListener('click', (e) => {
-      e.preventDefault();
-      loadSection('culture-walkthrough');
-    });
-
-    document.getElementById('school-report-link').addEventListener('click', (e) => {
-      e.preventDefault();
-      loadSection('school-report');
-    });
-
-    document.getElementById('past-reports-link').addEventListener('click', (e) => {
-      e.preventDefault();
-      loadSection('past-reports');
-    });
-
-    // ============================================================
-    // SECTION LOADING
-    // ============================================================
-    function loadSection(section) {
-      const routes = {
-        'culture-walkthrough': `
-          <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
-            <h2 class="text-2xl font-bold text-[#001489] mb-6">Culture Walkthrough</h2>
-            <p class="text-slate-500 mb-4">School culture walkthrough assessment</p>
-            <p class="text-slate-500">This section will evaluate the school across the 4P pillars: People, Practices, Pedagogy, and Platforms.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div class="p-4 rounded-lg border-l-4 border-[#001489] bg-blue-50">
-                <h4 class="font-bold text-[#001489]">PEOPLE</h4>
-                <p class="text-sm text-slate-500">Psychological safety & digital confidence</p>
-              </div>
-              <div class="p-4 rounded-lg border-l-4 border-emerald-500 bg-emerald-50">
-                <h4 class="font-bold text-emerald-600">PRACTICES</h4>
-                <p class="text-sm text-slate-500">Collaboration & professional development</p>
-              </div>
-              <div class="p-4 rounded-lg border-l-4 border-[#00A1A3] bg-teal-50">
-                <h4 class="font-bold text-[#00A1A3]">PEDAGOGY</h4>
-                <p class="text-sm text-slate-500">Lesson design & learner agency</p>
-              </div>
-              <div class="p-4 rounded-lg border-l-4 border-purple-500 bg-purple-50">
-                <h4 class="font-bold text-purple-600">PLATFORMS</h4>
-                <p class="text-sm text-slate-500">Resource scheduling & ePortal</p>
-              </div>
-            </div>
-            <p class="text-slate-500 mt-6 text-sm">Full form coming in next iteration.</p>
-          </div>
-        `,
-        'school-report': `
-          <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
-            <h2 class="text-2xl font-bold text-[#001489] mb-6">School Report</h2>
-            <p class="text-slate-500 mb-4">Standalone school report (uses same diagnostic tool as walkthrough)</p>
-            <p class="text-slate-500">Select a school and complete the diagnostic rubrics.</p>
-            <p class="text-slate-500 mt-6 text-sm">Full form coming in next iteration.</p>
-          </div>
-        `,
-        'past-reports': `
-          <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
-            <h2 class="text-2xl font-bold text-[#001489] mb-6">Past Reports</h2>
-            <p class="text-slate-500">Your previous reports for editing or review</p>
-            <p class="text-slate-500 mt-6 text-sm">No reports found yet. Start by creating a Culture Walkthrough or School Report.</p>
-          </div>
-        `,
-      };
-
-      sectionContent.innerHTML = routes[section] || '<p>Section not found</p>';
-    }
 
     // ============================================================
     // INITIALIZE - Check for existing "session"

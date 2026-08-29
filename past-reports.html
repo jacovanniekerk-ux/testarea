@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Past Reports — WCED 4P Diagnostic</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/minimal.min.css" />
+
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: #f8fafc;
+        color: #1e293b;
+        min-height: 100vh;
+      }
+      .btn-primary { background: #001489; color: white; }
+      .btn-primary:hover { background: #000e60; }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <header class="bg-[#001489] text-white py-3 px-6 shadow-sm">
+      <div class="max-w-5xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="4p.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Dashboard</span>
+          </a>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-user-large text-lg"></i>
+            <span id="user-name" class="font-medium"></span>
+          </div>
+        </div>
+        <span id="user-district" class="font-medium text-sm"></span>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-4 md:p-6 pb-24">
+      <h1 class="text-2xl font-bold text-slate-800 mb-1">Past Reports</h1>
+      <p class="text-slate-500 mb-6 text-sm">
+        Culture walkthroughs and standalone classroom reports across your district. Drafts can be resumed for editing; submitted reports are locked for audit.
+      </p>
+
+      <section class="mb-8">
+        <h2 class="text-sm font-black uppercase text-slate-700 tracking-wide mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-user-group text-[#001489]"></i>
+          Culture Walkthroughs
+        </h2>
+        <div id="walkthroughs-list" class="space-y-3">
+          <p class="text-sm text-slate-400">Loading...</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-black uppercase text-slate-700 tracking-wide mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-file-text text-emerald-600"></i>
+          Classroom Reports (Standalone)
+        </h2>
+        <div id="classroom-reports-list" class="space-y-3">
+          <p class="text-sm text-slate-400">Loading...</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { requireSession } from './js/session.js';
+      import { fetchWalkthroughsForDistrict } from './js/culture-walkthroughs.js';
+      import { fetchStandaloneObservationsForDistrict } from './js/classroom-observations.js';
+
+      const advisor = requireSession('4p.html');
+      if (!advisor) {
+        throw new Error('No advisor session — redirecting to login.');
+      }
+
+      document.getElementById('user-name').textContent = advisor.full_name;
+      document.getElementById('user-district').textContent = advisor.district;
+
+      const walkthroughsListEl = document.getElementById('walkthroughs-list');
+      const classroomReportsListEl = document.getElementById('classroom-reports-list');
+
+      function formatDate(value) {
+        if (!value) return '—';
+        return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+
+      function statusBadgeHtml(submitted) {
+        return submitted
+          ? '<span class="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700"><i class="fa-solid fa-lock"></i> Submitted</span>'
+          : '<span class="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-1 rounded-full bg-amber-50 text-amber-700"><i class="fa-solid fa-pen"></i> Draft</span>';
+      }
+
+      function reportCardHtml({ schoolName, dateLabel, dateValue, submitted, resumeHref, typeLabel, subLabel }) {
+        const actionHtml = submitted
+          ? '<span class="text-[11px] text-slate-400 font-medium">Locked for audit</span>'
+          : `<a href="${resumeHref}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#001489] hover:text-[#000e60] transition">
+               <span>Resume Editing</span>
+               <i class="fa-solid fa-arrow-right"></i>
+             </a>`;
+
+        return `
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p class="font-bold text-sm text-slate-800">${schoolName}</p>
+              <p class="text-xs text-slate-500 mt-0.5">
+                ${typeLabel} ${subLabel ? `&middot; ${subLabel}` : ''} &middot; ${dateLabel} ${formatDate(dateValue)}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              ${statusBadgeHtml(submitted)}
+              ${actionHtml}
+            </div>
+          </div>`;
+      }
+
+      async function loadWalkthroughs() {
+        const { data, error } = await fetchWalkthroughsForDistrict(advisor.district);
+
+        if (error) {
+          walkthroughsListEl.innerHTML = `<p class="text-sm text-red-600">Could not load walkthroughs: ${error.message}</p>`;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          walkthroughsListEl.innerHTML = '<p class="text-sm text-slate-400">No culture walkthroughs yet for your district.</p>';
+          return;
+        }
+
+        walkthroughsListEl.innerHTML = data
+          .map((w) =>
+            reportCardHtml({
+              schoolName: w.schools ? w.schools.school_name : w.school_cemis,
+              typeLabel: 'Culture Walkthrough',
+              dateLabel: 'Visited',
+              dateValue: w.visit_date,
+              submitted: w.submitted,
+              resumeHref: `culture-walkthrough.html?id=${w.id}`,
+            })
+          )
+          .join('');
+      }
+
+      async function loadStandaloneClassroomReports() {
+        const { data, error } = await fetchStandaloneObservationsForDistrict(advisor.district);
+
+        if (error) {
+          classroomReportsListEl.innerHTML = `<p class="text-sm text-red-600">Could not load classroom reports: ${error.message}</p>`;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          classroomReportsListEl.innerHTML = '<p class="text-sm text-slate-400">No standalone classroom reports yet for your district.</p>';
+          return;
+        }
+
+        classroomReportsListEl.innerHTML = data
+          .map((c) =>
+            reportCardHtml({
+              schoolName: c.schools ? c.schools.school_name : c.school_cemis,
+              typeLabel: 'Classroom Report',
+              subLabel: c.teacher_name || c.subject_observed || null,
+              dateLabel: 'Created',
+              dateValue: c.created_at,
+              submitted: c.submitted,
+              resumeHref: `classroom-report.html?id=${c.id}`,
+            })
+          )
+          .join('');
+      }
+
+      loadWalkthroughs();
+      loadStandaloneClassroomReports();
+    </script>
+  </body>
+</html>
