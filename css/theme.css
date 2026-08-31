@@ -1,0 +1,199 @@
+/* ============================================================
+   theme.css
+   ------------------------------------------------------------
+   THE single stylesheet for the whole tool. Every page links this
+   file. Change a variable here and it takes effect everywhere —
+   that's the whole point of pulling this out of scattered Tailwind
+   arbitrary-value classes (text-[10px], text-[8px], etc.) that used
+   to be hardcoded inside the JS files that generate the HTML.
+
+   HOW TO MAKE EVERYTHING BIGGER/SMALLER AT ONCE:
+   Adjust the --fs-* variables in :root below. Every semantic class
+   in this file (and every page/module that uses them) reads from
+   these variables, so one edit here cascades everywhere.
+   ============================================================ */
+
+:root {
+  /* ---- Type scale ---- */
+  /* Previously these were scattered as text-[8px] through text-[11px]
+     directly in the JS templates. Bumped up noticeably from the
+     original values, which were too small to read comfortably. */
+  --fs-eyebrow: 11px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
+  --fs-label: 12.5px;      /* form field labels, checklist labels */
+  --fs-body: 13.5px;       /* rubric option descriptions, general body copy */
+  --fs-body-lg: 14.5px;    /* text typed into inputs/textareas/selects */
+  --fs-subtitle: 13px;     /* pillar group subtitles/instructions */
+  --fs-heading: 15px;      /* section headings (e.g. "PEOPLE — ...") */
+  --fs-heading-lg: 20px;   /* page titles */
+  --line-height-body: 1.55;
+
+  /* ---- Brand colors (used across pages) ---- */
+  --color-brand: #001489;
+  --color-brand-dark: #000e60;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+  font-size: var(--fs-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ---- Shared buttons / cards (previously duplicated per-page) ---- */
+.btn-primary {
+  background: var(--color-brand);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--color-brand-dark);
+}
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   Semantic text classes used by rubric-ui.js, classroom-report.js,
+   culture-walkthrough.js, and report.html. Using these instead of
+   raw Tailwind text-[Npx] classes is what makes the --fs-* variables
+   above actually control sizing everywhere.
+   ============================================================ */
+
+.eyebrow-label {
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.field-label {
+  font-size: var(--fs-label);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.02em;
+}
+
+.pillar-title {
+  font-size: var(--fs-heading);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.pillar-subtitle {
+  font-size: var(--fs-subtitle);
+  color: #64748b;
+  line-height: var(--line-height-body);
+}
+
+.pillar-badge {
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pillar-description {
+  font-size: var(--fs-body);
+  color: #475569;
+  line-height: var(--line-height-body);
+  font-weight: 500;
+}
+
+.section-heading {
+  font-size: var(--fs-heading);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.category-divider-label {
+  font-size: var(--fs-label);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Form controls: inputs/selects/textareas rendered inside the
+   rubric forms should all read at --fs-body-lg regardless of
+   whatever Tailwind text-size utility class is also present on
+   them, so bumping the variable is guaranteed to reach every field. */
+.form-field,
+.form-field textarea,
+.form-field input,
+.form-field select {
+  font-size: var(--fs-body-lg) !important;
+}
+
+/* ============================================================
+   Tabs (shared by classroom-report.js's internal sections,
+   culture-walkthrough.js's internal sections, and the
+   Classroom 1 / Classroom 2 / ... switcher on the walkthrough page)
+   ============================================================ */
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.tab-button {
+  font-size: var(--fs-label);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  padding: 10px 14px;
+  color: #94a3b8;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.tab-button:hover {
+  color: #475569;
+}
+
+.tab-button.active {
+  color: var(--color-brand);
+  border-bottom-color: var(--color-brand);
+}
+
+.tab-button .tab-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+@media print {
+  header, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}

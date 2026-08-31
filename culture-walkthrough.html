@@ -8,18 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/minimal.min.css" />
-
-    <style>
-      * { box-sizing: border-box; }
-      body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background: #f8fafc;
-        color: #1e293b;
-        min-height: 100vh;
-      }
-      .btn-primary { background: #001489; color: white; }
-      .btn-primary:hover { background: #000e60; }
-    </style>
+    <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
     <header class="bg-[#001489] text-white py-3 px-6 shadow-sm">
@@ -39,7 +28,7 @@
     </header>
 
     <main class="max-w-5xl mx-auto p-4 md:p-6 pb-24">
-      <h1 class="text-2xl font-bold text-slate-800 mb-1">Culture Walkthrough</h1>
+      <h1 class="text-[var(--fs-heading-lg)] font-bold text-slate-800 mb-1">Culture Walkthrough</h1>
       <p class="text-slate-500 mb-6 text-sm">
         School-wide culture assessment, plus at least one linked classroom observation.
         Both save and submit together.
@@ -47,8 +36,8 @@
 
       <!-- School selection -->
       <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-6">
-        <label class="block text-xs font-black uppercase text-slate-600 mb-2">Select School</label>
-        <select id="school-select" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#001489] focus:outline-none bg-white text-slate-800">
+        <label class="field-label block mb-2">Select School</label>
+        <select id="school-select" class="form-field w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#001489] focus:outline-none bg-white text-slate-800">
           <option value="">-- Loading schools... --</option>
         </select>
         <p id="school-select-error" class="mt-2 text-xs text-red-600 hidden"></p>
@@ -60,16 +49,24 @@
       <!-- Classroom observations section -->
       <div id="classrooms-section" class="mt-8 hidden">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-black uppercase text-slate-700 tracking-wide">
-            Classroom Observations <span class="text-slate-400 font-medium">(at least 1 required)</span>
+          <h2 class="section-heading text-slate-700">
+            Classroom Observations <span class="text-slate-400 font-medium normal-case" style="font-weight:500;">(at least 1 required)</span>
           </h2>
-          <button id="add-classroom-btn" type="button"
-            class="bg-white border border-[#001489]/30 hover:bg-blue-50/50 text-[#001489] font-bold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-            <i class="fa-solid fa-plus"></i>
-            <span>Add Classroom</span>
-          </button>
+          <div class="flex items-center gap-3">
+            <button id="remove-classroom-btn" type="button"
+              class="text-xs font-bold uppercase text-red-500 hover:text-red-700 disabled:text-slate-300 disabled:cursor-not-allowed flex items-center gap-1.5">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>Remove This Classroom</span>
+            </button>
+            <button id="add-classroom-btn" type="button"
+              class="bg-white border border-[#001489]/30 hover:bg-blue-50/50 text-[#001489] font-bold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Classroom</span>
+            </button>
+          </div>
         </div>
-        <div id="classroom-instances"></div>
+        <!-- Tab strip (Classroom 1 / Classroom 2 / ...) mounts here -->
+        <div id="classroom-tabs-mount" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"></div>
       </div>
 
       <!-- Save / Submit actions -->
@@ -95,6 +92,7 @@
       import { fetchSchoolsForDistrict } from './js/schools.js';
       import { createCultureWalkthrough } from './js/culture-walkthrough.js';
       import { createClassroomReport } from './js/classroom-report.js';
+      import { createTabbedPanel } from './js/tabs-ui.js';
       import { submitCultureWalkthrough, fetchCultureWalkthroughById, fetchClassroomObservationsForWalkthrough } from './js/culture-walkthroughs.js';
 
       // If opened as culture-walkthrough.html?id=<uuid> (from Past Reports),
@@ -113,8 +111,9 @@
       const schoolSelectError = document.getElementById('school-select-error');
       const walkthroughContainer = document.getElementById('walkthrough-container');
       const classroomsSection = document.getElementById('classrooms-section');
-      const classroomInstancesEl = document.getElementById('classroom-instances');
+      const classroomTabsMount = document.getElementById('classroom-tabs-mount');
       const addClassroomBtn = document.getElementById('add-classroom-btn');
+      const removeClassroomBtn = document.getElementById('remove-classroom-btn');
       const walkthroughActions = document.getElementById('walkthrough-actions');
       const saveDraftBtn = document.getElementById('save-draft-btn');
       const submitFinalBtn = document.getElementById('submit-final-btn');
@@ -122,8 +121,9 @@
 
       let currentWalkthrough = null; // createCultureWalkthrough() instance
       let currentSchoolCemis = null;
-      // Each entry: { wrapper: HTMLElement, report: createClassroomReport() instance }
-      let classroomInstances = [];
+      let classroomTabs = null; // createTabbedPanel() instance for the classroom switcher
+      let classroomTabCounter = 0; // ever-increasing, for unique tab ids (not reused after removal)
+      const classroomReports = {}; // tabId -> createClassroomReport() instance
 
       function showSchoolError(message) {
         if (!message) {
@@ -157,70 +157,64 @@
           data.map((s) => `<option value="${s.cemis_number}">${s.school_name}</option>`).join('');
       }
 
-      function updateRemoveButtonsState() {
-        const canRemove = classroomInstances.length > 1;
-        classroomInstances.forEach(({ wrapper }) => {
-          const btn = wrapper.querySelector('[data-remove-classroom-btn]');
-          if (btn) btn.disabled = !canRemove;
-        });
+      // Relabels every classroom tab "Classroom 1", "Classroom 2", ...
+      // in current tab order, and enables/disables the remove button
+      // based on the 1-classroom floor.
+      function renumberAndUpdateControls() {
+        if (!classroomTabs) return;
+        const ids = classroomTabs.getTabIds();
+        ids.forEach((id, i) => classroomTabs.setTabLabel(id, `Classroom ${i + 1}`));
+        removeClassroomBtn.disabled = ids.length <= 1;
       }
 
       function addClassroomInstance(existingRow = null) {
-        const index = classroomInstances.length + 1;
+        classroomTabCounter += 1;
+        const tabId = `classroom-${classroomTabCounter}`;
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'relative mt-6 first:mt-0';
-        wrapper.innerHTML = `
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Classroom ${index}</span>
-            <button type="button" data-remove-classroom-btn
-              class="text-[10px] font-bold uppercase text-red-500 hover:text-red-700 disabled:text-slate-300 disabled:cursor-not-allowed flex items-center gap-1">
-              <i class="fa-solid fa-trash-can"></i>
-              <span>Remove</span>
-            </button>
-          </div>
-          <div data-classroom-mount></div>
-        `;
-        classroomInstancesEl.appendChild(wrapper);
+        const tabDef = {
+          id: tabId,
+          label: `Classroom ${classroomTabCounter}`, // temporary — renumberAndUpdateControls() fixes real numbering
+          render: (panelEl) => {
+            const report = createClassroomReport(panelEl, {
+              schoolCemis: currentSchoolCemis,
+              advisorId: advisor.id,
+              cultureWalkthroughId: currentWalkthrough ? currentWalkthrough.getData().id : null,
+            });
+            if (existingRow) report.loadData(existingRow);
+            classroomReports[tabId] = report;
+          },
+        };
 
-        const mountEl = wrapper.querySelector('[data-classroom-mount]');
-        const report = createClassroomReport(mountEl, {
-          schoolCemis: currentSchoolCemis,
-          advisorId: advisor.id,
-          cultureWalkthroughId: currentWalkthrough ? currentWalkthrough.getData().id : null,
-        });
-
-        if (existingRow) {
-          report.loadData(existingRow);
+        if (!classroomTabs) {
+          classroomTabs = createTabbedPanel(classroomTabsMount, [tabDef]);
+        } else {
+          classroomTabs.addTab(tabDef);
         }
 
-        wrapper.querySelector('[data-remove-classroom-btn]').addEventListener('click', () => {
-          if (classroomInstances.length <= 1) return; // guard: at least 1 required
-          report.destroy();
-          wrapper.remove();
-          classroomInstances = classroomInstances.filter((c) => c.wrapper !== wrapper);
-          renumberClassrooms();
-          updateRemoveButtonsState();
-        });
-
-        classroomInstances.push({ wrapper, report });
-        updateRemoveButtonsState();
+        renumberAndUpdateControls();
       }
 
-      function renumberClassrooms() {
-        classroomInstances.forEach(({ wrapper }, i) => {
-          wrapper.querySelector('span').textContent = `Classroom ${i + 1}`;
-        });
-      }
+      removeClassroomBtn.addEventListener('click', () => {
+        if (!classroomTabs) return;
+        const ids = classroomTabs.getTabIds();
+        if (ids.length <= 1) return; // guard: at least 1 required
+
+        const activeId = classroomTabs.getActiveTabId();
+        classroomReports[activeId].destroy();
+        delete classroomReports[activeId];
+        classroomTabs.removeTab(activeId);
+        renumberAndUpdateControls();
+      });
 
       function mountWalkthroughFor(schoolCemis) {
         if (currentWalkthrough) {
           currentWalkthrough.destroy();
           currentWalkthrough = null;
         }
-        classroomInstances.forEach(({ report }) => report.destroy());
-        classroomInstances = [];
-        classroomInstancesEl.innerHTML = '';
+        Object.values(classroomReports).forEach((report) => report.destroy());
+        for (const key in classroomReports) delete classroomReports[key];
+        classroomTabsMount.innerHTML = '';
+        classroomTabs = null;
 
         currentSchoolCemis = schoolCemis;
 
@@ -261,20 +255,22 @@
         submitFinalBtn.disabled = true;
         schoolSelect.disabled = true;
         addClassroomBtn.disabled = true;
-        classroomInstancesEl.querySelectorAll('[data-remove-classroom-btn]').forEach((btn) => (btn.disabled = true));
+        removeClassroomBtn.disabled = true;
       }
 
       async function handleSave({ submitted }) {
         if (!currentWalkthrough) return;
 
+        const reportsInOrder = classroomTabs ? classroomTabs.getTabIds().map((id) => classroomReports[id]) : [];
+
         if (submitted) {
           if (!currentWalkthrough.validate()) return;
-          if (classroomInstances.length === 0) {
+          if (reportsInOrder.length === 0) {
             saveStatus.textContent = 'A Culture Walkthrough requires at least one classroom observation.';
             saveStatus.className = 'text-xs text-red-600 font-semibold';
             return;
           }
-          const allClassroomsValid = classroomInstances.every(({ report }) => report.validate());
+          const allClassroomsValid = reportsInOrder.every((report) => report.validate());
           if (!allClassroomsValid) {
             saveStatus.textContent = 'Please complete the required fields on every classroom observation.';
             saveStatus.className = 'text-xs text-red-600 font-semibold';
@@ -294,7 +290,7 @@
         walkthroughRow.submitted = submitted;
         walkthroughRow.submitted_at = submittedAt;
 
-        const classroomRows = classroomInstances.map(({ report }) => {
+        const classroomRows = reportsInOrder.map((report) => {
           const row = report.getData();
           row.submitted = submitted;
           row.submitted_at = submittedAt;
@@ -316,7 +312,7 @@
         // Feed the returned ids back into each module so a second
         // save updates these same rows instead of inserting duplicates.
         currentWalkthrough.loadData({ ...walkthroughRow, id: data.id });
-        classroomInstances.forEach(({ report }, i) => {
+        reportsInOrder.forEach((report, i) => {
           const classroomId = data.classroom_ids[i];
           report.loadData({ ...classroomRows[i], id: classroomId });
         });

@@ -7,6 +7,9 @@
 // contract: createCultureWalkthrough(containerEl, opts) returns
 // { validate, getData, loadData, destroy }.
 //
+// Rendered as tabs (Details / People & Practices / Platforms)
+// instead of one long scroll — see tabs-ui.js.
+//
 // This module renders ONLY the walkthrough's own fields — it does
 // NOT manage any attached classroom observations. The calling page
 // (culture-walkthrough.html) is responsible for also mounting one
@@ -48,9 +51,10 @@ import {
   PRIMARY_BARRIER_OPTIONS,
   COLLABORATION_CHANNEL_OPTIONS,
 } from './rubrics.js';
-import { escapeHtml, badgeBgClass, activeBgClass, INACTIVE_CLASS, pillarGroupHtml, categoryDividerHtml, updatePillarVisual } from './rubric-ui.js';
+import { escapeHtml, badgeBgClass, activeBgClass, pillarGroupHtml, categoryDividerHtml, updatePillarVisual } from './rubric-ui.js';
+import { createTabbedPanel } from './tabs-ui.js';
 
-const PILLAR_GROUPS = [
+const PEOPLE_PRACTICES_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
@@ -96,6 +100,9 @@ const PILLAR_GROUPS = [
     iconBg: 'bg-teal-50',
     options: PRACTICES_CYBER_RUBRIC,
   },
+];
+
+const PLATFORMS_GROUPS = [
   {
     category: 'PLATFORMS',
     categoryColor: '#D73828',
@@ -112,6 +119,19 @@ const CATEGORY_LABELS = {
   PRACTICES: 'PRACTICES — Shared Routines & Integration',
   PLATFORMS: 'PLATFORMS — Resource Scheduling, Rosters & Access Mechanics',
 };
+
+function pillarGroupsHtml(instanceId, groups, state) {
+  const out = [];
+  let currentCategory = null;
+  for (const group of groups) {
+    if (group.category !== currentCategory) {
+      out.push(categoryDividerHtml(CATEGORY_LABELS[group.category], group.categoryColor));
+      currentCategory = group.category;
+    }
+    out.push(pillarGroupHtml(instanceId, group, state[group.field]));
+  }
+  return out.join('');
+}
 
 /**
  * @param {HTMLElement} containerEl
@@ -155,6 +175,15 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
 
   const instanceId = `cw-${Math.random().toString(36).slice(2, 9)}`;
 
+  function visitDateHtml() {
+    return `
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm max-w-xs">
+        <label class="field-label block mb-1">Visit Date</label>
+        <input type="date" data-field="visit_date" value="${escapeHtml(state.visit_date)}"
+               class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
+      </div>`;
+  }
+
   function contextDetailsHtml() {
     const barrierOptionsHtml = PRIMARY_BARRIER_OPTIONS
       .map((opt) => `<option value="${escapeHtml(opt)}" ${state.primary_barrier === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`)
@@ -165,20 +194,20 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
 
     return `
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm space-y-4">
-        <h4 class="text-[10px] font-bold uppercase text-slate-700 tracking-wider">Walkthrough Environmental Details</h4>
+        <h4 class="field-label">Walkthrough Environmental Details</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Primary Identified Barrier / Fear Factor</label>
+            <label class="field-label block mb-1.5">Primary Identified Barrier / Fear Factor</label>
             <select data-field="primary_barrier"
-                    class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none cursor-pointer text-slate-700 font-medium">
+                    class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none cursor-pointer text-slate-700 font-medium">
               <option value="">-- Select Barrier --</option>
               ${barrierOptionsHtml}
             </select>
           </div>
           <div>
-            <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Staff Collaboration Mindset &amp; Trust</label>
+            <label class="field-label block mb-1.5">Staff Collaboration Mindset &amp; Trust</label>
             <select data-field="collaboration_channel"
-                    class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none cursor-pointer text-slate-700 font-medium">
+                    class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none cursor-pointer text-slate-700 font-medium">
               <option value="">-- Select Collaboration &amp; Trust Level --</option>
               ${collabOptionsHtml}
             </select>
@@ -191,21 +220,21 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
     const cardsHtml = SCENARIO_OPTIONS.map((opt) => {
       const checked = state.scenario_response === opt.value;
       return `
-        <label class="p-2.5 rounded-lg border text-xs cursor-pointer transition-all duration-200 hover:scale-[1.005] flex flex-col justify-between ${checked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}"
+        <label class="p-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.005] flex flex-col justify-between ${checked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}"
                data-scenario-option data-value="${opt.value}">
           <input type="radio" name="${instanceId}-scenario_response" value="${opt.value}" ${checked ? 'checked' : ''}
                  class="sr-only" data-field="scenario_response" data-scenario-value="${opt.value}" />
           <div>
-            <span class="inline-block text-[8px] font-black px-1.5 py-0.5 rounded-md mb-1.5 ${badgeBgClass(opt.level)}">Level ${opt.level}</span>
-            <p class="leading-snug text-[10px] font-medium">${escapeHtml(opt.label)}</p>
+            <span class="pillar-badge inline-block px-1.5 py-0.5 rounded-md mb-1.5 ${badgeBgClass(opt.level)}">Level ${opt.level}</span>
+            <p class="pillar-description">${escapeHtml(opt.label)}</p>
           </div>
         </label>`;
     }).join('');
 
     return `
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm">
-        <h4 class="text-[10px] font-bold uppercase text-slate-700 tracking-wider mb-2">Diagnostic Scenario: Operational Resilience</h4>
-        <p class="text-[11px] text-slate-600 mb-2 leading-relaxed">
+        <h4 class="field-label mb-2">Diagnostic Scenario: Operational Resilience</h4>
+        <p class="pillar-subtitle mb-2">
           <strong>"If the internet drops during a digital lesson delivery, how do teachers react?"</strong><br />
           Select the choice that best matches the typical institutional response observed.
         </p>
@@ -219,51 +248,60 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
       const optValue = Number(el.getAttribute('data-value'));
       const opt = SCENARIO_OPTIONS.find((o) => o.value === optValue);
       const isChecked = state.scenario_response === optValue;
-      el.className = `p-2.5 rounded-lg border text-xs cursor-pointer transition-all duration-200 hover:scale-[1.005] flex flex-col justify-between ${isChecked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`;
+      el.className = `p-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.005] flex flex-col justify-between ${isChecked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`;
     });
   }
 
   function render() {
-    const pillarsHtml = [];
-    let currentCategory = null;
-    for (const group of PILLAR_GROUPS) {
-      if (group.category !== currentCategory) {
-        pillarsHtml.push(categoryDividerHtml(CATEGORY_LABELS[group.category], group.categoryColor));
-        currentCategory = group.category;
-      }
-      pillarsHtml.push(pillarGroupHtml(instanceId, group, state[group.field]));
-    }
-
     containerEl.innerHTML = `
       <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm" data-culture-walkthrough-root>
-        <div class="border-b border-slate-100 pb-3 mb-4">
-          <h2 class="text-base font-black text-slate-900 tracking-tight uppercase">
+        <div class="border-b border-slate-100 pb-3 mb-3">
+          <h2 class="pillar-title text-slate-900">
             Macro-Level School Culture Walkthrough (PEOPLE, PRACTICES &amp; PLATFORMS)
           </h2>
-          <p class="text-[11px] text-slate-500 mt-0.5">
+          <p class="pillar-subtitle mt-0.5">
             Evaluate the emotional infrastructure, psychological safety, cultural routines, and school-wide access mechanics.
           </p>
         </div>
 
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm mb-4 max-w-xs">
-          <label class="block text-[10px] font-black uppercase text-slate-600 mb-1">Visit Date</label>
-          <input type="date" data-field="visit_date" value="${escapeHtml(state.visit_date)}"
-                 class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
-        </div>
+        <p class="text-[13px] text-red-600 font-semibold hidden mb-3" data-validation-message></p>
 
-        <div class="space-y-0">
-          ${pillarsHtml.join('')}
-        </div>
-
-        <div class="mt-6">${contextDetailsHtml()}</div>
-        <div class="mt-4">${scenarioHtml()}</div>
-
-        <p class="mt-3 text-[10px] text-red-600 font-semibold hidden" data-validation-message></p>
+        <div data-tabs-mount></div>
       </div>`;
 
-    attachListeners();
+    const tabsMount = containerEl.querySelector('[data-tabs-mount]');
+
+    createTabbedPanel(tabsMount, [
+      {
+        id: 'details',
+        label: 'Details',
+        render: (panel) => {
+          panel.innerHTML = `
+            ${visitDateHtml()}
+            <div class="mt-4">${contextDetailsHtml()}</div>
+            <div class="mt-4">${scenarioHtml()}</div>`;
+        },
+      },
+      {
+        id: 'people-practices',
+        label: 'People & Practices',
+        render: (panel) => {
+          panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_PRACTICES_GROUPS, state);
+        },
+      },
+      {
+        id: 'platforms',
+        label: 'Platforms',
+        render: (panel) => {
+          panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
+        },
+      },
+    ]);
   }
 
+  // Attached ONCE (not inside render()) — see classroom-report.js for
+  // why: containerEl persists across re-renders, so attaching inside
+  // render() would stack up duplicate listeners on every loadData().
   function attachListeners() {
     containerEl.addEventListener('change', (e) => {
       const target = e.target;
@@ -294,6 +332,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
     }
   }
 
+  attachListeners();
   render();
 
   return {
@@ -306,7 +345,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
      */
     validate() {
       if (!state.visit_date) {
-        showValidationMessage('Please set a Visit Date before continuing.');
+        showValidationMessage('Please set a Visit Date (Details tab) before continuing.');
         return false;
       }
       showValidationMessage(null);

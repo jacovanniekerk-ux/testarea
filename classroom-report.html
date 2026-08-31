@@ -8,18 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/minimal.min.css" />
-
-    <style>
-      * { box-sizing: border-box; }
-      body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background: #f8fafc;
-        color: #1e293b;
-        min-height: 100vh;
-      }
-      .btn-primary { background: #001489; color: white; }
-      .btn-primary:hover { background: #000e60; }
-    </style>
+    <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
     <header class="bg-[#001489] text-white py-3 px-6 shadow-sm">
@@ -46,7 +35,7 @@
 
       <!-- School selection -->
       <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-6">
-        <label class="block text-xs font-black uppercase text-slate-600 mb-2">Select School</label>
+        <label class="field-label block mb-2">Select School</label>
         <select id="school-select" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#001489] focus:outline-none bg-white text-slate-800">
           <option value="">-- Loading schools... --</option>
         </select>

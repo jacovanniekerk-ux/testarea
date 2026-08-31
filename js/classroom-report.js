@@ -7,6 +7,9 @@
 // page contains its own copy of the rubric fields, so a change
 // here updates both.
 //
+// Rendered as tabs (Context & Tech / People & Practice / Pedagogy /
+// Platforms / Evidence) instead of one long scroll — see tabs-ui.js.
+//
 // Usage:
 //   import { createClassroomReport } from './classroom-report.js';
 //   const report = createClassroomReport(containerEl, {
@@ -25,9 +28,6 @@
 //   - The "Enhance with AI" note-rewriting buttons per textarea
 //   - The searchable EdTech tool catalog / quick-add chips
 //   - Subject-domain auto-detection badges (CAPS phase, playbooks)
-//   - Multi-classroom tab switching (that's the calling page's job —
-//     this module only ever renders ONE classroom's fields; call it
-//     once per classroom if you need several)
 //
 // The Back/Submit/Generate-Report buttons are NOT part of this
 // module either — the calling page owns navigation and submission
@@ -49,12 +49,15 @@ import {
   PLATFORMS_EPORTAL_RUBRIC,
 } from './rubrics.js';
 import { escapeHtml, pillarGroupHtml, categoryDividerHtml, updatePillarVisual } from './rubric-ui.js';
+import { createTabbedPanel } from './tabs-ui.js';
 
 // ------------------------------------------------------------
-// Pillar group definitions — order matters (this is render order).
-// Each maps directly onto one classroom_observations column.
+// Pillar group definitions — each maps directly onto one
+// classroom_observations column. Grouped here by which TAB they
+// belong to (People+Practice share a tab, since Practice is just
+// one field).
 // ------------------------------------------------------------
-const PILLAR_GROUPS = [
+const PEOPLE_PRACTICE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
@@ -91,6 +94,9 @@ const PILLAR_GROUPS = [
     iconBg: 'bg-orange-50',
     options: CLASSROOM_COLLAB_RUBRIC,
   },
+];
+
+const PEDAGOGY_GROUPS = [
   {
     category: 'PEDAGOGY',
     categoryColor: '#00A1A3',
@@ -127,6 +133,9 @@ const PILLAR_GROUPS = [
     iconBg: 'bg-cyan-50',
     options: PEDAGOGY_CYBER_WELLNESS_RUBRIC,
   },
+];
+
+const PLATFORMS_GROUPS = [
   {
     category: 'PLATFORMS',
     categoryColor: '#C8126E',
@@ -160,6 +169,29 @@ const GRADE_OPTIONS = [
   'Grade R',
   'Multi-Grade',
 ];
+
+/**
+ * Renders a sequence of pillar groups, inserting a category divider
+ * whenever the category changes.
+ */
+function pillarGroupsHtml(instanceId, groups, state) {
+  const out = [];
+  let currentCategory = null;
+  const categoryLabels = {
+    PEOPLE: 'PEOPLE — Classroom Dynamics & Affective Culture',
+    PRACTICE: 'PRACTICE — Classroom Collaboration & Shared Practice',
+    PEDAGOGY: 'PEDAGOGY — Active Classroom Practice & Curriculum Integration',
+    PLATFORMS: 'PLATFORMS — Classroom Digital Tool Access & ePortal Integration',
+  };
+  for (const group of groups) {
+    if (group.category !== currentCategory) {
+      out.push(categoryDividerHtml(categoryLabels[group.category], group.categoryColor));
+      currentCategory = group.category;
+    }
+    out.push(pillarGroupHtml(instanceId, group, state[group.field]));
+  }
+  return out.join('');
+}
 
 /**
  * @param {HTMLElement} containerEl - element to render the form into
@@ -236,16 +268,14 @@ export function createClassroomReport(containerEl, opts = {}) {
       (c) => `
         <label class="flex items-center gap-2 cursor-pointer select-none">
           <input type="checkbox" data-field="${c.field}" ${state[c.field] ? 'checked' : ''}
-                 class="w-3.5 h-3.5 rounded text-[#001489] border-slate-300 focus:ring-[#001489]" />
-          <span class="text-[10px] font-bold text-slate-650">${escapeHtml(c.label)}</span>
+                 class="w-4 h-4 rounded text-[#001489] border-slate-300 focus:ring-[#001489]" />
+          <span class="field-label">${escapeHtml(c.label)}</span>
         </label>`
     ).join('');
 
     return `
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm space-y-3">
-        <h4 class="text-[10px] font-bold uppercase text-slate-700 tracking-wider">
-          In-Class Technical Checklist (Observable Live Elements)
-        </h4>
+        <h4 class="field-label">In-Class Technical Checklist (Observable Live Elements)</h4>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded border border-slate-150">
           ${items}
         </div>
@@ -259,39 +289,39 @@ export function createClassroomReport(containerEl, opts = {}) {
 
     return `
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm space-y-3">
-        <h4 class="text-[10px] font-bold uppercase text-slate-700 tracking-wider">Classroom Observation Context</h4>
+        <h4 class="field-label">Classroom Observation Context</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           <div>
-            <label class="block text-[9px] font-black uppercase text-slate-500 mb-1">Teacher Observed</label>
+            <label class="field-label block mb-1">Teacher Observed</label>
             <input type="text" data-field="teacher_name" value="${escapeHtml(state.teacher_name)}"
                    placeholder="e.g. Mrs. S. Adams"
-                   class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
+                   class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
           </div>
           <div>
-            <label class="block text-[9px] font-black uppercase text-slate-500 mb-1">Subject Observed</label>
+            <label class="field-label block mb-1">Subject Observed</label>
             <input type="text" data-field="subject_observed" value="${escapeHtml(state.subject_observed)}"
                    placeholder="e.g. Physical Sciences"
-                   class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
+                   class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
           </div>
           <div>
-            <label class="block text-[9px] font-black uppercase text-slate-500 mb-1">Grade Observed</label>
+            <label class="field-label block mb-1">Grade Observed</label>
             <select data-field="grade_observed"
-                    class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none text-slate-800">
+                    class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none text-slate-800">
               <option value="">-- Select Grade --</option>
               ${gradeOptionsHtml}
             </select>
           </div>
           <div>
-            <label class="block text-[9px] font-black uppercase text-slate-500 mb-1">Lesson Focus Topic</label>
+            <label class="field-label block mb-1">Lesson Focus Topic</label>
             <input type="text" data-field="lesson_topic" value="${escapeHtml(state.lesson_topic)}"
                    placeholder="e.g. Fractions / Algebra"
-                   class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
+                   class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
           </div>
           <div>
-            <label class="block text-[9px] font-black uppercase text-slate-500 mb-1">Learners in Class</label>
+            <label class="field-label block mb-1">Learners in Class</label>
             <input type="number" data-field="learners_count" value="${escapeHtml(state.learners_count)}"
                    placeholder="e.g. 35"
-                   class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
+                   class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
           </div>
         </div>
       </div>`;
@@ -300,9 +330,9 @@ export function createClassroomReport(containerEl, opts = {}) {
   function textareaFieldHtml(field, label, placeholder, rows) {
     return `
       <div class="space-y-2">
-        <label class="block text-[10px] font-black uppercase text-slate-600 leading-tight">${escapeHtml(label)}</label>
+        <label class="field-label block leading-tight">${escapeHtml(label)}</label>
         <textarea data-field="${field}" placeholder="${escapeHtml(placeholder)}" rows="${rows}"
-                  class="w-full text-xs px-2.5 py-1.5 border border-slate-250 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] bg-white text-slate-800">${escapeHtml(state[field])}</textarea>
+                  class="form-field w-full px-2.5 py-1.5 border border-slate-250 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] bg-white text-slate-800">${escapeHtml(state[field])}</textarea>
       </div>`;
   }
 
@@ -310,7 +340,7 @@ export function createClassroomReport(containerEl, opts = {}) {
     return `
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-5 shadow-sm space-y-4">
         <div class="flex items-center gap-1.5 border-b border-slate-200 pb-2">
-          <h4 class="text-xs font-black uppercase text-slate-800 tracking-wide">Classroom Field Evidence Observations</h4>
+          <h4 class="section-heading text-slate-800">Classroom Field Evidence Observations</h4>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           ${textareaFieldHtml('tools_used', 'Active Digital Tools & Platforms Used in the Lesson', 'e.g. Wayground (Quizizz), PhET Simulations, GeoGebra, Google Classroom, Canva...', 3)}
@@ -319,61 +349,79 @@ export function createClassroomReport(containerEl, opts = {}) {
           ${textareaFieldHtml('general_comments', 'eAdvisor General Classroom Comments', 'Enter rough observation notes, keywords, or bullet points (e.g. good classroom climate, smartboard used for slides, learners quiet, needs interactive check for understanding, recommend Plickers/Wayground)...', 3)}
           <div class="md:col-span-2 pt-2 border-t border-slate-150">
             <div class="flex items-center gap-1.5 mb-1.5">
-              <label class="block text-[10px] font-black uppercase text-[#8D6E97] leading-tight">
-                Teacher Professional Development & Capacity Building Suggestions (WCED eTPD)
+              <label class="field-label leading-tight" style="color:#8D6E97;">
+                Teacher Professional Development &amp; Capacity Building Suggestions (WCED eTPD)
               </label>
-              <span class="text-[9px] font-semibold text-slate-400">Optional</span>
+              <span class="eyebrow-label text-slate-400">Optional</span>
             </div>
             <textarea data-field="teacher_upskilling" placeholder="Specify tailored WCED eTPD microlearning suggestions..." rows="2"
-                      class="w-full text-xs px-2.5 py-1.5 border border-slate-250 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] bg-white text-slate-800">${escapeHtml(state.teacher_upskilling)}</textarea>
+                      class="form-field w-full px-2.5 py-1.5 border border-slate-250 rounded-md focus:bg-white focus:ring-1 focus:ring-[#001489] bg-white text-slate-800">${escapeHtml(state.teacher_upskilling)}</textarea>
           </div>
         </div>
       </div>`;
   }
 
   function render() {
-    const pillarsHtml = [];
-    let currentCategory = null;
-    for (const group of PILLAR_GROUPS) {
-      if (group.category !== currentCategory) {
-        pillarsHtml.push(categoryDividerHtml(
-          group.category === 'PEOPLE' ? 'PEOPLE — Classroom Dynamics & Affective Culture'
-            : group.category === 'PRACTICE' ? 'PRACTICE — Classroom Collaboration & Shared Practice'
-            : group.category === 'PEDAGOGY' ? 'PEDAGOGY — Active Classroom Practice & Curriculum Integration'
-            : 'PLATFORMS — Classroom Digital Tool Access & ePortal Integration',
-          group.categoryColor
-        ));
-        currentCategory = group.category;
-      }
-      pillarsHtml.push(pillarGroupHtml(instanceId, group, state[group.field]));
-    }
-
     containerEl.innerHTML = `
       <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm" data-classroom-report-root>
-        <div class="border-b border-slate-100 pb-3 mb-4">
-          <h2 class="text-base font-black text-slate-900 tracking-tight uppercase">
-            Micro-Level Classroom Observation (PEDAGOGY & PLATFORMS)${instanceLabel ? ` — ${escapeHtml(instanceLabel)}` : ''}
+        <div class="border-b border-slate-100 pb-3 mb-3">
+          <h2 class="pillar-title text-slate-900">
+            Micro-Level Classroom Observation (PEDAGOGY &amp; PLATFORMS)${instanceLabel ? ` — ${escapeHtml(instanceLabel)}` : ''}
           </h2>
-          <p class="text-[11px] text-slate-500 mt-0.5">
+          <p class="pillar-subtitle mt-0.5">
             Sit in on an active lesson. Observe learner interaction, teacher pivots, and platform tool deployment.
           </p>
         </div>
 
-        ${contextFieldsHtml()}
+        <p class="text-[13px] text-red-600 font-semibold hidden mb-3" data-validation-message></p>
 
-        <div class="space-y-0 mt-4">
-          ${pillarsHtml.join('')}
-        </div>
-
-        <div class="mt-4">${checklistHtml()}</div>
-        <div class="mt-4">${evidenceFieldsHtml()}</div>
-
-        <p class="mt-3 text-[10px] text-red-600 font-semibold hidden" data-validation-message></p>
+        <div data-tabs-mount></div>
       </div>`;
 
-    attachListeners();
+    const tabsMount = containerEl.querySelector('[data-tabs-mount]');
+
+    createTabbedPanel(tabsMount, [
+      {
+        id: 'context',
+        label: 'Context & Tech',
+        render: (panel) => {
+          panel.innerHTML = `${contextFieldsHtml()}<div class="mt-4">${checklistHtml()}</div>`;
+        },
+      },
+      {
+        id: 'people-practice',
+        label: 'People & Practice',
+        render: (panel) => {
+          panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_PRACTICE_GROUPS, state);
+        },
+      },
+      {
+        id: 'pedagogy',
+        label: 'Pedagogy',
+        render: (panel) => {
+          panel.innerHTML = pillarGroupsHtml(instanceId, PEDAGOGY_GROUPS, state);
+        },
+      },
+      {
+        id: 'platforms',
+        label: 'Platforms',
+        render: (panel) => {
+          panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
+        },
+      },
+      {
+        id: 'evidence',
+        label: 'Evidence',
+        render: (panel) => {
+          panel.innerHTML = evidenceFieldsHtml();
+        },
+      },
+    ]);
   }
 
+  // Attached ONCE (not inside render()) since containerEl itself
+  // persists across re-renders — attaching inside render() would
+  // stack up duplicate listeners every time loadData() is called.
   function attachListeners() {
     containerEl.addEventListener('change', (e) => {
       const target = e.target;
@@ -414,6 +462,7 @@ export function createClassroomReport(containerEl, opts = {}) {
     }
   }
 
+  attachListeners();
   render();
 
   return {
@@ -425,7 +474,7 @@ export function createClassroomReport(containerEl, opts = {}) {
      */
     validate() {
       if (!state.teacher_name.trim() || !state.subject_observed.trim() || !state.grade_observed) {
-        showValidationMessage('Please fill in Teacher Observed, Subject Observed, and Grade Observed before continuing.');
+        showValidationMessage('Please fill in Teacher Observed, Subject Observed, and Grade Observed (Context & Tech tab) before continuing.');
         return false;
       }
       showValidationMessage(null);

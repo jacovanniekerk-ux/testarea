@@ -56,10 +56,10 @@ export function pillarGroupHtml(instanceId, group, currentValue) {
           <input type="radio" name="${instanceId}-${group.field}" value="${option.level}" ${checked ? 'checked' : ''}
                  class="sr-only" data-field="${group.field}" data-level="${option.level}" />
           <div>
-            <span class="inline-block text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-md mb-2 ${badgeBgClass(option.level)}">
+            <span class="pillar-badge inline-block px-1.5 py-0.5 rounded-md mb-2 ${badgeBgClass(option.level)}">
               L${option.level}: ${escapeHtml(option.label)}
             </span>
-            <p class="text-[10px] text-slate-500 leading-snug font-medium">${escapeHtml(option.description)}</p>
+            <p class="pillar-description">${escapeHtml(option.description)}</p>
           </div>
         </label>`;
     })
@@ -69,9 +69,9 @@ export function pillarGroupHtml(instanceId, group, currentValue) {
     <div class="bg-slate-50/50 border border-slate-100 rounded-xl p-4 md:p-5">
       <div class="flex items-center gap-1.5 mb-2">
         <div class="p-1 ${group.iconBg || 'bg-slate-100'} rounded-md w-6 h-6"></div>
-        <h3 class="text-xs font-black text-slate-800 tracking-tight uppercase">${escapeHtml(group.title)}</h3>
+        <h3 class="pillar-title text-slate-800">${escapeHtml(group.title)}</h3>
       </div>
-      <p class="text-[10px] text-slate-500 mb-3 leading-relaxed max-w-3xl">${escapeHtml(group.subtitle)}</p>
+      <p class="pillar-subtitle mb-3 max-w-3xl">${escapeHtml(group.subtitle)}</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">${cardsHtml}</div>
     </div>`;
 }
@@ -79,7 +79,7 @@ export function pillarGroupHtml(instanceId, group, currentValue) {
 export function categoryDividerHtml(name, color) {
   return `
     <div class="border-l-4 pl-3 py-1 rounded-r-lg mb-4 mt-6" style="border-color:${color}; background-color:${color}0A;">
-      <h4 class="text-[10px] font-black uppercase tracking-wider" style="color:${color};">
+      <h4 class="category-divider-label" style="color:${color};">
         Category: ${escapeHtml(name)}
       </h4>
     </div>`;
