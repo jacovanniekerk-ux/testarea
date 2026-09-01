@@ -227,7 +227,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
     const cardsHtml = SCENARIO_OPTIONS.map((opt) => {
       const checked = state.scenario_response === opt.value;
       return `
-        <label class="p-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.005] flex flex-col justify-between ${checked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}"
+        <label class="p-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:border-slate-400 hover:shadow-md flex flex-col justify-between ${checked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}"
                data-scenario-option data-value="${opt.value}">
           <input type="radio" name="${instanceId}-scenario_response" value="${opt.value}" ${checked ? 'checked' : ''}
                  class="sr-only" data-field="scenario_response" data-scenario-value="${opt.value}" />
@@ -255,7 +255,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
       const optValue = Number(el.getAttribute('data-value'));
       const opt = SCENARIO_OPTIONS.find((o) => o.value === optValue);
       const isChecked = state.scenario_response === optValue;
-      el.className = `p-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.005] flex flex-col justify-between ${isChecked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`;
+      el.className = `p-2.5 rounded-lg border cursor-pointer transition-all duration-150 hover:border-slate-400 hover:shadow-md flex flex-col justify-between ${isChecked ? activeBgClass(opt.level) + ' font-semibold text-slate-900 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`;
     });
   }
 
