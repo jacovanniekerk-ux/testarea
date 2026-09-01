@@ -14,18 +14,15 @@
    ============================================================ */
 
 :root {
-  /* ---- Type scale ---- */
-  /* Previously these were scattered as text-[8px] through text-[11px]
-     directly in the JS templates. Bumped up noticeably from the
-     original values, which were too small to read comfortably. */
-  --fs-eyebrow: 11px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
-  --fs-label: 12.5px;      /* form field labels, checklist labels */
-  --fs-body: 13.5px;       /* rubric option descriptions, general body copy */
-  --fs-body-lg: 14.5px;    /* text typed into inputs/textareas/selects */
-  --fs-subtitle: 13px;     /* pillar group subtitles/instructions */
-  --fs-heading: 15px;      /* section headings (e.g. "PEOPLE — ...") */
-  --fs-heading-lg: 20px;   /* page titles */
-  --line-height-body: 1.55;
+/* ---- Adjusted Compact Type Scale ---- */
+--fs-eyebrow: 10px;      /* uppercase badge/tag labels (add `letter-spacing: 0.05em;` for crispness) */
+--fs-label: 11px;        /* field & checklist labels */
+--fs-subtitle: 12px;     /* group subtitles & instructions */
+--fs-body: 12px;         /* general body copy & rubric descriptions */
+--fs-body-lg: 13px;      /* input text & focal body copy */
+--fs-heading: 14px;      /* section headings */
+--fs-heading-lg: 16px;   /* main page titles */
+--line-height-body: 1.5;
 
   /* ---- Brand colors (used across pages) ---- */
   --color-brand: #001489;
