@@ -51,7 +51,7 @@ export function pillarGroupHtml(instanceId, group, currentValue) {
     .map((option) => {
       const checked = currentValue === option.level;
       return `
-        <label class="relative p-3 rounded-lg border transition-all duration-150 cursor-pointer flex flex-col justify-between hover:scale-[1.002] ${checked ? activeBgClass(option.level) : INACTIVE_CLASS}"
+        <label class="relative p-3 rounded-lg border transition-all duration-150 cursor-pointer flex flex-col justify-between hover:border-slate-400 hover:shadow-md ${checked ? activeBgClass(option.level) : INACTIVE_CLASS}"
                data-pillar-option data-field="${group.field}" data-level="${option.level}">
           <input type="radio" name="${instanceId}-${group.field}" value="${option.level}" ${checked ? 'checked' : ''}
                  class="sr-only" data-field="${group.field}" data-level="${option.level}" />
@@ -95,6 +95,6 @@ export function updatePillarVisual(containerEl, field, currentValue) {
   labels.forEach((el) => {
     const optLevel = Number(el.getAttribute('data-level'));
     const isChecked = currentValue === optLevel;
-    el.className = `relative p-3 rounded-lg border transition-all duration-150 cursor-pointer flex flex-col justify-between hover:scale-[1.002] ${isChecked ? activeBgClass(optLevel) : INACTIVE_CLASS}`;
+    el.className = `relative p-3 rounded-lg border transition-all duration-150 cursor-pointer flex flex-col justify-between hover:border-slate-400 hover:shadow-md ${isChecked ? activeBgClass(optLevel) : INACTIVE_CLASS}`;
   });
 }
