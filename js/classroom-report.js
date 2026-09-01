@@ -262,6 +262,32 @@ export function createClassroomReport(containerEl, opts = {}) {
   };
 
   const instanceId = `cr-${Math.random().toString(36).slice(2, 9)}`;
+  const visitedTabs = new Set();
+  let tabsApi = null; // set by render(); referenced by attachListeners() to live-refresh status dots
+
+  const TAB_LABELS = {
+    context: 'Context & Tech',
+    'people-practice': 'People & Practice',
+    pedagogy: 'Pedagogy',
+    platforms: 'Platforms',
+    evidence: 'Evidence',
+  };
+
+  function isContextComplete() {
+    return Boolean(state.teacher_name.trim() && state.subject_observed.trim() && state.grade_observed);
+  }
+
+  /**
+   * Red/green on the Context tab (it has real required fields);
+   * a simple "have you looked at this yet" green/grey elsewhere,
+   * since every rubric field already has a valid default (level 1)
+   * — there's no meaningful notion of "incomplete" for those beyond
+   * whether the advisor has actually reviewed the tab.
+   */
+  function statusDotColor(tabId) {
+    if (tabId === 'context') return isContextComplete() ? '#10b981' : '#ef4444';
+    return visitedTabs.has(tabId) ? '#10b981' : '#cbd5e1';
+  }
 
   function checklistHtml() {
     const items = CHECKLIST_FIELDS.map(
@@ -380,43 +406,51 @@ export function createClassroomReport(containerEl, opts = {}) {
 
     const tabsMount = containerEl.querySelector('[data-tabs-mount]');
 
-    createTabbedPanel(tabsMount, [
+    tabsApi = createTabbedPanel(tabsMount, [
       {
         id: 'context',
-        label: 'Context & Tech',
+        label: TAB_LABELS.context,
         render: (panel) => {
           panel.innerHTML = `${contextFieldsHtml()}<div class="mt-4">${checklistHtml()}</div>`;
         },
       },
       {
         id: 'people-practice',
-        label: 'People & Practice',
+        label: TAB_LABELS['people-practice'],
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_PRACTICE_GROUPS, state);
         },
       },
       {
         id: 'pedagogy',
-        label: 'Pedagogy',
+        label: TAB_LABELS.pedagogy,
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PEDAGOGY_GROUPS, state);
         },
       },
       {
         id: 'platforms',
-        label: 'Platforms',
+        label: TAB_LABELS.platforms,
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
         },
       },
       {
         id: 'evidence',
-        label: 'Evidence',
+        label: TAB_LABELS.evidence,
         render: (panel) => {
           panel.innerHTML = evidenceFieldsHtml();
         },
       },
-    ]);
+    ], {
+      sticky: opts.sticky !== false,
+      stickyOffset: opts.stickyOffset || 0,
+      getStatusDotColor: statusDotColor,
+      onActivate: (tabId) => {
+        visitedTabs.add(tabId);
+        if (tabsApi) tabsApi.refreshStatusDots();
+      },
+    });
   }
 
   // Attached ONCE (not inside render()) since containerEl itself
@@ -436,6 +470,7 @@ export function createClassroomReport(containerEl, opts = {}) {
       } else if (target.tagName === 'SELECT') {
         state[field] = target.value;
       }
+      if (tabsApi) tabsApi.refreshStatusDots();
     });
 
     containerEl.addEventListener('input', (e) => {
@@ -447,6 +482,7 @@ export function createClassroomReport(containerEl, opts = {}) {
       } else if (target.tagName === 'INPUT' && target.type === 'number') {
         state[field] = target.value;
       }
+      if (tabsApi) tabsApi.refreshStatusDots();
     });
   }
 
@@ -473,8 +509,9 @@ export function createClassroomReport(containerEl, opts = {}) {
      * @returns {boolean}
      */
     validate() {
-      if (!state.teacher_name.trim() || !state.subject_observed.trim() || !state.grade_observed) {
+      if (!isContextComplete()) {
         showValidationMessage('Please fill in Teacher Observed, Subject Observed, and Grade Observed (Context & Tech tab) before continuing.');
+        if (tabsApi) tabsApi.setActiveTab('context');
         return false;
       }
       showValidationMessage(null);

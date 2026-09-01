@@ -139,6 +139,61 @@ body {
    Classroom 1 / Classroom 2 / ... switcher on the walkthrough page)
    ============================================================ */
 
+.app-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.tabs-header-sticky {
+  background: white;
+  z-index: 20;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.tab-nav-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 2px;
+}
+
+.tab-nav-step {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  color: #64748b;
+  text-align: center;
+  flex: 1;
+}
+
+.tab-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-label);
+  font-weight: 800;
+  color: var(--color-brand);
+  background: #f1f5f9;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.tab-nav-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.tab-nav-btn:disabled {
+  color: #cbd5e1;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
 .tab-bar {
   display: flex;
   gap: 4px;

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
-    <header class="bg-[#001489] text-white py-3 px-6 shadow-sm">
+    <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm">
       <div class="max-w-5xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
           <a href="4p.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
@@ -179,6 +179,7 @@
               schoolCemis: currentSchoolCemis,
               advisorId: advisor.id,
               cultureWalkthroughId: currentWalkthrough ? currentWalkthrough.getData().id : null,
+              sticky: false, // avoid stacking on top of the outer Classroom-switcher's own sticky bar
             });
             if (existingRow) report.loadData(existingRow);
             classroomReports[tabId] = report;
@@ -186,7 +187,7 @@
         };
 
         if (!classroomTabs) {
-          classroomTabs = createTabbedPanel(classroomTabsMount, [tabDef]);
+          classroomTabs = createTabbedPanel(classroomTabsMount, [tabDef], { stickyOffset: 56 });
         } else {
           classroomTabs.addTab(tabDef);
         }
@@ -228,6 +229,7 @@
         currentWalkthrough = createCultureWalkthrough(walkthroughContainer, {
           schoolCemis,
           advisorId: advisor.id,
+          stickyOffset: 56,
         });
 
         classroomsSection.classList.remove('hidden');

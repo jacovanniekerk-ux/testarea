@@ -174,6 +174,13 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
   };
 
   const instanceId = `cw-${Math.random().toString(36).slice(2, 9)}`;
+  const visitedTabs = new Set();
+  let tabsApi = null; // set by render(); referenced by attachListeners() to live-refresh status dots
+
+  function statusDotColor(tabId) {
+    if (tabId === 'details') return state.visit_date ? '#10b981' : '#ef4444';
+    return visitedTabs.has(tabId) ? '#10b981' : '#cbd5e1';
+  }
 
   function visitDateHtml() {
     return `
@@ -271,7 +278,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
 
     const tabsMount = containerEl.querySelector('[data-tabs-mount]');
 
-    createTabbedPanel(tabsMount, [
+    tabsApi = createTabbedPanel(tabsMount, [
       {
         id: 'details',
         label: 'Details',
@@ -296,7 +303,15 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
           panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
         },
       },
-    ]);
+    ], {
+      sticky: opts.sticky !== false,
+      stickyOffset: opts.stickyOffset || 0,
+      getStatusDotColor: statusDotColor,
+      onActivate: (tabId) => {
+        visitedTabs.add(tabId);
+        if (tabsApi) tabsApi.refreshStatusDots();
+      },
+    });
   }
 
   // Attached ONCE (not inside render()) — see classroom-report.js for
@@ -317,6 +332,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
       } else if (target.tagName === 'SELECT' || target.type === 'date') {
         state[field] = target.value;
       }
+      if (tabsApi) tabsApi.refreshStatusDots();
     });
   }
 
@@ -346,6 +362,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
     validate() {
       if (!state.visit_date) {
         showValidationMessage('Please set a Visit Date (Details tab) before continuing.');
+        if (tabsApi) tabsApi.setActiveTab('details');
         return false;
       }
       showValidationMessage(null);

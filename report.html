@@ -11,15 +11,15 @@
     <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
-    <header class="bg-[#001489] text-white py-3 px-6 shadow-sm no-print">
+    <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm no-print">
       <div class="max-w-4xl mx-auto flex items-center justify-between">
         <a href="past-reports.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
           <i class="fa-solid fa-arrow-left"></i>
           <span>Past Reports</span>
         </a>
-        <button id="print-btn" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
+        <button id="print-btn" class="bg-[#001489] hover:bg-[#000e60] text-white font-black text-xs px-4 py-2 rounded-lg shadow-md transition flex items-center gap-1.5 uppercase tracking-wide border border-blue-900">
           <i class="fa-solid fa-print"></i>
-          <span>Print</span>
+          <span>Print / Save as PDF</span>
         </button>
       </div>
     </header>
@@ -33,7 +33,7 @@
     <script type="module">
       import { requireSession } from './js/session.js';
       import { fetchReportData } from './js/report-data.js';
-      import { calculateScores, getArchetypeInfo, getRadarGeometry } from './js/report-engine.js';
+      import { calculateScores, getArchetypeInfo, getRadarGeometry, buildAffectiveContext } from './js/report-engine.js';
 
       const advisor = requireSession('4p.html');
       if (!advisor) {
@@ -50,6 +50,13 @@
       function escapeHtml(str) {
         if (str === null || str === undefined || str === '') return '';
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function nl2p(text) {
+        return text
+          .split('\n\n')
+          .map((p) => `<p class="text-[11px] text-slate-700 font-medium leading-relaxed mb-2 last:mb-0">${escapeHtml(p)}</p>`)
+          .join('');
       }
 
       function formatDateTime(value) {
@@ -82,287 +89,391 @@
       }
 
       // ------------------------------------------------------------
-      // Radar chart rendering — 4-axis diamond grid (or 2-axis for a
-      // standalone classroom report), with the actual score polygon
-      // plotted on top, matching the original app's geometry exactly.
+      // Section header banner — the same colored-banner-with-icon-and-
+      // pill-badge pattern used above all 5 sections in the original.
       // ------------------------------------------------------------
+      function sectionBannerHtml(archetype, iconClass, title, badgeText) {
+        return `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-3.5 rounded-xl border shadow-sm"
+               style="background-color:${archetype.color}14; border-color:${archetype.color}45; border-left-width:6px; border-left-color:${archetype.color};">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color:${archetype.color};">
+                <i class="fa-solid ${iconClass}"></i>
+              </div>
+              <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-[#001489]">${title}</h3>
+            </div>
+            <span class="text-[9px] sm:text-[10px] font-black uppercase px-2.5 py-1 rounded-md border"
+                  style="background-color:${archetype.color}25; color:#001489; border-color:${archetype.color}50;">
+              ${escapeHtml(badgeText)}
+            </span>
+          </div>`;
+      }
+
+      // ------------------------------------------------------------
+      // Radar chart — exact geometry/styling from the original:
+      // dashed concentric rings at r=18/36/54, solid ring at r=72,
+      // axis lines, per-pillar colored labels with live scores,
+      // filled polygon, colored dot markers per axis.
+      // ------------------------------------------------------------
+      const PILLAR_COLORS = { people: '#890C58', practices: '#D73828', pedagogy: '#00A1A3', platforms: '#C8126E' };
+
       function radarChartSvg(scores, archetype) {
-        const { center, radius, points, pointsPath } = getRadarGeometry(scores);
+        const { points, pointsPath } = getRadarGeometry(scores);
+        const [peopleX, peopleY] = points.people.split(',');
+        const [practicesX, practicesY] = points.practices.split(',');
+        const [pedagogyX, pedagogyY] = points.pedagogy.split(',');
+        const [platformsX, platformsY] = points.platforms.split(',');
 
-        const axisAngles = scores.isStandalone
-          ? [{ label: 'Pedagogy', angle: 90 }, { label: 'Platforms', angle: 180 }]
-          : [
-              { label: 'People', angle: 270 },
-              { label: 'Practices', angle: 0 },
-              { label: 'Pedagogy', angle: 90 },
-              { label: 'Platforms', angle: 180 },
-            ];
+        const labelsHtml = scores.isStandalone
+          ? `
+            <text x="100" y="192" font-size="8" font-weight="900" text-anchor="middle" fill="${PILLAR_COLORS.pedagogy}">PEDAGOGY (L${scores.pedagogyRating.toFixed(1)})</text>
+            <text x="22" y="103" font-size="8" font-weight="900" text-anchor="end" fill="${PILLAR_COLORS.platforms}">PLATFORMS (L${scores.platformsRating.toFixed(1)})</text>`
+          : `
+            <text x="100" y="16" font-size="8" font-weight="900" text-anchor="middle" fill="${PILLAR_COLORS.people}">PEOPLE (L${scores.peopleRating.toFixed(1)})</text>
+            <text x="178" y="103" font-size="8" font-weight="900" text-anchor="start" fill="${PILLAR_COLORS.practices}">PRACTICES (L${scores.practicesRating.toFixed(1)})</text>
+            <text x="100" y="192" font-size="8" font-weight="900" text-anchor="middle" fill="${PILLAR_COLORS.pedagogy}">PEDAGOGY (L${scores.pedagogyRating.toFixed(1)})</text>
+            <text x="22" y="103" font-size="8" font-weight="900" text-anchor="end" fill="${PILLAR_COLORS.platforms}">PLATFORMS (L${scores.platformsRating.toFixed(1)})</text>`;
 
-        const fullPoint = (angle) => {
-          const rad = (angle * Math.PI) / 180;
-          return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
-        };
-
-        const gridRingsHtml = [0.25, 0.5, 0.75, 1.0]
-          .map((factor) => {
-            const ringPoints = axisAngles
-              .map(({ angle }) => {
-                const rad = (angle * Math.PI) / 180;
-                const x = center + radius * factor * Math.cos(rad);
-                const y = center + radius * factor * Math.sin(rad);
-                return `${x},${y}`;
-              })
-              .join(' ');
-            return `<polygon points="${ringPoints}" fill="none" stroke="#e2e8f0" stroke-width="1" />`;
-          })
-          .join('');
-
-        const axisLinesHtml = axisAngles
-          .map(({ angle }) => {
-            const p = fullPoint(angle);
-            return `<line x1="${center}" y1="${center}" x2="${p.x}" y2="${p.y}" stroke="#e2e8f0" stroke-width="1" />`;
-          })
-          .join('');
-
-        const axisLabelsHtml = axisAngles
-          .map(({ label, angle }) => {
-            const p = fullPoint(angle);
-            // Push labels slightly further out than the axis line ends
-            const labelX = center + (p.x - center) * 1.22;
-            const labelY = center + (p.y - center) * 1.22;
-            const scoreKey = label.toLowerCase() + 'Rating';
-            const value = scores[scoreKey] !== undefined ? scores[scoreKey].toFixed(2) : '';
-            return `
-              <text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle"
-                    font-size="8" font-weight="800" fill="#475569" text-transform="uppercase">${label}</text>
-              <text x="${labelX}" y="${labelY + 9}" text-anchor="middle" dominant-baseline="middle"
-                    font-size="9" font-weight="900" fill="${archetype.color}">${value}</text>`;
-          })
-          .join('');
+        const dotsHtml = scores.isStandalone
+          ? `
+            <circle cx="${pedagogyX}" cy="${pedagogyY}" r="4" fill="${PILLAR_COLORS.pedagogy}" stroke="#fff" stroke-width="1" />
+            <circle cx="${platformsX}" cy="${platformsY}" r="4" fill="${PILLAR_COLORS.platforms}" stroke="#fff" stroke-width="1" />`
+          : `
+            <circle cx="${peopleX}" cy="${peopleY}" r="4" fill="${PILLAR_COLORS.people}" stroke="#fff" stroke-width="1" />
+            <circle cx="${practicesX}" cy="${practicesY}" r="4" fill="${PILLAR_COLORS.practices}" stroke="#fff" stroke-width="1" />
+            <circle cx="${pedagogyX}" cy="${pedagogyY}" r="4" fill="${PILLAR_COLORS.pedagogy}" stroke="#fff" stroke-width="1" />
+            <circle cx="${platformsX}" cy="${platformsY}" r="4" fill="${PILLAR_COLORS.platforms}" stroke="#fff" stroke-width="1" />`;
 
         return `
-          <svg viewBox="0 0 200 200" class="w-full max-w-xs mx-auto">
-            ${gridRingsHtml}
-            ${axisLinesHtml}
-            <polygon points="${pointsPath}" fill="${archetype.color}22" stroke="${archetype.color}" stroke-width="2" />
-            ${axisLabelsHtml}
+          <svg viewBox="-80 0 360 205" class="w-full max-w-[280px] h-auto">
+            <circle cx="100" cy="100" r="18" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
+            <circle cx="100" cy="100" r="36" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
+            <circle cx="100" cy="100" r="54" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
+            <circle cx="100" cy="100" r="72" fill="none" stroke="#94a3b8" stroke-width="0.75" />
+            <line x1="100" y1="28" x2="100" y2="172" stroke="#94a3b8" stroke-width="0.5" />
+            <line x1="28" y1="100" x2="172" y2="100" stroke="#94a3b8" stroke-width="0.5" />
+            ${labelsHtml}
+            <polygon points="${pointsPath}" fill="${archetype.color}25" stroke="${archetype.color}" stroke-width="2" />
+            ${dotsHtml}
           </svg>`;
       }
 
-      function strategicMatrixHtml(archetype) {
+      // ------------------------------------------------------------
+      // Section 1: Institutional Diagnostic Level
+      // ------------------------------------------------------------
+      function pillarBadgeHtml(label, color, value, dimmed) {
+        return `
+          <div class="p-2 rounded-lg border text-center ${dimmed ? 'opacity-40' : ''}" style="background-color:${color}08; border-color:${color}25;">
+            <span class="text-[8px] font-bold text-slate-500 block tracking-wider uppercase">${label}</span>
+            <span class="text-sm font-black" style="color:${color};">${dimmed ? 'N/A' : `L${value.toFixed(1)}`}</span>
+          </div>`;
+      }
+
+      function infrastructureBadgesHtml(school) {
+        const items = [
+          ['Computer Labs', school && school.computer_labs],
+          ['Smart Classrooms', school && school.smart_classrooms],
+          ['Learner Devices', school && school.learner_devices],
+          ['Connectivity', school && school.connectivity],
+        ];
+        return items
+          .map(([label, value]) => {
+            const has = value && value.trim() !== '';
+            return `<span class="text-[9.5px] font-semibold px-2 py-0.5 rounded border ${has ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200/50'}">
+              ${label}: ${has ? escapeHtml(value) : 'Not on file'}
+            </span>`;
+          })
+          .join('');
+      }
+
+      function section1Html({ scores, archetype, school, district, advisorName, dateValue }) {
+        const metadataGrid = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-slate-700 bg-slate-50/60 p-3 rounded-lg border border-slate-200/80">
+            <div class="flex items-center gap-2"><i class="fa-solid fa-building text-slate-400"></i><span><strong>School Name:</strong> ${escapeHtml(school ? school.school_name : 'N/A')}</span></div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-layer-group text-slate-400"></i><span><strong>District Name:</strong> ${escapeHtml(district || 'N/A')}</span></div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-calendar text-slate-400"></i><span><strong>Date of Visit:</strong> ${formatDate(dateValue)}</span></div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-users text-slate-400"></i><span><strong>eLearning Advisor:</strong> ${escapeHtml(advisorName || 'N/A')}</span></div>
+          </div>`;
+
+        const pillarBadges = scores.isStandalone
+          ? `${pillarBadgeHtml('PEOPLE', PILLAR_COLORS.people, 0, true)}${pillarBadgeHtml('PRACTICES', PILLAR_COLORS.practices, 0, true)}${pillarBadgeHtml('PEDAGOGY', PILLAR_COLORS.pedagogy, scores.pedagogyRating, false)}${pillarBadgeHtml('PLATFORMS', PILLAR_COLORS.platforms, scores.platformsRating, false)}`
+          : `${pillarBadgeHtml('PEOPLE', PILLAR_COLORS.people, scores.peopleRating, false)}${pillarBadgeHtml('PRACTICES', PILLAR_COLORS.practices, scores.practicesRating, false)}${pillarBadgeHtml('PEDAGOGY', PILLAR_COLORS.pedagogy, scores.pedagogyRating, false)}${pillarBadgeHtml('PLATFORMS', PILLAR_COLORS.platforms, scores.platformsRating, false)}`;
+
+        return `
+          <div class="py-4 border-b border-slate-200 space-y-4">
+            ${sectionBannerHtml(archetype, 'fa-award', '1. Institutional Diagnostic Level', `LEVEL ${archetype.levelNum}: ${archetype.name.toUpperCase()}`)}
+
+            <div class="p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+                 style="background-color:${archetype.color}12; border-color:${archetype.color}40; border-left-width:8px; border-left-color:${archetype.color};">
+              <div class="space-y-1.5 max-w-2xl">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-[11px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md text-white shadow-sm" style="background-color:${archetype.color};">LEVEL ${archetype.levelNum}</span>
+                  <h2 class="text-xl sm:text-2xl font-black tracking-tight text-[#001489]">${archetype.name.toUpperCase()}</h2>
+                </div>
+                <p class="text-xs sm:text-sm font-semibold text-slate-700 leading-snug">${escapeHtml(archetype.tagline)}</p>
+              </div>
+              <div class="flex md:flex-col items-center md:items-end justify-between border-t md:border-t-0 md:border-l border-slate-200/80 pt-3 md:pt-0 md:pl-5 shrink-0">
+                <span class="text-[9px] font-extrabold uppercase tracking-widest text-slate-500">Composite Score</span>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl sm:text-3xl font-black font-mono text-[#001489]">${scores.scoreAverage.toFixed(2)}</span>
+                  <span class="text-xs font-bold text-slate-500 font-mono">/ 4.00</span>
+                </div>
+                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded mt-1" style="background-color:${archetype.color}25; color:#001489;">Level ${archetype.levelNum} of 4</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div class="lg:col-span-8 space-y-3">
+                ${metadataGrid}
+                <div>
+                  <h4 class="text-[9px] font-black tracking-wider text-slate-400 uppercase mb-1.5">Evaluated Infrastructure Details:</h4>
+                  <div class="flex flex-wrap gap-1.5">${infrastructureBadgesHtml(school)}</div>
+                </div>
+                <div class="pt-1">
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">${pillarBadges}</div>
+                </div>
+              </div>
+              <div class="lg:col-span-4 flex flex-col items-center justify-center p-4 border border-slate-200 rounded-lg bg-slate-50/80 shadow-inner">
+                <div class="flex items-center justify-between w-full mb-2">
+                  <span class="text-[9px] font-extrabold uppercase text-slate-500 tracking-wider">4P Dimension Vector</span>
+                  <span class="font-mono text-[9.5px] font-bold text-slate-700">Avg: <strong style="color:${archetype.color};">${scores.scoreAverage.toFixed(2)}</strong> / 4.00</span>
+                </div>
+                ${radarChartSvg(scores, archetype)}
+              </div>
+            </div>
+
+            <div class="rounded-xl p-4 border shadow-sm" style="background-color:${archetype.color}0a; border-color:${archetype.color}35; border-left-width:4px; border-left-color:${archetype.color};">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color:${archetype.color};"></span>
+                <h4 class="text-[11px] font-black uppercase tracking-wider text-[#001489]">Affective Diagnosis &amp; Context</h4>
+              </div>
+              ${nl2p(buildAffectiveContext(archetype, school, scores._classrooms))}
+            </div>
+          </div>`;
+      }
+
+      // ------------------------------------------------------------
+      // Section 2: Operational to Affective Insight (Strategic Matrix)
+      // ------------------------------------------------------------
+      function section2Html(archetype) {
         const m = archetype.strategicMatrix;
         return `
-          <div class="p-5 border-b border-slate-100">
-            <h2 class="text-xs font-black uppercase tracking-wide mb-1" style="color:${archetype.color};">${escapeHtml(m.title)}</h2>
-            <p class="text-[10px] text-slate-400 mb-3">Reading operational evidence through an affective and cultural lens</p>
-            <div class="space-y-3">
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <span class="text-[9px] font-black uppercase text-slate-400 block mb-1">Operational Signals Observed</span>
-                <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(m.operationalSignals)}</p>
+          <div class="py-4 border-b border-slate-200 space-y-4">
+            ${sectionBannerHtml(archetype, 'fa-compass', '2. Operational to Affective Insight', m.title)}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="bg-white rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
+                <div>
+                  <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                    <span class="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded" style="background-color:${archetype.color}15; color:#001489;">Operational Signals</span>
+                  </div>
+                  <p class="text-[11px] text-slate-700 font-medium leading-relaxed">${escapeHtml(m.operationalSignals)}</p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase">What is monitored &amp; visible</div>
               </div>
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <span class="text-[9px] font-black uppercase text-slate-400 block mb-1">Affective &amp; Cultural Insight</span>
-                <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(m.affectiveInsight)}</p>
+              <div class="bg-white rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
+                <div>
+                  <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
+                    <span class="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded" style="background-color:${archetype.color}20; color:#001489;">Affective &amp; Cultural Insight</span>
+                  </div>
+                  <p class="text-[11px] text-slate-700 font-medium leading-relaxed">${escapeHtml(m.affectiveInsight)}</p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase">Human meaning behind the data</div>
               </div>
-              <div class="rounded-lg p-3 border" style="background:${archetype.color}0F; border-color:${archetype.color}33;">
-                <span class="text-[9px] font-black uppercase block mb-1" style="color:${archetype.color};">Affective Reading</span>
-                <p class="text-xs font-semibold" style="color:${archetype.color};">${escapeHtml(m.affectiveReading)}</p>
+              <div class="rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="background-color:${archetype.color}10; border-color:${archetype.color}45;">
+                <div>
+                  <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b" style="border-color:${archetype.color}25;">
+                    <span class="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded text-white shadow-sm" style="background-color:${archetype.color};">Affective Reading</span>
+                  </div>
+                  <p class="text-[11px] font-black leading-relaxed text-[#001489]">${escapeHtml(m.affectiveReading)}</p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-200/50 text-[9px] font-black uppercase text-slate-500">Cultural mindset summary</div>
               </div>
             </div>
           </div>`;
       }
 
-      function criticalAdvisoryLensHtml(archetype) {
-        const paragraphsHtml = archetype.criticalAdvisoryLens
-          .split('\n\n')
-          .map((p) => `<p class="text-xs text-slate-700 leading-relaxed mb-3 last:mb-0">${escapeHtml(p)}</p>`)
-          .join('');
-
-        const rulesHtml = archetype.strategicActionRules
-          .map(
-            (r) => `
-            <div class="flex gap-3 items-start bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <span class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black text-white" style="background:${archetype.color};">${escapeHtml(r.num)}</span>
-              <div>
-                <p class="text-xs font-black text-slate-800">${escapeHtml(r.rule)}</p>
-                <p class="text-[11px] text-slate-600 leading-relaxed mt-0.5">${escapeHtml(r.text)}</p>
-              </div>
-            </div>`
-          )
-          .join('');
-
+      // ------------------------------------------------------------
+      // Section 3: Critical Advisory Lens
+      // (single narrative card only — advisoryCheck/strategicActionRules
+      // exist in the archetype data but are never actually rendered in
+      // the original UI either, so they're correctly omitted here too.)
+      // ------------------------------------------------------------
+      function section3Html(archetype) {
         return `
-          <div class="p-5 border-b border-slate-100">
-            <h2 class="text-xs font-black uppercase text-slate-700 tracking-wide mb-3">Critical Advisory Lens</h2>
-            ${paragraphsHtml}
-            <div class="rounded-lg p-3 my-3 border-l-4" style="background:${archetype.color}0A; border-color:${archetype.color};">
-              <p class="text-xs font-black" style="color:${archetype.color};">${escapeHtml(archetype.advisoryCheck.question)}</p>
-              <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">${escapeHtml(archetype.advisoryCheck.detail)}</p>
+          <div class="py-4 border-b border-slate-200 space-y-3">
+            ${sectionBannerHtml(archetype, 'fa-wand-magic-sparkles', `3. Critical Advisory Lens for Affective Transformation - ${archetype.name}`, 'Cultural Lens')}
+            <div class="rounded-xl p-4 border shadow-sm" style="background-color:${archetype.color}08; border-color:${archetype.color}35; border-left-width:4px; border-left-color:${archetype.color};">
+              ${nl2p(archetype.criticalAdvisoryLens)}
             </div>
-            <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-wide mt-4 mb-2">Strategic Action Rules for This Visit</h3>
-            <div class="space-y-2">${rulesHtml}</div>
           </div>`;
       }
 
-      function measuresOfSupportHtml(archetype) {
-        const cardsHtml = archetype.measuresOfSupport
+      // ------------------------------------------------------------
+      // Section 4: Measures of Support
+      // ------------------------------------------------------------
+      function section4Html(archetype) {
+        const cards = archetype.measuresOfSupport
           .map(
             (m) => `
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-[11px] font-black mb-1" style="color:${archetype.color};">${escapeHtml(m.title)}</p>
-              <p class="text-[11px] text-slate-600 leading-relaxed">${escapeHtml(m.text)}</p>
+            <div class="bg-white border rounded-xl p-3.5 shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
+              <div>
+                <span class="inline-flex items-center justify-center text-[9.5px] font-black rounded px-2 py-1 mb-2.5 uppercase tracking-wide border w-full text-center"
+                      style="background-color:${archetype.color}18; color:#001489; border-color:${archetype.color}45;">
+                  ${escapeHtml(m.title)}
+                </span>
+                <p class="text-[10.5px] text-slate-700 leading-relaxed font-medium">${escapeHtml(m.text)}</p>
+              </div>
             </div>`
           )
           .join('');
 
         return `
-          <div class="p-5 border-b border-slate-100">
-            <h2 class="text-xs font-black uppercase text-slate-700 tracking-wide mb-3">Measures of Support</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">${cardsHtml}</div>
+          <div class="py-4 border-b border-slate-200 space-y-3">
+            ${sectionBannerHtml(archetype, 'fa-circle-check', '4. Measures of Support', '5 Key Pillars of Support')}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">${cards}</div>
           </div>`;
       }
 
-      function pillarBreakdownHtml(scores, walkthrough, classrooms) {
-        const rows = [];
-
-        if (!scores.isStandalone) {
-          rows.push({
-            label: 'People',
-            score: scores.peopleRating,
-            detail: `Psychological Safety: ${walkthrough.people_safety} · Digital Confidence: ${walkthrough.people_confidence}`,
-          });
-          rows.push({
-            label: 'Practices',
-            score: scores.practicesRating,
-            detail: `Collaboration: ${walkthrough.practices_collab} · PD: ${walkthrough.practices_pd} · Cyber Wellness: ${walkthrough.practices_cyber}`,
-          });
-        }
-
-        const avgField = (field) => classrooms.reduce((sum, c) => sum + (Number(c[field]) || 1), 0) / classrooms.length;
-        rows.push({
-          label: 'Pedagogy',
-          score: scores.pedagogyRating,
-          detail: `Design: ${avgField('pedagogy_design').toFixed(2)} · Agency: ${avgField('pedagogy_agency').toFixed(2)} · Inclusivity: ${avgField('pedagogy_inclusivity').toFixed(2)}${classrooms.length > 1 ? ` (averaged across ${classrooms.length} classrooms)` : ''}`,
-        });
-
-        const platformsDetailParts = [];
-        if (!scores.isStandalone) platformsDetailParts.push(`Scheduling: ${walkthrough.platforms_scheduling}`);
-        platformsDetailParts.push(`Tool Access: ${avgField('platforms_integration').toFixed(2)}`);
-        platformsDetailParts.push(`ePortal: ${avgField('platforms_eportal').toFixed(2)}`);
-        rows.push({ label: 'Platforms', score: scores.platformsRating, detail: platformsDetailParts.join(' · ') });
-
-        return rows
-          .map(
-            (r) => `
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-black uppercase text-slate-700">${r.label}</span>
-                <span class="text-sm font-black text-slate-900">${r.score.toFixed(2)} <span class="text-slate-400 text-xs font-medium">/ 4.00</span></span>
-              </div>
-              <p class="text-[10px] text-slate-500">${escapeHtml(r.detail)}</p>
-            </div>`
-          )
-          .join('');
+      // ------------------------------------------------------------
+      // Section 5: Field Observation Findings & Evidence
+      // ------------------------------------------------------------
+      function evidenceFieldHtml(label, value, placeholder) {
+        return `
+          <div>
+            <dt class="text-[8px] font-black uppercase text-slate-400 tracking-wider">${label}</dt>
+            <dd class="text-slate-800 font-medium mt-0.5 bg-slate-50 border border-slate-150 rounded p-2 whitespace-pre-line min-h-[46px]">${escapeHtml(value) || placeholder}</dd>
+          </div>`;
       }
 
-      function evidenceLogHtml(walkthrough, classrooms) {
-        const sections = [];
+      function classroomCardHtml(cls, idx, total) {
+        const classLabel = total > 1 ? `Observed Classroom ${idx + 1}: ${cls.teacher_name || 'Unnamed'}` : 'Classroom Observation Context';
 
-        if (walkthrough && (walkthrough.primary_barrier || walkthrough.collaboration_channel)) {
-          sections.push(`
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        const techFlags = [
+          ['smartboard_observed', 'Smart Classroom Technology Use'],
+          ['tablets_observed', 'Learner Tablets'],
+          ['lab_observed', 'eLearning Lab Utilised'],
+          ['internet_observed', 'Online Activities'],
+          ['offline_observed', 'Offline Digital Resources/Tool'],
+        ];
+        const activeFlags = techFlags.filter(([field]) => cls[field]);
+        const techHtml = activeFlags.length > 0
+          ? `
+            <div class="bg-white p-2.5 text-xs rounded border border-slate-200">
+              <span class="text-[8px] font-black text-slate-400 block uppercase mb-1.5">Observed Live Technical Evidence:</span>
+              <div class="flex flex-wrap gap-2 text-[9px] font-extrabold uppercase">
+                ${activeFlags.map(([, label]) => `<span class="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded">✓ ${label}</span>`).join('')}
+              </div>
+            </div>`
+          : '';
+
+        return `
+          <div class="bg-slate-50/50 border border-slate-200/80 rounded-xl p-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span class="text-[11px] font-black uppercase text-[#001489] tracking-wider">${escapeHtml(classLabel)}</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs bg-white p-3 rounded-lg border border-slate-200">
+              <div><span class="text-[8px] font-black text-slate-400 block uppercase">TEACHER OBSERVED</span><span class="text-slate-800">${escapeHtml(cls.teacher_name) || 'N/A'}</span></div>
+              <div><span class="text-[8px] font-black text-slate-400 block uppercase">SUBJECT</span><span class="text-slate-800">${escapeHtml(cls.subject_observed) || 'N/A'}</span></div>
+              <div><span class="text-[8px] font-black text-slate-400 block uppercase">GRADE CLASS</span><span class="text-slate-800">${escapeHtml(cls.grade_observed) || 'N/A'}</span></div>
+              <div><span class="text-[8px] font-black text-slate-400 block uppercase">LESSON FOCUS TOPIC</span><span class="text-slate-800">${escapeHtml(cls.lesson_topic) || 'N/A'}</span></div>
+              <div><span class="text-[8px] font-black text-slate-400 block uppercase">LEARNERS IN CLASS</span><span class="text-slate-800">${escapeHtml(cls.learners_count) || 'N/A'}</span></div>
+            </div>
+            ${techHtml}
+            <div class="bg-white border border-slate-200 rounded-xl p-4 space-y-3.5 shadow-sm">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                ${evidenceFieldHtml('Active Digital Tools &amp; Platforms Used in the Lesson', cls.tools_used, 'Not documented during classroom visit')}
+                ${evidenceFieldHtml('Describe the learner activities in the lesson', cls.artifact_verified, 'Not documented')}
+                ${evidenceFieldHtml('eAdvisor In-Classroom Suggestions &amp; Interventions', cls.advisor_support, 'No recommendations or interventions documented')}
+                ${evidenceFieldHtml('eAdvisor General Classroom Comments', cls.general_comments, 'No general comments documented')}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function section5Html(archetype, walkthrough, classrooms) {
+        const walkthroughDetails = walkthrough && (walkthrough.primary_barrier || walkthrough.collaboration_channel)
+          ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-4">
               ${walkthrough.primary_barrier ? `
-                <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+                <div class="bg-slate-50 p-2.5 text-[10.5px] rounded border border-slate-200">
                   <span class="text-[8px] font-black text-slate-400 block uppercase mb-0.5">Primary Identified Barrier</span>
-                  <span class="text-slate-700 text-[11px] font-semibold">${escapeHtml(walkthrough.primary_barrier)}</span>
+                  <span class="text-slate-700 font-semibold">${escapeHtml(walkthrough.primary_barrier)}</span>
                 </div>` : ''}
               ${walkthrough.collaboration_channel ? `
-                <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
-                  <span class="text-[8px] font-black text-slate-400 block uppercase mb-0.5">Staff Collaboration Mindset</span>
-                  <span class="text-slate-700 text-[11px] font-semibold">${escapeHtml(walkthrough.collaboration_channel)}</span>
+                <div class="bg-slate-50 p-2.5 text-[10.5px] rounded border border-slate-200">
+                  <span class="text-[8px] font-black text-slate-400 block uppercase mb-0.5">Staff Peer-Sharing Mindset &amp; Trust</span>
+                  <span class="text-slate-700 font-semibold">${escapeHtml(walkthrough.collaboration_channel)}</span>
                 </div>` : ''}
-            </div>`);
-        }
+            </div>`
+          : '';
 
-        classrooms.forEach((c, i) => {
-          const fields = [
-            ['Tools & Platforms Used', c.tools_used],
-            ['Learner Activities Observed', c.artifact_verified],
-            ['eAdvisor Suggestions', c.advisor_support],
-            ['General Comments', c.general_comments],
-            ['Teacher PD / eTPD Suggestions', c.teacher_upskilling],
-          ].filter(([, v]) => v);
+        const classroomCards = classrooms.map((cls, i) => classroomCardHtml(cls, i, classrooms.length)).join('<div class="h-6"></div>');
 
-          sections.push(`
-            <div class="border border-slate-200 rounded-lg p-3 mb-3">
-              <p class="text-xs font-black text-slate-800 mb-2">
-                ${classrooms.length > 1 ? `Classroom ${i + 1} — ` : ''}${escapeHtml(c.teacher_name || 'Unnamed Teacher')}
-                ${c.subject_observed ? `· ${escapeHtml(c.subject_observed)}` : ''}
-                ${c.grade_observed ? `· ${escapeHtml(c.grade_observed)}` : ''}
-              </p>
-              ${fields.length === 0 ? '<p class="text-[10px] text-slate-400">No evidence notes recorded.</p>' : fields.map(([label, value]) => `
-                <div class="mb-2">
-                  <span class="text-[8px] font-black text-slate-400 block uppercase mb-0.5">${label}</span>
-                  <p class="text-[11px] text-slate-700 leading-relaxed">${escapeHtml(value)}</p>
-                </div>`).join('')}
-            </div>`);
-        });
+        return `
+          <div class="py-4 border-b border-slate-200 space-y-4">
+            ${sectionBannerHtml(archetype, 'fa-layer-group', '5. Field Observation Findings &amp; Evidence', 'Field Logs')}
+            ${walkthroughDetails}
+            <div class="space-y-6">${classroomCards}</div>
+          </div>`;
+      }
 
-        return sections.join('') || '<p class="text-xs text-slate-400">No evidence recorded.</p>';
+      function signatureBlockHtml(advisorName) {
+        return `
+          <div class="pt-8 grid grid-cols-2 gap-8">
+            <div class="text-center space-y-8">
+              <div class="h-px bg-slate-300 w-full"></div>
+              <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">
+                eLearning Advisor Signature
+                <span class="block font-semibold lowercase text-slate-500 mt-1">${escapeHtml(advisorName) || 'Full name'}</span>
+              </div>
+            </div>
+            <div class="text-center space-y-8">
+              <div class="h-px bg-slate-300 w-full"></div>
+              <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">
+                School Principal Signature
+                <span class="block font-semibold lowercase text-slate-500 mt-1">Authorized Seal &amp; Sign</span>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function reportBrandingHeaderHtml(archetype, dateValue) {
+        const refDate = dateValue ? String(dateValue).replace(/-/g, '').slice(0, 8) : '2026';
+        return `
+          <div class="no-print absolute top-0 left-0 right-0 h-1.5" style="background-color:${archetype.color};"></div>
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div class="flex items-start gap-3">
+              <div class="text-white font-extrabold text-lg w-10 h-10 rounded-md flex items-center justify-center shadow-sm shrink-0" style="background-color:${archetype.color};">4P</div>
+              <div>
+                <h2 class="text-base font-black text-[#001489] tracking-tight uppercase leading-none">Western Cape Education Department</h2>
+                <p class="text-[9px] font-bold text-slate-500 tracking-wider mt-1 uppercase">ELEARNING DIRECTORATE — 4P AFFECTIVE TRANSFORMATION SUMMARY</p>
+              </div>
+            </div>
+            <div class="text-right flex flex-col items-start md:items-end bg-slate-50 border border-slate-200 p-2 rounded-lg shrink-0">
+              <span class="text-[8px] font-black tracking-wider text-slate-400 block uppercase">Report Ref Number:</span>
+              <span class="font-mono text-[10px] font-bold text-slate-700">WCED-4P-${refDate}</span>
+            </div>
+          </div>`;
       }
 
       function renderReport({ walkthrough, classrooms, school, advisor: reportAdvisor }) {
         const scores = calculateScores(walkthrough, classrooms);
+        scores._classrooms = classrooms; // carried through for buildAffectiveContext()
         const archetype = getArchetypeInfo(scores.scoreAverage);
 
-        const schoolName = school ? school.school_name : (walkthrough ? walkthrough.school_cemis : classrooms[0].school_cemis);
-        const district = school ? school.district : '—';
-        const advisorName = reportAdvisor ? reportAdvisor.full_name : '—';
+        const district = school ? school.district : (reportAdvisor ? reportAdvisor.district : '—');
+        const advisorName = reportAdvisor ? reportAdvisor.full_name : null;
         const dateValue = walkthrough ? walkthrough.visit_date : classrooms[0].created_at;
-        const dateLabelFmt = walkthrough ? formatDate(dateValue) : formatDate(dateValue);
-        const submittedAt = walkthrough ? walkthrough.submitted_at : classrooms[0].submitted_at;
 
         rootEl.innerHTML = `
-          <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-100">
-              <p class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1">
-                ${scores.isStandalone ? 'Classroom Report' : 'Culture Walkthrough Report'}
-              </p>
-              <h1 class="text-xl font-black text-slate-900 tracking-tight">${escapeHtml(schoolName)}</h1>
-              <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
-                <span><i class="fa-solid fa-map-pin mr-1"></i>${escapeHtml(district)}</span>
-                <span><i class="fa-solid fa-user mr-1"></i>${escapeHtml(advisorName)}</span>
-                <span><i class="fa-solid fa-calendar mr-1"></i>${dateLabelFmt}</span>
-                <span><i class="fa-solid fa-lock mr-1"></i>Submitted ${formatDateTime(submittedAt)}</span>
-              </div>
-            </div>
-
-            <div class="p-5 flex flex-col md:flex-row gap-6 items-center border-b border-slate-100" style="background:${archetype.color}0A;">
-              <div class="shrink-0">${radarChartSvg(scores, archetype)}</div>
-              <div class="flex-1 text-center md:text-left">
-                <p class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1">Composite Profile Average</p>
-                <p class="text-4xl font-black" style="color:${archetype.color};">${scores.scoreAverage.toFixed(2)}<span class="text-lg text-slate-400 font-bold"> / 4.00</span></p>
-                <p class="text-sm font-black uppercase tracking-wide mt-2" style="color:${archetype.color};">Level ${archetype.levelNum}: ${archetype.name}</p>
-                <p class="text-xs text-slate-600 mt-1 italic">${escapeHtml(archetype.tagline)}</p>
-                <p class="text-xs text-slate-700 mt-3 leading-relaxed">${escapeHtml(archetype.description)}</p>
-              </div>
-            </div>
-
-            <div class="p-5 border-b border-slate-100">
-              <h2 class="text-xs font-black uppercase text-slate-700 tracking-wide mb-3">Pillar Breakdown</h2>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                ${pillarBreakdownHtml(scores, walkthrough, classrooms)}
-              </div>
-            </div>
-
-            ${strategicMatrixHtml(archetype)}
-            ${criticalAdvisoryLensHtml(archetype)}
-            ${measuresOfSupportHtml(archetype)}
-
-            <div class="p-5">
-              <h2 class="text-xs font-black uppercase text-slate-700 tracking-wide mb-3">Field Observation Evidence</h2>
-              ${evidenceLogHtml(walkthrough, classrooms)}
-            </div>
+          <div id="printable-report" class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-sm">
+            ${reportBrandingHeaderHtml(archetype, dateValue)}
+            ${section1Html({ scores, archetype, school, district, advisorName, dateValue })}
+            ${section2Html(archetype)}
+            ${section3Html(archetype)}
+            ${section4Html(archetype)}
+            ${section5Html(archetype, walkthrough, classrooms)}
+            ${signatureBlockHtml(advisorName)}
           </div>`;
       }
 

@@ -54,6 +54,104 @@ export function calculateScores(walkthrough, classrooms) {
 }
 
 /**
+ * The static per-archetype paragraph the original app calls
+ * "levelMeaning" inside buildDynamicContext() — the base of the
+ * "Affective Diagnosis & Context" section. English only, per the
+ * earlier scope decision.
+ */
+function getAffectiveDiagnosisBase(levelNum) {
+  const texts = {
+    1: "The school is operating within the 'Withdraw' digital culture level. Digital change may currently be experienced as pressure rather than opportunity, with low confidence, fatigue, uncertainty or resistance among some staff members. Technology may be available, but its use is limited, inconsistent or mainly focused on administration, presentations and basic teacher-led activities. Leadership may recognise the importance of digital transformation but may not yet have clear structures, roles or routines to support it. Teachers may work largely on their own, with little peer or leadership support or sharing of digital practices, while learners have limited opportunities to use technology actively for learning, collaboration or creation. Existing platforms and devices may also be underused because of access challenges, technical difficulties, low confidence or uncertainty about how they support teaching. Cyber wellness, responsible digital behaviour and online safety may be addressed only when problems arise rather than as part of everyday school culture.\n\nThe priority at this level is to rebuild confidence, trust and readiness for digital change. Teachers need patient, practical support, simple entry points, reliable access to basic digital tools and opportunities to experience small successes that reduce anxiety and encourage participation.",
+    2: "The school is operating within the 'Stabilise' digital culture level. There is growing acceptance of technology and greater willingness among staff to use digital tools, although confidence and practice remain uneven across the school. Some teachers are beginning to use technology more regularly for teaching, assessment, communication and administration, while others remain dependent on familiar or traditional approaches. Leadership structures are beginning to support digital practice, but expectations, responsibilities and routines may not yet be consistently understood or applied. Available devices and platforms are being used more often, although their use may still focus on improving existing practices rather than changing how learners engage with learning. Collegial support may be emerging, but digital knowledge often remains concentrated among a small number of confident teachers or ICT champions. Cyber wellness and responsible technology use are increasingly recognised, although these practices may still sit alongside the curriculum rather than being embedded within school culture.\n\nThe priority at this level is to build consistency and strengthen everyday practice. Teachers need practical support, shared routines, guidance and learning opportunities to use digital tools confidently as part of normal teaching, assessment, communication and administration.",
+    3: "The school is operating within the 'Explore' digital culture level. There is visible confidence, curiosity and willingness to experiment with different digital approaches, and examples of strong practice are emerging across classrooms, departments or phases. Teachers are beginning to move beyond basic technology use towards collaboration, learner participation, digital assessment, differentiated learning, research and content creation. Learners have more opportunities to use technology actively rather than simply receive information from a screen. Leadership is increasingly involved in shaping digital priorities and encouraging professional learning, while teachers are beginning to share resources, ideas and experiences with one another. However, strong practice may still depend on particular teachers, champions or departments, and approaches may not yet be consistent across the whole school. Platforms and infrastructure are generally used more purposefully, but the school may still need stronger systems for coordination, monitoring and sharing. Cyber wellness, digital citizenship, AI awareness and responsible online behaviour are beginning to form part of broader teaching and school conversations.\n\nThe priority at this level is to deepen practice and connect emerging areas of strength. Teachers need opportunities to collaborate, share successful approaches, experiment with more learner-centred digital practices and build greater consistency across subjects, phases and departments.",
+    4: "The school is operating within the 'Lead' digital culture level. Digital practice is embedded across the institution and forms part of the normal way the school teaches, learns, communicates, manages information and improves its practice. Leadership provides clear direction while responsibility for digital transformation is distributed across teachers, departments and school structures. Teachers confidently select technology according to learning needs and use it to support collaboration, creativity, assessment, differentiation, inquiry and problem solving. Learners are active digital participants who create, investigate, communicate and take increasing responsibility for their learning. Teachers regularly learn from one another, mentor colleagues and adapt their practice based on evidence and reflection. Platforms, devices and digital systems are managed purposefully and support both learning and school operations rather than operating as separate technology initiatives. Cyber wellness, responsible digital citizenship, ethical AI use, professional boundaries and online behaviour form part of the school's wider culture and expectations. The school is also able to document its practice, measure impact and share successful approaches with other schools.\n\nThe priority at this level is to sustain strong practice, deepen impact and extend digital leadership. Teachers and school leaders need opportunities to refine innovative practice, strengthen learner agency, use evidence to guide improvement, mentor others and share successful approaches across the wider school community and beyond.",
+  };
+  return texts[levelNum];
+}
+
+/**
+ * Builds the full "Affective Diagnosis & Context" narrative: the
+ * static per-archetype paragraph above, plus a dynamically-appended
+ * paragraph referencing the ACTUAL school infrastructure and
+ * classroom observation on file.
+ *
+ * ADAPTED from the original, not a verbatim port: the original drew
+ * on four boolean infrastructure flags (SLIM labs, CAT/IT/EGD labs,
+ * internet, smart classroom) and active-project flags (MCO,
+ * Back-on-Track, etc.) that don't exist in this schema. Our schools
+ * table instead has free-text infrastructure fields
+ * (computer_labs, smart_classrooms, learner_devices, connectivity),
+ * which this uses instead — genuinely descriptive of the real
+ * school, just not identical in shape to the original's fields. The
+ * active-projects sentence is dropped entirely since we have no
+ * equivalent field; the teacher-upskilling/advisor-support sentences
+ * ARE kept since classroom_observations has those exact fields.
+ *
+ * Only the FIRST classroom on the walkthrough is referenced here
+ * (matching the original, which was designed around a single
+ * observation) — a simplification worth knowing about if a
+ * walkthrough has several classrooms.
+ * @param {object} archetype
+ * @param {object|null} school - a schools row (or null)
+ * @param {object[]} classrooms
+ */
+export function buildAffectiveContext(archetype, school, classrooms) {
+  const base = getAffectiveDiagnosisBase(archetype.levelNum);
+
+  const infraParts = [];
+  if (school) {
+    if (school.computer_labs) infraParts.push(`computer labs (${school.computer_labs})`);
+    if (school.smart_classrooms) infraParts.push(`smart classroom setups (${school.smart_classrooms})`);
+    if (school.learner_devices) infraParts.push(`learner device access (${school.learner_devices})`);
+    if (school.connectivity) infraParts.push(`connectivity (${school.connectivity})`);
+  }
+
+  const hwContext = infraParts.length > 0
+    ? `With ${infraParts.join(', ')} on record, the hardware foundation is documented; converting physical infrastructure into active pedagogical flow requires lowering academic performance anxieties.`
+    : 'No detailed infrastructure profile is on file for this school yet, which itself suggests digital integration efforts should focus on offline-first resources, high-impact administrative shortcuts, and teacher-centric mobile workflows until that picture is clearer.';
+
+  const cls = classrooms && classrooms.length > 0 ? classrooms[0] : null;
+  let obsContext = '';
+  if (cls) {
+    const nameStr = cls.teacher_name ? `teacher ${cls.teacher_name}` : '';
+    const subStr = cls.subject_observed ? ` in ${cls.subject_observed}` : '';
+    const grStr = cls.grade_observed ? ` (${cls.grade_observed})` : '';
+    const topStr = cls.lesson_topic ? `, delivering a lesson on '${cls.lesson_topic}',` : '';
+
+    let obsDetails = '';
+    if (nameStr || subStr || topStr) {
+      obsDetails = `During the walkthrough with ${nameStr || 'the teacher'}${subStr}${grStr}${topStr} we captured valuable field highlights: `;
+    }
+
+    const activeTools = cls.tools_used && cls.tools_used.trim() !== '';
+    const activeArtifact = cls.artifact_verified && cls.artifact_verified.trim() !== '';
+
+    let toolsAndArts = activeTools
+      ? `The current implementation of "${cls.tools_used}" `
+      : 'The absence of active digital tools during current lessons ';
+
+    toolsAndArts += activeArtifact
+      ? `is coupled with a verified learner activity ("${cls.artifact_verified}"). This serves as high-quality proof of active learner agency and hands-on digital creation rather than passive observation. `
+      : 'indicates that lesson engagement remains centred on teacher-delivery. Shifting from whiteboards to requiring learners to compile their own digital work is the key strategic recommendation to bridge this gap. ';
+
+    let closing = '';
+    if (cls.teacher_upskilling && cls.teacher_upskilling.trim() !== '') {
+      closing += `The teacher upskilling suggestion on file ("${cls.teacher_upskilling}") is highly strategic. `;
+    }
+    if (cls.advisor_support && cls.advisor_support.trim() !== '') {
+      closing += `To execute the in-class suggestions ("${cls.advisor_support}"), focus must shift entirely from compliance oversight to high-reward technical wins that protect teacher wellness.`;
+    } else {
+      closing += 'Nurturing this ecosystem demands continuous, low-pressure support rather than administrative audits.';
+    }
+
+    obsContext = [obsDetails, toolsAndArts, closing].filter(Boolean).join('').trim();
+  }
+
+  return obsContext ? `${base}\n\n${hwContext} ${obsContext}` : base;
+}
+
+
+/**
  * Archetype identity + full narrative content, ported from
  * getArchetypeInfo() in the original app. English only for now —
  * Afrikaans fields (titleAfr, textAfr, etc. in the original) are
