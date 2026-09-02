@@ -7,7 +7,7 @@
 // contract: createCultureWalkthrough(containerEl, opts) returns
 // { validate, getData, loadData, destroy }.
 //
-// Rendered as tabs (Details / People & Practices / Platforms)
+// Rendered as tabs (People / Practices / Platforms / General)
 // instead of one long scroll — see tabs-ui.js.
 //
 // This module renders ONLY the walkthrough's own fields — it does
@@ -16,6 +16,13 @@
 // or more classroom-report.js instances and submitting everything
 // together, per the spec's "no partial submissions for composite
 // walkthroughs" rule.
+//
+// VISIT DATE — moved out of this module. Visit date selection now
+// lives on the host page (culture-walkthrough.html) next to the
+// school picker, since a visit date/school pair is chosen before a
+// walkthrough is even mounted. This module no longer tracks
+// visit_date in its state or validates it — the host page owns that
+// field and is responsible for attaching it to the row it submits.
 //
 // SCHEMA NOTE — read before wiring up Supabase:
 // Your Data Architecture doc lists BOTH platforms_scheduling and
@@ -54,7 +61,9 @@ import {
 import { escapeHtml, badgeBgClass, activeBgClass, pillarGroupHtml, categoryDividerHtml, updatePillarVisual } from './rubric-ui.js';
 import { createTabbedPanel } from './tabs-ui.js';
 
-const PEOPLE_PRACTICES_GROUPS = [
+// Split out of the old PEOPLE_PRACTICES_GROUPS by heading — PEOPLE
+// entries now live on their own tab, distinct from PRACTICES.
+const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
@@ -73,6 +82,9 @@ const PEOPLE_PRACTICES_GROUPS = [
     iconBg: 'bg-rose-50',
     options: PEOPLE_CONFIDENCE_RUBRIC,
   },
+];
+
+const PRACTICES_GROUPS = [
   {
     category: 'PRACTICES',
     categoryColor: '#00A1A3',
@@ -142,21 +154,25 @@ function pillarGroupsHtml(instanceId, groups, state) {
 export function createCultureWalkthrough(containerEl, opts = {}) {
   const { schoolCemis = null, advisorId = null } = opts;
 
-  // Shaped exactly like a culture_walkthroughs row.
+  // Shaped exactly like a culture_walkthroughs row (minus visit_date,
+  // which the host page now owns — see the VISIT DATE note above).
   const state = {
     id: null,
     school_cemis: schoolCemis,
     advisor_id: advisorId,
-    visit_date: new Date().toISOString().slice(0, 10),
 
-    people_safety: 1,
-    people_confidence: 1,
-    practices_collab: 1,
-    practices_pd: 1,
-    practices_cyber: 1,
-    platforms_scheduling: 1,
+    // Deliberately null, not a default rubric level — every pillar
+    // selection is compulsory and must be explicitly made by the
+    // advisor. See validate() below.
+    people_safety: null,
+    people_confidence: null,
+    practices_collab: null,
+    practices_pd: null,
+    practices_cyber: null,
+    platforms_scheduling: null,
     // Not surfaced as its own control at the walkthrough level —
-    // see the schema note at the top of this file.
+    // see the schema note at the top of this file. Not user-facing,
+    // so it keeps a fixed schema-default value rather than null.
     platforms_integration: 1,
 
     primary_barrier: '',
@@ -177,18 +193,23 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
   const visitedTabs = new Set();
   let tabsApi = null; // set by render(); referenced by attachListeners() to live-refresh status dots
 
+  // People/Practices/Platforms tabs are compulsory — their dot is
+  // red until every rubric field on that tab has an explicit
+  // selection, then green. General is optional context, so it just
+  // tracks whether the advisor has visited it (grey -> green).
   function statusDotColor(tabId) {
-    if (tabId === 'details') return state.visit_date ? '#10b981' : '#ef4444';
+    if (tabId === 'people') {
+      return state.people_safety != null && state.people_confidence != null ? '#10b981' : '#ef4444';
+    }
+    if (tabId === 'practices') {
+      return state.practices_collab != null && state.practices_pd != null && state.practices_cyber != null
+        ? '#10b981'
+        : '#ef4444';
+    }
+    if (tabId === 'platforms') {
+      return state.platforms_scheduling != null ? '#10b981' : '#ef4444';
+    }
     return visitedTabs.has(tabId) ? '#10b981' : '#cbd5e1';
-  }
-
-  function visitDateHtml() {
-    return `
-      <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm max-w-xs">
-        <label class="field-label block mb-1">Visit Date</label>
-        <input type="date" data-field="visit_date" value="${escapeHtml(state.visit_date)}"
-               class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
-      </div>`;
   }
 
   function contextDetailsHtml() {
@@ -280,20 +301,17 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
 
     tabsApi = createTabbedPanel(tabsMount, [
       {
-        id: 'details',
-        label: 'Details',
+        id: 'people',
+        label: 'People',
         render: (panel) => {
-          panel.innerHTML = `
-            ${visitDateHtml()}
-            <div class="mt-4">${contextDetailsHtml()}</div>
-            <div class="mt-4">${scenarioHtml()}</div>`;
+          panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_GROUPS, state);
         },
       },
       {
-        id: 'people-practices',
-        label: 'People & Practices',
+        id: 'practices',
+        label: 'Practices',
         render: (panel) => {
-          panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_PRACTICES_GROUPS, state);
+          panel.innerHTML = pillarGroupsHtml(instanceId, PRACTICES_GROUPS, state);
         },
       },
       {
@@ -301,6 +319,15 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
         label: 'Platforms',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
+        },
+      },
+      {
+        id: 'general',
+        label: 'General',
+        render: (panel) => {
+          panel.innerHTML = `
+            ${contextDetailsHtml()}
+            <div class="mt-4">${scenarioHtml()}</div>`;
         },
       },
     ], {
@@ -336,6 +363,18 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
     });
   }
 
+  // Every pillar rubric selection is compulsory — nothing defaults
+  // to a level anymore, so validate() must check each one explicitly
+  // and send the advisor to the first tab that's missing a choice.
+  const REQUIRED_RUBRIC_FIELDS = [
+    { field: 'people_safety', tab: 'people', label: 'People — Psychological Safety & Wellbeing' },
+    { field: 'people_confidence', tab: 'people', label: 'People — Digital Confidence & Agency' },
+    { field: 'practices_collab', tab: 'practices', label: 'Practices — Collaboration & School Rituals' },
+    { field: 'practices_pd', tab: 'practices', label: 'Practices — Professional Development & Learning Pathways' },
+    { field: 'practices_cyber', tab: 'practices', label: 'Practices — Cyber Wellness & Digital Citizenship' },
+    { field: 'platforms_scheduling', tab: 'platforms', label: 'Platforms — Resource Scheduling, Rosters & Access Mechanics' },
+  ];
+
   function showValidationMessage(message) {
     const el = containerEl.querySelector('[data-validation-message]');
     if (!el) return;
@@ -353,17 +392,18 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
 
   return {
     /**
-     * Rubric fields always have a value (default 1), and the
-     * scenario/context selects are optional context, not hard
-     * blockers — the one thing that must be explicitly set is the
-     * visit date, since it's NOT NULL on the schema.
+     * Every pillar rubric field is compulsory — no default level is
+     * assumed, so each of the 6 must have an explicit selection
+     * before this walkthrough can be submitted.
      * @returns {boolean}
      */
     validate() {
-      if (!state.visit_date) {
-        showValidationMessage('Please set a Visit Date (Details tab) before continuing.');
-        if (tabsApi) tabsApi.setActiveTab('details');
-        return false;
+      for (const { field, tab, label } of REQUIRED_RUBRIC_FIELDS) {
+        if (state[field] == null) {
+          showValidationMessage(`Please select a rating for "${label}" before continuing.`);
+          if (tabsApi) tabsApi.setActiveTab(tab);
+          return false;
+        }
       }
       showValidationMessage(null);
       return true;
