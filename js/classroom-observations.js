@@ -79,22 +79,17 @@ export async function fetchStandaloneObservationsForAdvisor(advisorId) {
 export async function fetchStandaloneObservationsForDistrict(district) {
   const { data, error } = await supabaseClient
     .from('classroom_observations')
-    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
+    .select('*, schools!inner(school_name, district, circuit), advisors(full_name)')
     .eq('schools.district', district)
     .is('culture_walkthrough_id', null)
     .order('created_at', { ascending: false });
   return { data, error };
 }
 
-/**
- * Fetch every standalone classroom observation across every
- * district — used for HEAD OFFICE advisors.
- * @returns {Promise<{data: Array|null, error: object|null}>}
- */
 export async function fetchAllStandaloneObservations() {
   const { data, error } = await supabaseClient
     .from('classroom_observations')
-    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
+    .select('*, schools!inner(school_name, district, circuit), advisors(full_name)')
     .is('culture_walkthrough_id', null)
     .order('created_at', { ascending: false });
   return { data, error };
