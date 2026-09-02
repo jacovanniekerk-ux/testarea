@@ -79,14 +79,15 @@ export async function fetchWalkthroughsForAdvisor(advisorId) {
  * Fetch all culture_walkthroughs for schools within a given district
  * (not scoped to a single advisor) — matches the "Past Reports shows
  * everything in my district" requirement. Joins against schools to
- * filter by district and to get the school name/circuit for display.
+ * filter by district and to get the school name/circuit for display,
+ * and joins against advisors to get the advisor's full name.
  * @param {string} district
  * @returns {Promise<{data: Array|null, error: object|null}>}
  */
 export async function fetchWalkthroughsForDistrict(district) {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district, circuit)')
+    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
     .eq('schools.district', district)
     .order('created_at', { ascending: false });
   return { data, error };
@@ -95,14 +96,14 @@ export async function fetchWalkthroughsForDistrict(district) {
 /**
  * Fetch every culture_walkthroughs row across every district —
  * used for HEAD OFFICE advisors, who aren't scoped to a single
- * district. Joins against schools the same way as
- * fetchWalkthroughsForDistrict(), just without the district filter.
+ * district. Joins against schools and advisors the same way as
+ * fetchWalkthroughsForDistrict().
  * @returns {Promise<{data: Array|null, error: object|null}>}
  */
 export async function fetchAllWalkthroughs() {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district, circuit)')
+    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
     .order('created_at', { ascending: false });
   return { data, error };
 }
