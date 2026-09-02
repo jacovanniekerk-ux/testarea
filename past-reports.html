@@ -108,6 +108,14 @@
   let allSchools = [];
   let allReports = [];
 
+function getAdvisorName(record) {
+  if (!record.advisors) return '—';
+  if (Array.isArray(record.advisors)) {
+    return record.advisors[0]?.full_name || '—';
+  }
+  return record.advisors.full_name || '—';
+}
+      
   function escapeHtml(str) {
     if (str === null || str === undefined || str === '') return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -146,7 +154,7 @@
   id: w.id,
   type: 'walkthrough',
   schoolName: w.schools ? w.schools.school_name : w.school_cemis,
-  advisorName: w.advisors ? w.advisors.full_name : '—', // <--- Added here
+  advisorName: getAdvisorName(w),
   district: w.schools ? w.schools.district : '',
   circuit: w.schools ? w.schools.circuit : null,
   dateValue: w.visit_date,
@@ -160,7 +168,7 @@ const classroomRows = (classroomsRes.data || []).map((c) => ({
   id: c.id,
   type: 'classroom',
   schoolName: c.schools ? c.schools.school_name : c.school_cemis,
-  advisorName: c.advisors ? c.advisors.full_name : '—', // <--- Added here
+  advisorName: getAdvisorName(c),
   district: c.schools ? c.schools.district : '',
   circuit: c.schools ? c.schools.circuit : null,
   dateValue: c.created_at,
