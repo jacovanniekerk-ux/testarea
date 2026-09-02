@@ -20,7 +20,7 @@
 --fs-subtitle: 12px;     /* group subtitles & instructions */
 --fs-body: 12px;         /* general body copy & rubric descriptions */
 --fs-body-lg: 13px;      /* input text & focal body copy */
---fs-heading: 14px;      /* section headings */
+--fs-heading: 16px;      /* section headings */
 --fs-heading-lg: 16px;   /* main page titles */
 --line-height-body: 1.5;
 
@@ -81,6 +81,7 @@ body {
 .pillar-title {
   font-size: var(--fs-heading);
   font-weight: 900;
+  color: #001489;
   letter-spacing: -0.01em;
   text-transform: uppercase;
 }
@@ -143,10 +144,10 @@ body {
 }
 
 .tabs-header-sticky {
-  background: white;
+  background: #001489; /* Dark blue background */
   z-index: 20;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Lightened border */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .tab-nav-strip {
@@ -160,7 +161,7 @@ body {
 .tab-nav-step {
   font-size: var(--fs-label);
   font-weight: 700;
-  color: #64748b;
+  color: #94a3b8; /* Lightened from dark grey */
   text-align: center;
   flex: 1;
 }
@@ -171,8 +172,8 @@ body {
   gap: 6px;
   font-size: var(--fs-label);
   font-weight: 800;
-  color: var(--color-brand);
-  background: #f1f5f9;
+  color: #ffffff; /* White text */
+  background: rgba(255, 255, 255, 0.12); /* Semi-transparent button background */
   border: none;
   padding: 6px 12px;
   border-radius: 8px;
@@ -182,19 +183,19 @@ body {
 }
 
 .tab-nav-btn:hover:not(:disabled) {
-  background: #e2e8f0;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .tab-nav-btn:disabled {
-  color: #cbd5e1;
-  background: #f8fafc;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
   cursor: not-allowed;
 }
 
 .tab-bar {
   display: flex;
   gap: 4px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for dark background */
   overflow-x: auto;
 }
 
@@ -204,7 +205,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.01em;
   padding: 10px 14px;
-  color: #94a3b8;
+  color: #93c5fd; /* Soft light blue/grey for inactive tabs */
   border-bottom: 2px solid transparent;
   white-space: nowrap;
   cursor: pointer;
@@ -216,12 +217,12 @@ body {
 }
 
 .tab-button:hover {
-  color: #475569;
+  color: #ffffff; /* White text on hover */
 }
 
 .tab-button.active {
-  color: var(--color-brand);
-  border-bottom-color: var(--color-brand);
+  color: #ffffff; /* White text for active tab */
+  border-bottom-color: #38bdf8; /* Bright light-blue underline indicator */
 }
 
 .tab-button .tab-status-dot {
@@ -231,14 +232,6 @@ body {
   border-radius: 999px;
   margin-left: 6px;
   vertical-align: middle;
-}
-
-.tab-panel {
-  display: none;
-}
-
-.tab-panel.active {
-  display: block;
 }
 
 @media print {
