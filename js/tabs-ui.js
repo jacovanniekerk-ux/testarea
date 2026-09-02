@@ -1,29 +1,3 @@
-// ============================================================
-// tabs-ui.js
-// ------------------------------------------------------------
-// Generic tab bar + panel switcher. Used in three places:
-//  1. Inside classroom-report.js, to split its form into sections
-//     (Context, People, Pedagogy, Platforms, Evidence).
-//  2. Inside culture-walkthrough.js, for its own sections (Details,
-//     People & Practices, Platforms).
-//  3. At the culture-walkthrough.html page level, as the
-//     "Classroom 1 / Classroom 2 / ..." switcher between multiple
-//     classroom-report.js instances on one walkthrough. Dynamic —
-//     tabs are added/removed at runtime via addTab()/removeTab().
-//
-// Each tab's content is rendered ONCE into its panel and then just
-// shown/hidden via CSS — panels are never destroyed on switch, so
-// form state (inputs, radio selections) is preserved.
-//
-// UX chrome included here (so every tab group gets it for free,
-// rather than each page reinventing it):
-//  - A sticky header bar (tab buttons + Previous/Next strip) that
-//    stays visible while scrolling through a tab's content.
-//  - Previous/Next buttons with a "Step X of N: <label>" indicator.
-//  - Optional status dots per tab (see getStatusDotColor) so users
-//    can see at a glance which sections still need attention.
-// ============================================================
-
 /**
  * @param {HTMLElement} containerEl
  * @param {{id: string, label: string, render: (panelEl: HTMLElement) => void}[]} initialTabs
@@ -65,6 +39,7 @@ export function createTabbedPanel(containerEl, initialTabs, opts = {}) {
   const tabBar = document.createElement('div');
   tabBar.className = 'tab-bar';
 
+  // --- Top Nav Strip ---
   const navStrip = document.createElement('div');
   navStrip.className = 'tab-nav-strip';
 
@@ -87,6 +62,27 @@ export function createTabbedPanel(containerEl, initialTabs, opts = {}) {
 
   headerWrap.appendChild(tabBar);
   headerWrap.appendChild(navStrip);
+
+  // --- Bottom Nav Strip ---
+  const navStripBottom = document.createElement('div');
+  navStripBottom.className = 'tab-nav-strip';
+
+  const prevBtnBottom = document.createElement('button');
+  prevBtnBottom.type = 'button';
+  prevBtnBottom.className = 'tab-nav-btn';
+  prevBtnBottom.innerHTML = '<i class="fa-solid fa-chevron-left"></i><span>Previous</span>';
+
+  const stepLabelBottom = document.createElement('span');
+  stepLabelBottom.className = 'tab-nav-step';
+
+  const nextBtnBottom = document.createElement('button');
+  nextBtnBottom.type = 'button';
+  nextBtnBottom.className = 'tab-nav-btn';
+  nextBtnBottom.innerHTML = '<span>Next</span><i class="fa-solid fa-chevron-right"></i>';
+
+  navStripBottom.appendChild(prevBtnBottom);
+  navStripBottom.appendChild(stepLabelBottom);
+  navStripBottom.appendChild(nextBtnBottom);
 
   const panelsWrap = document.createElement('div');
   panelsWrap.className = 'tab-panels-wrap mt-4';
@@ -129,16 +125,28 @@ export function createTabbedPanel(containerEl, initialTabs, opts = {}) {
 
   initialTabs.forEach(buildTab);
 
+  // Append header, panels, and bottom nav strip to container
   containerEl.innerHTML = '';
   containerEl.appendChild(headerWrap);
   containerEl.appendChild(panelsWrap);
+  containerEl.appendChild(navStripBottom);
 
   function updateNavStrip() {
     const idx = tabOrder.indexOf(activeId);
     const label = labelSpanEls[activeId] ? labelSpanEls[activeId].textContent : '';
-    stepLabel.textContent = `Step ${idx + 1} of ${tabOrder.length}: ${label}`;
-    prevBtn.disabled = idx <= 0;
-    nextBtn.disabled = idx >= tabOrder.length - 1;
+    const text = `Step ${idx + 1} of ${tabOrder.length}: ${label}`;
+    const isFirst = idx <= 0;
+    const isLast = idx >= tabOrder.length - 1;
+
+    // Sync Top
+    stepLabel.textContent = text;
+    prevBtn.disabled = isFirst;
+    nextBtn.disabled = isLast;
+
+    // Sync Bottom
+    stepLabelBottom.textContent = text;
+    prevBtnBottom.disabled = isFirst;
+    nextBtnBottom.disabled = isLast;
   }
 
   function setActiveTab(id) {
@@ -152,14 +160,22 @@ export function createTabbedPanel(containerEl, initialTabs, opts = {}) {
     if (opts.onActivate) opts.onActivate(id);
   }
 
-  prevBtn.addEventListener('click', () => {
+  // Shared nav actions
+  function goPrev() {
     const idx = tabOrder.indexOf(activeId);
     if (idx > 0) setActiveTab(tabOrder[idx - 1]);
-  });
-  nextBtn.addEventListener('click', () => {
+  }
+
+  function goNext() {
     const idx = tabOrder.indexOf(activeId);
     if (idx < tabOrder.length - 1) setActiveTab(tabOrder[idx + 1]);
-  });
+  }
+
+  // Attach listeners to both sets of buttons
+  prevBtn.addEventListener('click', goPrev);
+  nextBtn.addEventListener('click', goNext);
+  prevBtnBottom.addEventListener('click', goPrev);
+  nextBtnBottom.addEventListener('click', goNext);
 
   function refreshStatusDots() {
     if (!opts.getStatusDotColor) return;
@@ -180,7 +196,7 @@ export function createTabbedPanel(containerEl, initialTabs, opts = {}) {
   function addTab(tab, addOpts = {}) {
     buildTab(tab);
     if (addOpts.activate !== false) setActiveTab(tab.id);
-    else updateNavStrip(); // tab count changed either way
+    else updateNavStrip();
     refreshStatusDots();
   }
 
