@@ -65,7 +65,7 @@
 
     <script type="module">
       import { requireSession } from './js/session.js';
-      import { fetchSchoolsForDistrict } from './js/schools.js';
+      import { fetchSchoolsForAdvisor, isHeadOffice } from './js/schools.js';
       import { createClassroomReport } from './js/classroom-report.js';
       import { saveClassroomObservation, fetchClassroomObservationById } from './js/classroom-observations.js';
 
@@ -105,7 +105,8 @@
       }
 
       async function loadSchools() {
-        const { data, error } = await fetchSchoolsForDistrict(advisor.district);
+        const { data, error } = await fetchSchoolsForAdvisor(advisor);
+        const scopeLabel = isHeadOffice(advisor) ? 'across all districts' : 'for your district';
 
         if (error) {
           // Most likely cause: RLS blocking the anon role from reading
@@ -113,22 +114,41 @@
           // rather than leaving a silently-empty dropdown.
           schoolSelect.innerHTML = '<option value="">-- Unable to load schools --</option>';
           showSchoolError(
-            'Could not load schools for your district. This is usually an RLS policy on the schools table blocking anonymous reads — see the comment at the top of js/schools.js.'
+            `Could not load schools ${scopeLabel}. This is usually an RLS policy on the schools table blocking anonymous reads — see the comment at the top of js/schools.js.`
           );
           return;
         }
 
         if (!data || data.length === 0) {
-          schoolSelect.innerHTML = '<option value="">-- No schools found for your district --</option>';
-          showSchoolError('No schools are loaded for your district yet.');
+          schoolSelect.innerHTML = '<option value="">-- No schools found --</option>';
+          showSchoolError(`No schools are loaded ${scopeLabel} yet.`);
           return;
         }
 
-        schoolSelect.innerHTML =
-          '<option value="">-- Select a school --</option>' +
-          data
-            .map((s) => `<option value="${s.cemis_number}">${s.school_name}</option>`)
-            .join('');
+        if (isHeadOffice(advisor)) {
+          // Group by district so a HEAD OFFICE advisor isn't scrolling
+          // an unstructured list of every school in the province.
+          const byDistrict = {};
+          data.forEach((s) => {
+            if (!byDistrict[s.district]) byDistrict[s.district] = [];
+            byDistrict[s.district].push(s);
+          });
+          schoolSelect.innerHTML =
+            '<option value="">-- Select a school --</option>' +
+            Object.keys(byDistrict)
+              .sort()
+              .map(
+                (district) =>
+                  `<optgroup label="${district}">` +
+                  byDistrict[district].map((s) => `<option value="${s.cemis_number}">${s.school_name}</option>`).join('') +
+                  '</optgroup>'
+              )
+              .join('');
+        } else {
+          schoolSelect.innerHTML =
+            '<option value="">-- Select a school --</option>' +
+            data.map((s) => `<option value="${s.cemis_number}">${s.school_name}</option>`).join('');
+        }
       }
 
       function mountReportFor(schoolCemis) {

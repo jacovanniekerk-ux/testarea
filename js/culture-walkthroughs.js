@@ -10,6 +10,7 @@
 // ============================================================
 
 import { supabaseClient } from './supabase-client.js';
+import { isHeadOffice } from './schools.js';
 
 /**
  * Save a walkthrough and all its classroom observations in one
@@ -78,15 +79,44 @@ export async function fetchWalkthroughsForAdvisor(advisorId) {
  * Fetch all culture_walkthroughs for schools within a given district
  * (not scoped to a single advisor) — matches the "Past Reports shows
  * everything in my district" requirement. Joins against schools to
- * filter by district and to get the school name for display.
+ * filter by district and to get the school name/circuit for display.
  * @param {string} district
  * @returns {Promise<{data: Array|null, error: object|null}>}
  */
 export async function fetchWalkthroughsForDistrict(district) {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district)')
+    .select('*, schools!inner(school_name, district, circuit)')
     .eq('schools.district', district)
     .order('created_at', { ascending: false });
   return { data, error };
+}
+
+/**
+ * Fetch every culture_walkthroughs row across every district —
+ * used for HEAD OFFICE advisors, who aren't scoped to a single
+ * district. Joins against schools the same way as
+ * fetchWalkthroughsForDistrict(), just without the district filter.
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function fetchAllWalkthroughs() {
+  const { data, error } = await supabaseClient
+    .from('culture_walkthroughs')
+    .select('*, schools!inner(school_name, district, circuit)')
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+/**
+ * The call Past Reports should actually use: HEAD OFFICE advisors
+ * see every walkthrough across every district; everyone else sees
+ * just their own district's, same as before.
+ * @param {{district: string}} advisor
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function fetchWalkthroughsForAdvisorScope(advisor) {
+  if (isHeadOffice(advisor)) {
+    return fetchAllWalkthroughs();
+  }
+  return fetchWalkthroughsForDistrict(advisor.district);
 }
