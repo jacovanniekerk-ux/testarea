@@ -18,7 +18,7 @@
   /* Previously these were scattered as text-[8px] through text-[11px]
      directly in the JS templates. Bumped up noticeably from the
      original values, which were too small to read comfortably. */
-  --fs-eyebrow: 10px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
+  --fs-eyebrow: 12px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
   --fs-label: 12px;      /* form field labels, checklist labels */
   --fs-body: 12px;       /* rubric option descriptions, general body copy */
   --fs-body-lg: 12px;    /* text typed into inputs/textareas/selects */
@@ -98,7 +98,7 @@ body {
   font-size: var(--fs-eyebrow);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
 }
 
 .pillar-description {
