@@ -43,15 +43,32 @@
         <p id="school-select-error" class="mt-2 text-xs text-red-600 hidden"></p>
       </div>
 
+      <!-- Toggle between Macro-Level Walkthrough and Classroom Observations -->
+      <div id="section-toggle" class="hidden mb-6">
+        <div class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 gap-1">
+          <button id="toggle-macro-btn" type="button" data-section="macro"
+            class="section-toggle-btn font-bold text-xs px-4 py-2 rounded-md transition flex items-center gap-1.5 text-slate-500 hover:text-slate-700">
+            <i class="fa-solid fa-building-columns"></i>
+            <span>Macro-Level School Culture</span>
+          </button>
+          <button id="toggle-classrooms-btn" type="button" data-section="classrooms"
+            class="section-toggle-btn font-bold text-xs px-4 py-2 rounded-md transition flex items-center gap-1.5 text-slate-500 hover:text-slate-700">
+            <i class="fa-solid fa-chalkboard-user"></i>
+            <span>Classroom Observations</span>
+            <span id="classroom-count-badge" class="bg-slate-300 text-slate-700 text-[10px] font-extrabold rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center"></span>
+          </button>
+        </div>
+      </div>
+
       <!-- Walkthrough form mounts here once a school is selected -->
-      <div id="walkthrough-container"></div>
+      <div id="macro-section-wrapper" class="hidden">
+        <div id="walkthrough-container"></div>
+      </div>
 
       <!-- Classroom observations section -->
-      <div id="classrooms-section" class="mt-8 hidden">
+      <div id="classrooms-section" class="hidden">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="section-heading text-slate-700">
-            Classroom Observations <span class="text-slate-400 font-medium normal-case" style="font-weight:500;">(at least 1 required)</span>
-          </h2>
+          <p class="text-xs text-slate-400 font-medium">(at least 1 classroom observation required)</p>
           <div class="flex items-center gap-3">
             <button id="remove-classroom-btn" type="button"
               class="text-xs font-bold uppercase text-red-500 hover:text-red-700 disabled:text-slate-300 disabled:cursor-not-allowed flex items-center gap-1.5">
@@ -109,6 +126,11 @@
 
       const schoolSelect = document.getElementById('school-select');
       const schoolSelectError = document.getElementById('school-select-error');
+      const sectionToggle = document.getElementById('section-toggle');
+      const toggleMacroBtn = document.getElementById('toggle-macro-btn');
+      const toggleClassroomsBtn = document.getElementById('toggle-classrooms-btn');
+      const classroomCountBadge = document.getElementById('classroom-count-badge');
+      const macroSectionWrapper = document.getElementById('macro-section-wrapper');
       const walkthroughContainer = document.getElementById('walkthrough-container');
       const classroomsSection = document.getElementById('classrooms-section');
       const classroomTabsMount = document.getElementById('classroom-tabs-mount');
@@ -124,6 +146,35 @@
       let classroomTabs = null; // createTabbedPanel() instance for the classroom switcher
       let classroomTabCounter = 0; // ever-increasing, for unique tab ids (not reused after removal)
       const classroomReports = {}; // tabId -> createClassroomReport() instance
+      let activeSection = 'macro'; // 'macro' | 'classrooms' — which section the toggle is showing
+
+      // Shows exactly one of the two sections (Macro-Level Walkthrough vs
+      // Classroom Observations) and styles the toggle buttons to match.
+      function setActiveSection(section) {
+        activeSection = section;
+
+        macroSectionWrapper.classList.toggle('hidden', section !== 'macro');
+        classroomsSection.classList.toggle('hidden', section !== 'classrooms');
+
+        [
+          [toggleMacroBtn, 'macro'],
+          [toggleClassroomsBtn, 'classrooms'],
+        ].forEach(([btn, key]) => {
+          const isActive = key === section;
+          btn.classList.toggle('bg-white', isActive);
+          btn.classList.toggle('shadow-sm', isActive);
+          btn.classList.toggle('text-[#001489]', isActive);
+          btn.classList.toggle('text-slate-500', !isActive);
+        });
+      }
+
+      toggleMacroBtn.addEventListener('click', () => setActiveSection('macro'));
+      toggleClassroomsBtn.addEventListener('click', () => setActiveSection('classrooms'));
+
+      function updateClassroomCountBadge() {
+        const count = classroomTabs ? classroomTabs.getTabIds().length : 0;
+        classroomCountBadge.textContent = String(count);
+      }
 
       function showSchoolError(message) {
         if (!message) {
@@ -185,6 +236,7 @@
         const ids = classroomTabs.getTabIds();
         ids.forEach((id, i) => classroomTabs.setTabLabel(id, `Classroom ${i + 1}`));
         removeClassroomBtn.disabled = ids.length <= 1;
+        updateClassroomCountBadge();
       }
 
       function addClassroomInstance(existingRow = null) {
@@ -238,11 +290,13 @@
         classroomTabs = null;
 
         currentSchoolCemis = schoolCemis;
+        updateClassroomCountBadge();
 
         if (!schoolCemis) {
           walkthroughContainer.innerHTML = '';
-          classroomsSection.classList.add('hidden');
+          sectionToggle.classList.add('hidden');
           walkthroughActions.classList.add('hidden');
+          setActiveSection('macro');
           return;
         }
 
@@ -252,9 +306,12 @@
           stickyOffset: 56,
         });
 
-        classroomsSection.classList.remove('hidden');
+        sectionToggle.classList.remove('hidden');
         walkthroughActions.classList.remove('hidden');
         saveStatus.textContent = '';
+        // Always land on the Macro-Level Walkthrough first — that's step
+        // one of the flow, with Classroom Observations a deliberate switch.
+        setActiveSection('macro');
         // NOTE: does NOT auto-add a classroom instance anymore — the
         // caller (school-select handler for a fresh walkthrough, or
         // init() when resuming a draft) decides what to seed in.
