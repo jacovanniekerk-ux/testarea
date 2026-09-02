@@ -143,30 +143,32 @@
     allSchools = schoolsRes.data || [];
 
     const walkthroughRows = (walkthroughsRes.data || []).map((w) => ({
-      id: w.id,
-      type: 'walkthrough',
-      schoolName: w.schools ? w.schools.school_name : w.school_cemis,
-      district: w.schools ? w.schools.district : '',
-      circuit: w.schools ? w.schools.circuit : null,
-      dateValue: w.visit_date,
-      submitted: w.submitted,
-      subLabel: null,
-      resumeHref: `culture-walkthrough.html?id=${w.id}`,
-      reportHref: `report.html?type=walkthrough&id=${w.id}`,
-    }));
+  id: w.id,
+  type: 'walkthrough',
+  schoolName: w.schools ? w.schools.school_name : w.school_cemis,
+  advisorName: w.advisors ? w.advisors.full_name : '—', // <--- Added here
+  district: w.schools ? w.schools.district : '',
+  circuit: w.schools ? w.schools.circuit : null,
+  dateValue: w.visit_date,
+  submitted: w.submitted,
+  subLabel: null,
+  resumeHref: `culture-walkthrough.html?id=${w.id}`,
+  reportHref: `report.html?type=walkthrough&id=${w.id}`,
+}));
 
-    const classroomRows = (classroomsRes.data || []).map((c) => ({
-      id: c.id,
-      type: 'classroom',
-      schoolName: c.schools ? c.schools.school_name : c.school_cemis,
-      district: c.schools ? c.schools.district : '',
-      circuit: c.schools ? c.schools.circuit : null,
-      dateValue: c.created_at,
-      submitted: c.submitted,
-      subLabel: c.teacher_name || c.subject_observed || null,
-      resumeHref: `classroom-report.html?id=${c.id}`,
-      reportHref: `report.html?type=classroom&id=${c.id}`,
-    }));
+const classroomRows = (classroomsRes.data || []).map((c) => ({
+  id: c.id,
+  type: 'classroom',
+  schoolName: c.schools ? c.schools.school_name : c.school_cemis,
+  advisorName: c.advisors ? c.advisors.full_name : '—', // <--- Added here
+  district: c.schools ? c.schools.district : '',
+  circuit: c.schools ? c.schools.circuit : null,
+  dateValue: c.created_at,
+  submitted: c.submitted,
+  subLabel: c.teacher_name || c.subject_observed || null,
+  resumeHref: `classroom-report.html?id=${c.id}`,
+  reportHref: `report.html?type=classroom&id=${c.id}`,
+}));
 
     allReports = [...walkthroughRows, ...classroomRows].sort(
       (a, b) => new Date(b.dateValue || 0) - new Date(a.dateValue || 0)
@@ -185,14 +187,14 @@
       
       // Standard WCED districts + any extra districts present in loaded reports
       const knownDistricts = [
-        'Cape Winelands',
-        'Eden & Central Karoo',
-        'Metro Central',
-        'Metro East',
-        'Metro North',
-        'Metro South',
-        'Overberg',
-        'West Coast',
+        'CAPE WINELANDS',
+        'EDEN AND CENTRAL KAROO',
+          'METRO CENTRAL',
+        'METRO EAST',
+        'METRO NORTH',
+        'METRO SOUTH',
+        'OVERBERG',
+        'WEST COAST',
       ];
       const districtsFromReports = allReports.map((r) => r.district).filter(Boolean);
       const districts = [...new Set([...knownDistricts, ...districtsFromReports])].sort();
@@ -288,52 +290,54 @@
   }
 
   function renderTable(reports) {
-    if (reports.length === 0) {
-      tableWrap.innerHTML = '<p class="text-sm text-slate-400 p-6 text-center">No reports match the current filters.</p>';
-      return;
-    }
-
-    const districtHeaderHtml = headOffice ? '<th class="text-left px-3 py-2">District</th>' : '';
-
-    const rowsHtml = reports
-      .map((r) => {
-        const districtCellHtml = headOffice ? `<td class="px-3 py-2 text-slate-600">${escapeHtml(r.district)}</td>` : '';
-        const action = r.submitted
-          ? `<a href="${r.reportHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800"><span>View Report</span><i class="fa-solid fa-chart-simple"></i></a>`
-          : `<a href="${r.resumeHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#001489] hover:text-[#000e60]"><span>Resume</span><i class="fa-solid fa-arrow-right"></i></a>`;
-
-        return `
-          <tr class="border-t border-slate-100 hover:bg-slate-50/60 transition">
-            <td class="px-3 py-2">
-              <span class="font-bold text-slate-800 text-xs">${escapeHtml(r.schoolName)}</span>
-              ${r.subLabel ? `<span class="block text-[10px] text-slate-400">${escapeHtml(r.subLabel)}</span>` : ''}
-            </td>
-            <td class="px-3 py-2">${typeBadgeHtml(r.type)}</td>
-            ${districtCellHtml}
-            <td class="px-3 py-2 text-slate-600">${escapeHtml(r.circuit) || '<span class="text-slate-300">Unassigned</span>'}</td>
-            <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${formatDate(r.dateValue)}</td>
-            <td class="px-3 py-2">${statusBadgeHtml(r.submitted)}</td>
-            <td class="px-3 py-2 text-right whitespace-nowrap">${action}</td>
-          </tr>`;
-      })
-      .join('');
-
-    tableWrap.innerHTML = `
-      <table class="w-full text-xs">
-        <thead>
-          <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wide">
-            <th class="text-left px-3 py-2">School</th>
-            <th class="text-left px-3 py-2">Type</th>
-            ${districtHeaderHtml}
-            <th class="text-left px-3 py-2">Circuit</th>
-            <th class="text-left px-3 py-2">Date</th>
-            <th class="text-left px-3 py-2">Status</th>
-            <th class="text-right px-3 py-2">Action</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>`;
+  if (reports.length === 0) {
+    tableWrap.innerHTML = '<p class="text-sm text-slate-400 p-6 text-center">No reports match the current filters.</p>';
+    return;
   }
+
+  const districtHeaderHtml = headOffice ? '<th class="text-left px-3 py-2">District</th>' : '';
+
+  const rowsHtml = reports
+    .map((r) => {
+      const districtCellHtml = headOffice ? `<td class="px-3 py-2 text-slate-600">${escapeHtml(r.district)}</td>` : '';
+      const action = r.submitted
+        ? `<a href="${r.reportHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800"><span>View Report</span><i class="fa-solid fa-chart-simple"></i></a>`
+        : `<a href="${r.resumeHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#001489] hover:text-[#000e60]"><span>Resume</span><i class="fa-solid fa-arrow-right"></i></a>`;
+
+      return `
+        <tr class="border-t border-slate-100 hover:bg-slate-50/60 transition">
+          <td class="px-3 py-2">
+            <span class="font-bold text-slate-800 text-xs">${escapeHtml(r.schoolName)}</span>
+            ${r.subLabel ? `<span class="block text-[10px] text-slate-400">${escapeHtml(r.subLabel)}</span>` : ''}
+          </td>
+          <td class="px-3 py-2">${typeBadgeHtml(r.type)}</td>
+          <td class="px-3 py-2 text-slate-600">${escapeHtml(r.advisorName)}</td> <!-- Added Advisor cell -->
+          ${districtCellHtml}
+          <td class="px-3 py-2 text-slate-600">${escapeHtml(r.circuit) || '<span class="text-slate-300">Unassigned</span>'}</td>
+          <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${formatDate(r.dateValue)}</td>
+          <td class="px-3 py-2">${statusBadgeHtml(r.submitted)}</td>
+          <td class="px-3 py-2 text-right whitespace-nowrap">${action}</td>
+        </tr>`;
+    })
+    .join('');
+
+  tableWrap.innerHTML = `
+    <table class="w-full text-xs">
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wide">
+          <th class="text-left px-3 py-2">School</th>
+          <th class="text-left px-3 py-2">Type</th>
+          <th class="text-left px-3 py-2">Advisor</th> <!-- Added Advisor header -->
+          ${districtHeaderHtml}
+          <th class="text-left px-3 py-2">Circuit</th>
+          <th class="text-left px-3 py-2">Date</th>
+          <th class="text-left px-3 py-2">Status</th>
+          <th class="text-right px-3 py-2">Action</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+}
 
   // ------------------------------------------------------------
   // Wiring
