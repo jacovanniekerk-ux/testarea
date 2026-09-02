@@ -87,23 +87,16 @@ export async function fetchWalkthroughsForAdvisor(advisorId) {
 export async function fetchWalkthroughsForDistrict(district) {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
+    .select('*, schools!inner(school_name, district, circuit), advisors(full_name)')
     .eq('schools.district', district)
     .order('created_at', { ascending: false });
   return { data, error };
 }
 
-/**
- * Fetch every culture_walkthroughs row across every district —
- * used for HEAD OFFICE advisors, who aren't scoped to a single
- * district. Joins against schools and advisors the same way as
- * fetchWalkthroughsForDistrict().
- * @returns {Promise<{data: Array|null, error: object|null}>}
- */
 export async function fetchAllWalkthroughs() {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
+    .select('*, schools!inner(school_name, district, circuit), advisors(full_name)')
     .order('created_at', { ascending: false });
   return { data, error };
 }
