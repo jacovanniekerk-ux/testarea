@@ -54,6 +54,22 @@ export async function fetchClassroomObservationById(id) {
 }
 
 /**
+ * Fetch all standalone (culture_walkthrough_id IS NULL) classroom
+ * observations for a given advisor — used by Past Reports.
+ * @param {string} advisorId
+ * @returns {Promise<{data: Array|null, error: object|null}>}
+ */
+export async function fetchStandaloneObservationsForAdvisor(advisorId) {
+  const { data, error } = await supabaseClient
+    .from('classroom_observations')
+    .select('*, advisors:advisor_id(full_name)')
+    .eq('advisor_id', advisorId)
+    .is('culture_walkthrough_id', null)
+    .order('created_at', { ascending: false });
+  return { data, error };
+}
+
+/**
  * Fetch all standalone classroom observations for schools within a
  * given district (not scoped to a single advisor) — matches the
  * "Past Reports shows everything in my district" requirement.
@@ -79,20 +95,6 @@ export async function fetchAllStandaloneObservations() {
   const { data, error } = await supabaseClient
     .from('classroom_observations')
     .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
-    .is('culture_walkthrough_id', null)
-    .order('created_at', { ascending: false });
-  return { data, error };
-}
-
-/**
- * Fetch every standalone classroom observation across every
- * district — used for HEAD OFFICE advisors.
- * @returns {Promise<{data: Array|null, error: object|null}>}
- */
-export async function fetchAllStandaloneObservations() {
-  const { data, error } = await supabaseClient
-    .from('classroom_observations')
-    .select('*, schools!inner(school_name, district, circuit)')
     .is('culture_walkthrough_id', null)
     .order('created_at', { ascending: false });
   return { data, error };
