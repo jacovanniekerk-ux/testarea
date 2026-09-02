@@ -78,245 +78,303 @@
     </main>
 
     <script type="module">
-      import { requireSession } from './js/session.js';
-      import { fetchSchoolsForAdvisor, isHeadOffice } from './js/schools.js';
-      import { fetchWalkthroughsForAdvisorScope } from './js/culture-walkthroughs.js';
-      import { fetchStandaloneObservationsForAdvisorScope } from './js/classroom-observations.js';
+  import { requireSession } from './js/session.js';
+  import { fetchSchoolsForDistrict, isHeadOffice } from './js/schools.js';
+  import { fetchWalkthroughsForAdvisorScope } from './js/culture-walkthroughs.js';
+  import { fetchStandaloneObservationsForAdvisorScope } from './js/classroom-observations.js';
 
-      const advisor = requireSession('4p.html');
-      if (!advisor) {
-        throw new Error('No advisor session — redirecting to login.');
+  const advisor = requireSession('4p.html');
+  if (!advisor) {
+    throw new Error('No advisor session — redirecting to login.');
+  }
+
+  const headOffice = isHeadOffice(advisor);
+
+  document.getElementById('user-name').textContent = advisor.full_name;
+  document.getElementById('user-district').textContent = advisor.district;
+
+  const districtFilterWrap = document.getElementById('district-filter-wrap');
+  const districtFilter = document.getElementById('district-filter');
+  const circuitFilter = document.getElementById('circuit-filter');
+  const submittedFilter = document.getElementById('submitted-filter');
+  const schoolSearch = document.getElementById('school-search');
+  const schoolDatalist = document.getElementById('school-datalist');
+  const clearFiltersBtn = document.getElementById('clear-filters-btn');
+  const resultsCount = document.getElementById('results-count');
+  const tableWrap = document.getElementById('reports-table-wrap');
+
+  const UNASSIGNED = '__unassigned__';
+
+  let allSchools = [];
+  let allReports = [];
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined || str === '') return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function formatDate(value) {
+    if (!value) return '—';
+    return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  // ------------------------------------------------------------
+  // Data loading
+  // ------------------------------------------------------------
+  async function loadData() {
+    // Non-head office advisors load their district's schools up front.
+    // Head office defers fetching schools until a district is selected.
+    const fetchSchoolsPromise = headOffice
+      ? Promise.resolve({ data: [], error: null })
+      : fetchSchoolsForDistrict(advisor.district);
+
+    const [schoolsRes, walkthroughsRes, classroomsRes] = await Promise.all([
+      fetchSchoolsPromise,
+      fetchWalkthroughsForAdvisorScope(advisor),
+      fetchStandaloneObservationsForAdvisorScope(advisor),
+    ]);
+
+    if (schoolsRes.error || walkthroughsRes.error || classroomsRes.error) {
+      const err = schoolsRes.error || walkthroughsRes.error || classroomsRes.error;
+      tableWrap.innerHTML = `<p class="text-sm text-red-600 p-4">Could not load Past Reports: ${escapeHtml(err.message)}</p>`;
+      return;
+    }
+
+    allSchools = schoolsRes.data || [];
+
+    const walkthroughRows = (walkthroughsRes.data || []).map((w) => ({
+      id: w.id,
+      type: 'walkthrough',
+      schoolName: w.schools ? w.schools.school_name : w.school_cemis,
+      district: w.schools ? w.schools.district : '',
+      circuit: w.schools ? w.schools.circuit : null,
+      dateValue: w.visit_date,
+      submitted: w.submitted,
+      subLabel: null,
+      resumeHref: `culture-walkthrough.html?id=${w.id}`,
+      reportHref: `report.html?type=walkthrough&id=${w.id}`,
+    }));
+
+    const classroomRows = (classroomsRes.data || []).map((c) => ({
+      id: c.id,
+      type: 'classroom',
+      schoolName: c.schools ? c.schools.school_name : c.school_cemis,
+      district: c.schools ? c.schools.district : '',
+      circuit: c.schools ? c.schools.circuit : null,
+      dateValue: c.created_at,
+      submitted: c.submitted,
+      subLabel: c.teacher_name || c.subject_observed || null,
+      resumeHref: `classroom-report.html?id=${c.id}`,
+      reportHref: `report.html?type=classroom&id=${c.id}`,
+    }));
+
+    allReports = [...walkthroughRows, ...classroomRows].sort(
+      (a, b) => new Date(b.dateValue || 0) - new Date(a.dateValue || 0)
+    );
+
+    setupFilterOptions();
+    applyFiltersAndRender();
+  }
+
+  // ------------------------------------------------------------
+  // Filter option population
+  // ------------------------------------------------------------
+  function setupFilterOptions() {
+    if (headOffice) {
+      districtFilterWrap.classList.remove('hidden');
+      
+      // Standard WCED districts + any extra districts present in loaded reports
+      const knownDistricts = [
+        'Cape Winelands',
+        'Eden & Central Karoo',
+        'Metro Central',
+        'Metro East',
+        'Metro North',
+        'Metro South',
+        'Overberg',
+        'West Coast',
+      ];
+      const districtsFromReports = allReports.map((r) => r.district).filter(Boolean);
+      const districts = [...new Set([...knownDistricts, ...districtsFromReports])].sort();
+
+      districtFilter.innerHTML =
+        '<option value="">All Districts</option>' +
+        districts.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    }
+
+    populateCircuitOptions();
+    populateSchoolDatalist();
+  }
+
+  function populateCircuitOptions() {
+    const districtScope = headOffice ? districtFilter.value : advisor.district;
+
+    let circuits = [];
+    let hasUnassigned = false;
+
+    if (allSchools.length > 0) {
+      const schoolsInScope = districtScope
+        ? allSchools.filter((s) => s.district === districtScope)
+        : allSchools;
+
+      circuits = [...new Set(schoolsInScope.map((s) => s.circuit).filter(Boolean))].sort();
+      hasUnassigned = schoolsInScope.some((s) => !s.circuit);
+    } else {
+      const reportsInScope = districtScope
+        ? allReports.filter((r) => r.district === districtScope)
+        : allReports;
+
+      circuits = [...new Set(reportsInScope.map((r) => r.circuit).filter(Boolean))].sort();
+      hasUnassigned = reportsInScope.some((r) => !r.circuit);
+    }
+
+    circuitFilter.innerHTML =
+      '<option value="">All Circuits</option>' +
+      circuits.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') +
+      (hasUnassigned ? `<option value="${UNASSIGNED}">Unassigned Circuit</option>` : '');
+  }
+
+  function populateSchoolDatalist() {
+    let schoolNames = [];
+    if (allSchools.length > 0) {
+      schoolNames = allSchools.map((s) => s.school_name);
+    } else {
+      schoolNames = allReports.map((r) => r.schoolName);
+    }
+
+    schoolDatalist.innerHTML = [...new Set(schoolNames.filter(Boolean))]
+      .sort()
+      .map((name) => `<option value="${escapeHtml(name)}"></option>`)
+      .join('');
+  }
+
+  // ------------------------------------------------------------
+  // Filtering + rendering
+  // ------------------------------------------------------------
+  function applyFiltersAndRender() {
+    const districtVal = headOffice ? districtFilter.value : null;
+    const circuitVal = circuitFilter.value;
+    const submittedVal = submittedFilter.value;
+    const searchVal = schoolSearch.value.trim().toLowerCase();
+
+    const filtered = allReports.filter((r) => {
+      if (districtVal && r.district !== districtVal) return false;
+
+      if (circuitVal === UNASSIGNED && r.circuit) return false;
+      if (circuitVal && circuitVal !== UNASSIGNED && r.circuit !== circuitVal) return false;
+
+      if (submittedVal === 'submitted' && !r.submitted) return false;
+      if (submittedVal === 'draft' && r.submitted) return false;
+
+      if (searchVal && !r.schoolName.toLowerCase().includes(searchVal)) return false;
+
+      return true;
+    });
+
+    renderTable(filtered);
+    resultsCount.textContent = `${filtered.length} report${filtered.length === 1 ? '' : 's'}`;
+  }
+
+  function statusBadgeHtml(submitted) {
+    return submitted
+      ? '<span class="inline-flex items-center gap-1 text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"><i class="fa-solid fa-lock"></i> Submitted</span>'
+      : '<span class="inline-flex items-center gap-1 text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"><i class="fa-solid fa-pen"></i> Draft</span>';
+  }
+
+  function typeBadgeHtml(type) {
+    return type === 'walkthrough'
+      ? '<span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-blue-50 text-[#001489]">Walkthrough</span>'
+      : '<span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Classroom</span>';
+  }
+
+  function renderTable(reports) {
+    if (reports.length === 0) {
+      tableWrap.innerHTML = '<p class="text-sm text-slate-400 p-6 text-center">No reports match the current filters.</p>';
+      return;
+    }
+
+    const districtHeaderHtml = headOffice ? '<th class="text-left px-3 py-2">District</th>' : '';
+
+    const rowsHtml = reports
+      .map((r) => {
+        const districtCellHtml = headOffice ? `<td class="px-3 py-2 text-slate-600">${escapeHtml(r.district)}</td>` : '';
+        const action = r.submitted
+          ? `<a href="${r.reportHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800"><span>View Report</span><i class="fa-solid fa-chart-simple"></i></a>`
+          : `<a href="${r.resumeHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#001489] hover:text-[#000e60]"><span>Resume</span><i class="fa-solid fa-arrow-right"></i></a>`;
+
+        return `
+          <tr class="border-t border-slate-100 hover:bg-slate-50/60 transition">
+            <td class="px-3 py-2">
+              <span class="font-bold text-slate-800 text-xs">${escapeHtml(r.schoolName)}</span>
+              ${r.subLabel ? `<span class="block text-[10px] text-slate-400">${escapeHtml(r.subLabel)}</span>` : ''}
+            </td>
+            <td class="px-3 py-2">${typeBadgeHtml(r.type)}</td>
+            ${districtCellHtml}
+            <td class="px-3 py-2 text-slate-600">${escapeHtml(r.circuit) || '<span class="text-slate-300">Unassigned</span>'}</td>
+            <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${formatDate(r.dateValue)}</td>
+            <td class="px-3 py-2">${statusBadgeHtml(r.submitted)}</td>
+            <td class="px-3 py-2 text-right whitespace-nowrap">${action}</td>
+          </tr>`;
+      })
+      .join('');
+
+    tableWrap.innerHTML = `
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wide">
+            <th class="text-left px-3 py-2">School</th>
+            <th class="text-left px-3 py-2">Type</th>
+            ${districtHeaderHtml}
+            <th class="text-left px-3 py-2">Circuit</th>
+            <th class="text-left px-3 py-2">Date</th>
+            <th class="text-left px-3 py-2">Status</th>
+            <th class="text-right px-3 py-2">Action</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+  }
+
+  // ------------------------------------------------------------
+  // Wiring
+  // ------------------------------------------------------------
+  districtFilter.addEventListener('change', async () => {
+    const selectedDistrict = districtFilter.value;
+
+    if (headOffice) {
+      if (selectedDistrict) {
+        // Fetch only schools for the chosen district
+        const { data } = await fetchSchoolsForDistrict(selectedDistrict);
+        allSchools = data || [];
+      } else {
+        allSchools = [];
       }
+    }
 
-      const headOffice = isHeadOffice(advisor);
+    populateCircuitOptions();
+    populateSchoolDatalist();
+    circuitFilter.value = ''; // Reset circuit filter
+    applyFiltersAndRender();
+  });
 
-      document.getElementById('user-name').textContent = advisor.full_name;
-      document.getElementById('user-district').textContent = advisor.district;
+  circuitFilter.addEventListener('change', applyFiltersAndRender);
+  submittedFilter.addEventListener('change', applyFiltersAndRender);
+  schoolSearch.addEventListener('input', applyFiltersAndRender);
 
-      const districtFilterWrap = document.getElementById('district-filter-wrap');
-      const districtFilter = document.getElementById('district-filter');
-      const circuitFilter = document.getElementById('circuit-filter');
-      const submittedFilter = document.getElementById('submitted-filter');
-      const schoolSearch = document.getElementById('school-search');
-      const schoolDatalist = document.getElementById('school-datalist');
-      const clearFiltersBtn = document.getElementById('clear-filters-btn');
-      const resultsCount = document.getElementById('results-count');
-      const tableWrap = document.getElementById('reports-table-wrap');
+  clearFiltersBtn.addEventListener('click', () => {
+    if (headOffice) {
+      districtFilter.value = '';
+      allSchools = [];
+    }
+    populateCircuitOptions();
+    populateSchoolDatalist();
+    circuitFilter.value = '';
+    submittedFilter.value = 'all';
+    schoolSearch.value = '';
+    applyFiltersAndRender();
+  });
 
-      const UNASSIGNED = '__unassigned__';
-
-      let allSchools = [];
-      let allReports = []; // normalized: both walkthroughs and standalone classroom reports
-
-      function escapeHtml(str) {
-        if (str === null || str === undefined || str === '') return '';
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      }
-
-      function formatDate(value) {
-        if (!value) return '—';
-        return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-      }
-
-      // ------------------------------------------------------------
-      // Data loading
-      // ------------------------------------------------------------
-      async function loadData() {
-        const [schoolsRes, walkthroughsRes, classroomsRes] = await Promise.all([
-          fetchSchoolsForAdvisor(advisor),
-          fetchWalkthroughsForAdvisorScope(advisor),
-          fetchStandaloneObservationsForAdvisorScope(advisor),
-        ]);
-
-        if (schoolsRes.error || walkthroughsRes.error || classroomsRes.error) {
-          const err = schoolsRes.error || walkthroughsRes.error || classroomsRes.error;
-          tableWrap.innerHTML = `<p class="text-sm text-red-600 p-4">Could not load Past Reports: ${escapeHtml(err.message)}</p>`;
-          return;
-        }
-
-        allSchools = schoolsRes.data || [];
-
-        const walkthroughRows = (walkthroughsRes.data || []).map((w) => ({
-          id: w.id,
-          type: 'walkthrough',
-          schoolName: w.schools ? w.schools.school_name : w.school_cemis,
-          district: w.schools ? w.schools.district : '',
-          circuit: w.schools ? w.schools.circuit : null,
-          dateValue: w.visit_date,
-          submitted: w.submitted,
-          subLabel: null,
-          resumeHref: `culture-walkthrough.html?id=${w.id}`,
-          reportHref: `report.html?type=walkthrough&id=${w.id}`,
-        }));
-
-        const classroomRows = (classroomsRes.data || []).map((c) => ({
-          id: c.id,
-          type: 'classroom',
-          schoolName: c.schools ? c.schools.school_name : c.school_cemis,
-          district: c.schools ? c.schools.district : '',
-          circuit: c.schools ? c.schools.circuit : null,
-          dateValue: c.created_at,
-          submitted: c.submitted,
-          subLabel: c.teacher_name || c.subject_observed || null,
-          resumeHref: `classroom-report.html?id=${c.id}`,
-          reportHref: `report.html?type=classroom&id=${c.id}`,
-        }));
-
-        allReports = [...walkthroughRows, ...classroomRows].sort(
-          (a, b) => new Date(b.dateValue || 0) - new Date(a.dateValue || 0)
-        );
-
-        setupFilterOptions();
-        applyFiltersAndRender();
-      }
-
-      // ------------------------------------------------------------
-      // Filter option population
-      // ------------------------------------------------------------
-      function setupFilterOptions() {
-        if (headOffice) {
-          districtFilterWrap.classList.remove('hidden');
-          const districts = [...new Set(allSchools.map((s) => s.district).filter(Boolean))].sort();
-          districtFilter.innerHTML =
-            '<option value="">All Districts</option>' +
-            districts.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
-        }
-
-        populateCircuitOptions();
-
-        schoolDatalist.innerHTML = [...new Set(allSchools.map((s) => s.school_name))]
-          .sort()
-          .map((name) => `<option value="${escapeHtml(name)}"></option>`)
-          .join('');
-      }
-
-      // Circuit options narrow to the currently-selected district (HEAD
-      // OFFICE only — everyone else's schools are already scoped to
-      // their one district, so there's nothing to narrow further).
-      function populateCircuitOptions() {
-        const districtScope = headOffice ? districtFilter.value : null;
-        const schoolsInScope = districtScope
-          ? allSchools.filter((s) => s.district === districtScope)
-          : allSchools;
-
-        const circuits = [...new Set(schoolsInScope.map((s) => s.circuit).filter(Boolean))].sort();
-        const hasUnassigned = schoolsInScope.some((s) => !s.circuit);
-
-        circuitFilter.innerHTML =
-          '<option value="">All Circuits</option>' +
-          circuits.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') +
-          (hasUnassigned ? `<option value="${UNASSIGNED}">Unassigned Circuit</option>` : '');
-      }
-
-      // ------------------------------------------------------------
-      // Filtering + rendering
-      // ------------------------------------------------------------
-      function applyFiltersAndRender() {
-        const districtVal = headOffice ? districtFilter.value : null;
-        const circuitVal = circuitFilter.value;
-        const submittedVal = submittedFilter.value;
-        const searchVal = schoolSearch.value.trim().toLowerCase();
-
-        const filtered = allReports.filter((r) => {
-          if (districtVal && r.district !== districtVal) return false;
-
-          if (circuitVal === UNASSIGNED && r.circuit) return false;
-          if (circuitVal && circuitVal !== UNASSIGNED && r.circuit !== circuitVal) return false;
-
-          if (submittedVal === 'submitted' && !r.submitted) return false;
-          if (submittedVal === 'draft' && r.submitted) return false;
-
-          if (searchVal && !r.schoolName.toLowerCase().includes(searchVal)) return false;
-
-          return true;
-        });
-
-        renderTable(filtered);
-        resultsCount.textContent = `${filtered.length} report${filtered.length === 1 ? '' : 's'}`;
-      }
-
-      function statusBadgeHtml(submitted) {
-        return submitted
-          ? '<span class="inline-flex items-center gap-1 text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"><i class="fa-solid fa-lock"></i> Submitted</span>'
-          : '<span class="inline-flex items-center gap-1 text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"><i class="fa-solid fa-pen"></i> Draft</span>';
-      }
-
-      function typeBadgeHtml(type) {
-        return type === 'walkthrough'
-          ? '<span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-blue-50 text-[#001489]">Walkthrough</span>'
-          : '<span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Classroom</span>';
-      }
-
-      function renderTable(reports) {
-        if (reports.length === 0) {
-          tableWrap.innerHTML = '<p class="text-sm text-slate-400 p-6 text-center">No reports match the current filters.</p>';
-          return;
-        }
-
-        const districtHeaderHtml = headOffice ? '<th class="text-left px-3 py-2">District</th>' : '';
-
-        const rowsHtml = reports
-          .map((r) => {
-            const districtCellHtml = headOffice ? `<td class="px-3 py-2 text-slate-600">${escapeHtml(r.district)}</td>` : '';
-            const action = r.submitted
-              ? `<a href="${r.reportHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800"><span>View Report</span><i class="fa-solid fa-chart-simple"></i></a>`
-              : `<a href="${r.resumeHref}" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#001489] hover:text-[#000e60]"><span>Resume</span><i class="fa-solid fa-arrow-right"></i></a>`;
-
-            return `
-              <tr class="border-t border-slate-100 hover:bg-slate-50/60 transition">
-                <td class="px-3 py-2">
-                  <span class="font-bold text-slate-800 text-xs">${escapeHtml(r.schoolName)}</span>
-                  ${r.subLabel ? `<span class="block text-[10px] text-slate-400">${escapeHtml(r.subLabel)}</span>` : ''}
-                </td>
-                <td class="px-3 py-2">${typeBadgeHtml(r.type)}</td>
-                ${districtCellHtml}
-                <td class="px-3 py-2 text-slate-600">${escapeHtml(r.circuit) || '<span class="text-slate-300">Unassigned</span>'}</td>
-                <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${formatDate(r.dateValue)}</td>
-                <td class="px-3 py-2">${statusBadgeHtml(r.submitted)}</td>
-                <td class="px-3 py-2 text-right whitespace-nowrap">${action}</td>
-              </tr>`;
-          })
-          .join('');
-
-        tableWrap.innerHTML = `
-          <table class="w-full text-xs">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wide">
-                <th class="text-left px-3 py-2">School</th>
-                <th class="text-left px-3 py-2">Type</th>
-                ${districtHeaderHtml}
-                <th class="text-left px-3 py-2">Circuit</th>
-                <th class="text-left px-3 py-2">Date</th>
-                <th class="text-left px-3 py-2">Status</th>
-                <th class="text-right px-3 py-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>`;
-      }
-
-      // ------------------------------------------------------------
-      // Wiring
-      // ------------------------------------------------------------
-      districtFilter.addEventListener('change', () => {
-        populateCircuitOptions();
-        circuitFilter.value = ''; // district change invalidates the old circuit selection
-        applyFiltersAndRender();
-      });
-      circuitFilter.addEventListener('change', applyFiltersAndRender);
-      submittedFilter.addEventListener('change', applyFiltersAndRender);
-      schoolSearch.addEventListener('input', applyFiltersAndRender);
-
-      clearFiltersBtn.addEventListener('click', () => {
-        if (headOffice) districtFilter.value = '';
-        populateCircuitOptions();
-        circuitFilter.value = '';
-        submittedFilter.value = 'all';
-        schoolSearch.value = '';
-        applyFiltersAndRender();
-      });
-
-      loadData();
-    </script>
+  loadData();
+</script>
   </body>
 </html>
