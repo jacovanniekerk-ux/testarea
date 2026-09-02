@@ -14,15 +14,18 @@
    ============================================================ */
 
 :root {
-/* ---- Adjusted Compact Type Scale ---- */
---fs-eyebrow: 10px;      /* uppercase badge/tag labels (add `letter-spacing: 0.05em;` for crispness) */
---fs-label: 11px;        /* field & checklist labels */
---fs-subtitle: 12px;     /* group subtitles & instructions */
---fs-body: 12px;         /* general body copy & rubric descriptions */
---fs-body-lg: 13px;      /* input text & focal body copy */
---fs-heading: 16px;      /* section headings */
---fs-heading-lg: 16px;   /* main page titles */
---line-height-body: 1.5;
+  /* ---- Type scale ---- */
+  /* Previously these were scattered as text-[8px] through text-[11px]
+     directly in the JS templates. Bumped up noticeably from the
+     original values, which were too small to read comfortably. */
+  --fs-eyebrow: 11px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
+  --fs-label: 12.5px;      /* form field labels, checklist labels */
+  --fs-body: 13.5px;       /* rubric option descriptions, general body copy */
+  --fs-body-lg: 14.5px;    /* text typed into inputs/textareas/selects */
+  --fs-subtitle: 13px;     /* pillar group subtitles/instructions */
+  --fs-heading: 15px;      /* section headings (e.g. "PEOPLE — ...") */
+  --fs-heading-lg: 20px;   /* page titles */
+  --line-height-body: 1.55;
 
   /* ---- Brand colors (used across pages) ---- */
   --color-brand: #001489;
@@ -30,7 +33,7 @@
 }
 
 body {
-  font-family: 'Century Gothic', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   background: #f8fafc;
   color: #1e293b;
   min-height: 100vh;
@@ -81,7 +84,6 @@ body {
 .pillar-title {
   font-size: var(--fs-heading);
   font-weight: 900;
-  color: #001489;
   letter-spacing: -0.01em;
   text-transform: uppercase;
 }
@@ -138,195 +140,108 @@ body {
    ============================================================ */
 
 .app-header-sticky {
-
   position: sticky;
-
   top: 0;
-
   z-index: 30;
-
 }
-
-
 
 .tabs-header-sticky {
-
   background: white;
-
   z-index: 20;
-
   border-bottom: 1px solid #e2e8f0;
-
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-
 }
-
-
 
 .tab-nav-strip {
-
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
-
   gap: 8px;
-
   padding: 8px 2px;
-
 }
-
-
 
 .tab-nav-step {
-
   font-size: var(--fs-label);
-
   font-weight: 700;
-
   color: #64748b;
-
   text-align: center;
-
   flex: 1;
-
 }
-
-
 
 .tab-nav-btn {
-
   display: flex;
-
   align-items: center;
-
   gap: 6px;
-
   font-size: var(--fs-label);
-
   font-weight: 800;
-
   color: var(--color-brand);
-
   background: #f1f5f9;
-
   border: none;
-
   padding: 6px 12px;
-
   border-radius: 8px;
-
   cursor: pointer;
-
   transition: background 0.15s;
-
   white-space: nowrap;
-
 }
-
-
 
 .tab-nav-btn:hover:not(:disabled) {
-
   background: #e2e8f0;
-
 }
-
-
 
 .tab-nav-btn:disabled {
-
   color: #cbd5e1;
-
   background: #f8fafc;
-
   cursor: not-allowed;
-
 }
-
-
 
 .tab-bar {
-
   display: flex;
-
   gap: 4px;
-
   border-bottom: 1px solid #e2e8f0;
-
   overflow-x: auto;
-
 }
-
-
 
 .tab-button {
-
   font-size: var(--fs-label);
-
   font-weight: 800;
-
   text-transform: uppercase;
-
   letter-spacing: 0.01em;
-
   padding: 10px 14px;
-
   color: #94a3b8;
-
   border-bottom: 2px solid transparent;
-
   white-space: nowrap;
-
   cursor: pointer;
-
   transition: color 0.15s, border-color 0.15s;
-
   background: none;
-
   border-left: none;
-
   border-right: none;
-
   border-top: none;
-
 }
-
-
 
 .tab-button:hover {
-
   color: #475569;
-
 }
-
-
 
 .tab-button.active {
-
   color: var(--color-brand);
-
   border-bottom-color: var(--color-brand);
-
 }
 
-
-
 .tab-button .tab-status-dot {
-
   display: inline-block;
-
   width: 6px;
-
   height: 6px;
-
   border-radius: 999px;
-
   margin-left: 6px;
-
   vertical-align: middle;
+}
 
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
 }
 
 @media print {
