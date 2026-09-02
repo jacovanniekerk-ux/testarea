@@ -18,14 +18,14 @@
   /* Previously these were scattered as text-[8px] through text-[11px]
      directly in the JS templates. Bumped up noticeably from the
      original values, which were too small to read comfortably. */
-  --fs-eyebrow: 11px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
-  --fs-label: 12.5px;      /* form field labels, checklist labels */
-  --fs-body: 13.5px;       /* rubric option descriptions, general body copy */
-  --fs-body-lg: 14.5px;    /* text typed into inputs/textareas/selects */
+  --fs-eyebrow: 10px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
+  --fs-label: 12px;      /* form field labels, checklist labels */
+  --fs-body: 12px;       /* rubric option descriptions, general body copy */
+  --fs-body-lg: 12px;    /* text typed into inputs/textareas/selects */
   --fs-subtitle: 13px;     /* pillar group subtitles/instructions */
   --fs-heading: 15px;      /* section headings (e.g. "PEOPLE — ...") */
-  --fs-heading-lg: 20px;   /* page titles */
-  --line-height-body: 1.55;
+  --fs-heading-lg: 18px;   /* page titles */
+  --line-height-body: 1.25;
 
   /* ---- Brand colors (used across pages) ---- */
   --color-brand: #001489;
@@ -33,7 +33,7 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Century Gothic', system-ui, sans-serif;
   background: #f8fafc;
   color: #1e293b;
   min-height: 100vh;
