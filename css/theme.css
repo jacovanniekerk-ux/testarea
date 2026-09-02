@@ -138,100 +138,195 @@ body {
    ============================================================ */
 
 .app-header-sticky {
+
   position: sticky;
+
   top: 0;
+
   z-index: 30;
+
 }
+
+
 
 .tabs-header-sticky {
-  background: #001489; /* Dark blue background */
+
+  background: white;
+
   z-index: 20;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Lightened border */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+  border-bottom: 1px solid #e2e8f0;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+
 }
+
+
 
 .tab-nav-strip {
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
   gap: 8px;
+
   padding: 8px 2px;
+
 }
+
+
 
 .tab-nav-step {
+
   font-size: var(--fs-label);
+
   font-weight: 700;
-  color: #94a3b8; /* Lightened from dark grey */
+
+  color: #64748b;
+
   text-align: center;
+
   flex: 1;
+
 }
+
+
 
 .tab-nav-btn {
+
   display: flex;
+
   align-items: center;
+
   gap: 6px;
+
   font-size: var(--fs-label);
+
   font-weight: 800;
-  color: #ffffff; /* White text */
-  background: rgba(255, 255, 255, 0.12); /* Semi-transparent button background */
+
+  color: var(--color-brand);
+
+  background: #f1f5f9;
+
   border: none;
+
   padding: 6px 12px;
+
   border-radius: 8px;
+
   cursor: pointer;
+
   transition: background 0.15s;
+
   white-space: nowrap;
+
 }
+
+
 
 .tab-nav-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.25);
+
+  background: #e2e8f0;
+
 }
+
+
 
 .tab-nav-btn:disabled {
-  color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+
+  color: #cbd5e1;
+
+  background: #f8fafc;
+
   cursor: not-allowed;
+
 }
+
+
 
 .tab-bar {
+
   display: flex;
+
   gap: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for dark background */
+
+  border-bottom: 1px solid #e2e8f0;
+
   overflow-x: auto;
+
 }
+
+
 
 .tab-button {
+
   font-size: var(--fs-label);
+
   font-weight: 800;
+
   text-transform: uppercase;
+
   letter-spacing: 0.01em;
+
   padding: 10px 14px;
-  color: #93c5fd; /* Soft light blue/grey for inactive tabs */
+
+  color: #94a3b8;
+
   border-bottom: 2px solid transparent;
+
   white-space: nowrap;
+
   cursor: pointer;
+
   transition: color 0.15s, border-color 0.15s;
+
   background: none;
+
   border-left: none;
+
   border-right: none;
+
   border-top: none;
+
 }
+
+
 
 .tab-button:hover {
-  color: #ffffff; /* White text on hover */
+
+  color: #475569;
+
 }
+
+
 
 .tab-button.active {
-  color: #ffffff; /* White text for active tab */
-  border-bottom-color: #38bdf8; /* Bright light-blue underline indicator */
+
+  color: var(--color-brand);
+
+  border-bottom-color: var(--color-brand);
+
 }
 
+
+
 .tab-button .tab-status-dot {
+
   display: inline-block;
+
   width: 6px;
+
   height: 6px;
+
   border-radius: 999px;
+
   margin-left: 6px;
+
   vertical-align: middle;
+
 }
 
 @media print {
