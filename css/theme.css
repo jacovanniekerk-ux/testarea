@@ -2,30 +2,19 @@
    theme.css
    ------------------------------------------------------------
    THE single stylesheet for the whole tool. Every page links this
-   file. Change a variable here and it takes effect everywhere —
-   that's the whole point of pulling this out of scattered Tailwind
-   arbitrary-value classes (text-[10px], text-[8px], etc.) that used
-   to be hardcoded inside the JS files that generate the HTML.
-
-   HOW TO MAKE EVERYTHING BIGGER/SMALLER AT ONCE:
-   Adjust the --fs-* variables in :root below. Every semantic class
-   in this file (and every page/module that uses them) reads from
-   these variables, so one edit here cascades everywhere.
+   file. Change a variable here and it takes effect everywhere.
    ============================================================ */
 
 :root {
-  /* ---- Type scale ---- */
-  /* Previously these were scattered as text-[8px] through text-[11px]
-     directly in the JS templates. Bumped up noticeably from the
-     original values, which were too small to read comfortably. */
-  --fs-eyebrow: 11px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
-  --fs-label: 12.5px;      /* form field labels, checklist labels */
-  --fs-body: 13.5px;       /* rubric option descriptions, general body copy */
-  --fs-body-lg: 14.5px;    /* text typed into inputs/textareas/selects */
-  --fs-subtitle: 13px;     /* pillar group subtitles/instructions */
-  --fs-heading: 15px;      /* section headings (e.g. "PEOPLE — ...") */
-  --fs-heading-lg: 20px;   /* page titles */
-  --line-height-body: 1.55;
+  /* ---- Type scale (Slightly reduced for compact sizing) ---- */
+  --fs-eyebrow: 10px;      /* tiny uppercase tags: pillar level badges, field-evidence eyebrow labels */
+  --fs-label: 12px;      /* form field labels, checklist labels */
+  --fs-body: 13px;       /* rubric option descriptions, general body copy */
+  --fs-body-lg: 14px;    /* text typed into inputs/textareas/selects */
+  --fs-subtitle: 12px;     /* pillar group subtitles/instructions */
+  --fs-heading: 14px;      /* section headings (e.g. "PEOPLE — ...") */
+  --fs-heading-lg: 18px;   /* page titles */
+  --line-height-body: 1.5;
 
   /* ---- Brand colors (used across pages) ---- */
   --color-brand: #001489;
@@ -33,7 +22,7 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
   background: #f8fafc;
   color: #1e293b;
   min-height: 100vh;
@@ -42,12 +31,14 @@ body {
 
 * {
   box-sizing: border-box;
+  font-family: inherit; /* Ensures form elements inherit Century Gothic */
 }
 
-/* ---- Shared buttons / cards (previously duplicated per-page) ---- */
+/* ---- Shared buttons / cards ---- */
 .btn-primary {
   background: var(--color-brand);
   color: white;
+  border-radius: 8px;
 }
 .btn-primary:hover {
   background: var(--color-brand-dark);
@@ -56,26 +47,23 @@ body {
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* ============================================================
-   Semantic text classes used by rubric-ui.js, classroom-report.js,
-   culture-walkthrough.js, and report.html. Using these instead of
-   raw Tailwind text-[Npx] classes is what makes the --fs-* variables
-   above actually control sizing everywhere.
+   Semantic text classes
    ============================================================ */
 
 .eyebrow-label {
   font-size: var(--fs-eyebrow);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
 .field-label {
   font-size: var(--fs-label);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   color: #475569;
   letter-spacing: 0.02em;
@@ -83,7 +71,7 @@ body {
 
 .pillar-title {
   font-size: var(--fs-heading);
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.01em;
   text-transform: uppercase;
 }
@@ -96,7 +84,7 @@ body {
 
 .pillar-badge {
   font-size: var(--fs-eyebrow);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -110,46 +98,44 @@ body {
 
 .section-heading {
   font-size: var(--fs-heading);
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: -0.01em;
 }
 
 .category-divider-label {
   font-size: var(--fs-label);
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
-/* Form controls: inputs/selects/textareas rendered inside the
-   rubric forms should all read at --fs-body-lg regardless of
-   whatever Tailwind text-size utility class is also present on
-   them, so bumping the variable is guaranteed to reach every field. */
 .form-field,
 .form-field textarea,
 .form-field input,
 .form-field select {
   font-size: var(--fs-body-lg) !important;
+  border-radius: 8px;
 }
 
 /* ============================================================
-   Tabs (shared by classroom-report.js's internal sections,
-   culture-walkthrough.js's internal sections, and the
-   Classroom 1 / Classroom 2 / ... switcher on the walkthrough page)
+   Tabs (Softened Dark Header Styling)
    ============================================================ */
 
 .app-header-sticky {
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 30;
+  margin-bottom: 16px;
 }
 
+/* Softened, rounded container for the header */
 .tabs-header-sticky {
-  background: white;
+  background: var(--color-brand); /* #001489 */
   z-index: 20;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 14px rgba(0, 20, 137, 0.12);
 }
 
 .tab-nav-strip {
@@ -157,13 +143,13 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 2px;
+  padding-bottom: 8px;
 }
 
 .tab-nav-step {
   font-size: var(--fs-label);
   font-weight: 700;
-  color: #64748b;
+  color: #cbd5e1;
   text-align: center;
   flex: 1;
 }
@@ -173,11 +159,11 @@ body {
   align-items: center;
   gap: 6px;
   font-size: var(--fs-label);
-  font-weight: 800;
-  color: var(--color-brand);
-  background: #f1f5f9;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s;
@@ -185,46 +171,47 @@ body {
 }
 
 .tab-nav-btn:hover:not(:disabled) {
-  background: #e2e8f0;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .tab-nav-btn:disabled {
-  color: #cbd5e1;
-  background: #f8fafc;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
   cursor: not-allowed;
 }
 
 .tab-bar {
   display: flex;
-  gap: 4px;
-  border-bottom: 1px solid #e2e8f0;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 8px;
   overflow-x: auto;
 }
 
 .tab-button {
   font-size: var(--fs-label);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
-  padding: 10px 14px;
-  color: #94a3b8;
-  border-bottom: 2px solid transparent;
+  letter-spacing: 0.02em;
+  padding: 8px 14px;
+  color: #cbd5e1;
+  border-radius: 8px; /* Softened pill style for individual tabs */
+  border: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-  background: none;
-  border-left: none;
-  border-right: none;
-  border-top: none;
+  transition: all 0.15s ease;
+  background: transparent;
 }
 
 .tab-button:hover {
-  color: #475569;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .tab-button.active {
-  color: var(--color-brand);
-  border-bottom-color: var(--color-brand);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 -2px 0 0 #38bdf8; /* Soft blue bottom highlight inside rounded tab */
 }
 
 .tab-button .tab-status-dot {
