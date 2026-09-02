@@ -105,7 +105,6 @@ body {
   font-size: var(--fs-body);
   color: #475569;
   line-height: var(--line-height-body);
-  font-weight: 500;
 }
 
 .section-heading {
