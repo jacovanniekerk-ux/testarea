@@ -7,7 +7,7 @@
 // page contains its own copy of the rubric fields, so a change
 // here updates both.
 //
-// Rendered as tabs (Context & Tech / People & Practice / Pedagogy /
+// Rendered as tabs (Context & Tech / People / Practice / Pedagogy /
 // Platforms / Evidence) instead of one long scroll — see tabs-ui.js.
 //
 // Usage:
@@ -54,10 +54,10 @@ import { createTabbedPanel } from './tabs-ui.js';
 // ------------------------------------------------------------
 // Pillar group definitions — each maps directly onto one
 // classroom_observations column. Grouped here by which TAB they
-// belong to (People+Practice share a tab, since Practice is just
-// one field).
+// belong to. People and Practice were previously one shared tab —
+// now split into their own tabs, one group array each.
 // ------------------------------------------------------------
-const PEOPLE_PRACTICE_GROUPS = [
+const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
@@ -85,6 +85,9 @@ const PEOPLE_PRACTICE_GROUPS = [
     iconBg: 'bg-pink-50',
     options: CLASSROOM_RELATIONAL_SAFETY_RUBRIC,
   },
+];
+
+const PRACTICE_GROUPS = [
   {
     category: 'PRACTICE',
     categoryColor: '#D73828',
@@ -210,9 +213,9 @@ export function createClassroomReport(containerEl, opts = {}) {
   } = opts;
 
   // Internal state shaped EXACTLY like a classroom_observations row.
-  // Defaults of 1 ("Withdraw") on every rubric field match the
-  // original app's behavior of defaulting to level 1 rather than
-  // forcing an explicit selection before anything is touched.
+  // Every pillar rubric field is deliberately null, not a default
+  // level — each is a compulsory field the advisor must explicitly
+  // set. See validate() below.
   const state = {
     id: null, // set by loadData() when editing an existing draft
     culture_walkthrough_id: cultureWalkthroughId,
@@ -231,21 +234,23 @@ export function createClassroomReport(containerEl, opts = {}) {
     internet_observed: false,
     offline_observed: false,
 
-    teacher_confidence: 1,
-    learner_confidence: 1,
-    relational_safety: 1,
-    classroom_collab: 1,
-    pedagogy_design: 1,
-    pedagogy_agency: 1,
-    pedagogy_inclusivity: 1,
-    cyber_wellness: 1,
+    teacher_confidence: null,
+    learner_confidence: null,
+    relational_safety: null,
+    classroom_collab: null,
+    pedagogy_design: null,
+    pedagogy_agency: null,
+    pedagogy_inclusivity: null,
+    cyber_wellness: null,
     // platforms_scheduling is a whole-school metric captured on the
     // Culture Walkthrough, not per-classroom — carried here at its
     // schema default only so a standalone submission still satisfies
-    // the classroom_observations CHECK (1 and 4) constraint.
+    // the classroom_observations CHECK (1 and 4) constraint. Not
+    // user-facing, so (unlike the fields above) it keeps a fixed
+    // default rather than null.
     platforms_scheduling: 1,
-    platforms_integration: 1,
-    platforms_eportal: 1,
+    platforms_integration: null,
+    platforms_eportal: null,
 
     tools_used: '',
     artifact_verified: '',
@@ -267,7 +272,8 @@ export function createClassroomReport(containerEl, opts = {}) {
 
   const TAB_LABELS = {
     context: 'Context & Tech',
-    'people-practice': 'People & Practice',
+    people: 'People',
+    practice: 'Practice',
     pedagogy: 'Pedagogy',
     platforms: 'Platforms',
     evidence: 'Evidence',
@@ -278,14 +284,28 @@ export function createClassroomReport(containerEl, opts = {}) {
   }
 
   /**
-   * Red/green on the Context tab (it has real required fields);
-   * a simple "have you looked at this yet" green/grey elsewhere,
-   * since every rubric field already has a valid default (level 1)
-   * — there's no meaningful notion of "incomplete" for those beyond
-   * whether the advisor has actually reviewed the tab.
+   * Red/green on Context and on every rubric tab (People, Practice,
+   * Pedagogy, Platforms) — each has compulsory fields now. Evidence
+   * keeps the simple "have you looked at this yet" green/grey, since
+   * its fields are free-text notes, not required selections.
    */
   function statusDotColor(tabId) {
     if (tabId === 'context') return isContextComplete() ? '#10b981' : '#ef4444';
+    if (tabId === 'people') {
+      return state.teacher_confidence != null && state.learner_confidence != null && state.relational_safety != null
+        ? '#10b981'
+        : '#ef4444';
+    }
+    if (tabId === 'practice') return state.classroom_collab != null ? '#10b981' : '#ef4444';
+    if (tabId === 'pedagogy') {
+      return state.pedagogy_design != null && state.pedagogy_agency != null
+        && state.pedagogy_inclusivity != null && state.cyber_wellness != null
+        ? '#10b981'
+        : '#ef4444';
+    }
+    if (tabId === 'platforms') {
+      return state.platforms_integration != null && state.platforms_eportal != null ? '#10b981' : '#ef4444';
+    }
     return visitedTabs.has(tabId) ? '#10b981' : '#cbd5e1';
   }
 
@@ -415,10 +435,17 @@ export function createClassroomReport(containerEl, opts = {}) {
         },
       },
       {
-        id: 'people-practice',
-        label: TAB_LABELS['people-practice'],
+        id: 'people',
+        label: TAB_LABELS.people,
         render: (panel) => {
-          panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_PRACTICE_GROUPS, state);
+          panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_GROUPS, state);
+        },
+      },
+      {
+        id: 'practice',
+        label: TAB_LABELS.practice,
+        render: (panel) => {
+          panel.innerHTML = pillarGroupsHtml(instanceId, PRACTICE_GROUPS, state);
         },
       },
       {
@@ -486,6 +513,22 @@ export function createClassroomReport(containerEl, opts = {}) {
     });
   }
 
+  // Every pillar rubric field is compulsory — nothing defaults to a
+  // level anymore, so validate() must check each one explicitly and
+  // send the advisor to the first tab that's missing a choice.
+  const REQUIRED_RUBRIC_FIELDS = [
+    { field: 'teacher_confidence', tab: 'people', label: 'People — Teacher Digital Confidence & Responsiveness' },
+    { field: 'learner_confidence', tab: 'people', label: 'People — Learner Confidence, Voice & Agency' },
+    { field: 'relational_safety', tab: 'people', label: 'People — Relational Safety & Help-Seeking' },
+    { field: 'classroom_collab', tab: 'practice', label: 'Practice — Collaboration & Shared Digital Practice' },
+    { field: 'pedagogy_design', tab: 'pedagogy', label: 'Pedagogy — Lesson Design & Digital Integration' },
+    { field: 'pedagogy_agency', tab: 'pedagogy', label: 'Pedagogy — Learner Agency & Artefacts' },
+    { field: 'pedagogy_inclusivity', tab: 'pedagogy', label: 'Pedagogy — Cognitive Inclusivity & Differentiation' },
+    { field: 'cyber_wellness', tab: 'pedagogy', label: 'Pedagogy — Cyber Wellness Integration into Subject Learning' },
+    { field: 'platforms_integration', tab: 'platforms', label: 'Platforms — Digital Tool Access & Usability in Lesson' },
+    { field: 'platforms_eportal', tab: 'platforms', label: 'Platforms — Digital tool and ePortal integration' },
+  ];
+
   function showValidationMessage(message) {
     const el = containerEl.querySelector('[data-validation-message]');
     if (!el) return;
@@ -503,9 +546,10 @@ export function createClassroomReport(containerEl, opts = {}) {
 
   return {
     /**
-     * Checks the minimum fields needed for a meaningful classroom
-     * observation. Rubric fields always have a value (default 1),
-     * so they're never what blocks submission — context fields are.
+     * Checks the context fields, then every compulsory pillar rubric
+     * field — no rubric field has a default level anymore, so each
+     * of the 10 must have an explicit selection before this
+     * classroom observation can be submitted.
      * @returns {boolean}
      */
     validate() {
@@ -513,6 +557,13 @@ export function createClassroomReport(containerEl, opts = {}) {
         showValidationMessage('Please fill in Teacher Observed, Subject Observed, and Grade Observed (Context & Tech tab) before continuing.');
         if (tabsApi) tabsApi.setActiveTab('context');
         return false;
+      }
+      for (const { field, tab, label } of REQUIRED_RUBRIC_FIELDS) {
+        if (state[field] == null) {
+          showValidationMessage(`Please select a rating for "${label}" before continuing.`);
+          if (tabsApi) tabsApi.setActiveTab(tab);
+          return false;
+        }
       }
       showValidationMessage(null);
       return true;
