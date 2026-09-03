@@ -67,23 +67,18 @@
 
       <!-- Classroom observations section -->
       <div id="classrooms-section" class="hidden">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-xs text-slate-400 font-medium">(at least 1 classroom observation required)</p>
-          <div class="flex items-center gap-3">
-            <button id="remove-classroom-btn" type="button"
-              class="text-xs font-bold uppercase text-red-500 hover:text-red-700 disabled:text-slate-300 disabled:cursor-not-allowed flex items-center gap-1.5">
-              <i class="fa-solid fa-trash-can"></i>
-              <span>Remove This Classroom</span>
-            </button>
-            <button id="add-classroom-btn" type="button"
-              class="bg-white border border-[#001489]/30 hover:bg-blue-50/50 text-[#001489] font-bold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i class="fa-solid fa-plus"></i>
-              <span>Add Classroom</span>
-            </button>
-          </div>
+        <div class="flex items-center justify-between mb-2 gap-3 flex-wrap">
+          <!-- Classroom 1 / Classroom 2 / ... switcher, each with its own remove icon -->
+          <div id="classroom-tabs-bar" class="flex items-center gap-1.5 flex-wrap"></div>
+          <button id="add-classroom-btn" type="button" title="Maximum of 3 classrooms per walkthrough"
+            class="bg-white border border-[#001489]/30 hover:bg-blue-50/50 text-[#001489] font-bold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add Classroom</span>
+          </button>
         </div>
-        <!-- Tab strip (Classroom 1 / Classroom 2 / ...) mounts here -->
-        <div id="classroom-tabs-mount" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"></div>
+        <p class="text-xs text-slate-400 font-medium mb-3">(at least 1 classroom observation required, up to 3)</p>
+        <!-- Each classroom-report instance mounts into its own panel here; only the active one is shown -->
+        <div id="classroom-panels-mount"></div>
       </div>
 
       <!-- Save / Submit actions -->
@@ -109,7 +104,6 @@
       import { fetchSchoolsForAdvisor, isHeadOffice } from './js/schools.js';
       import { createCultureWalkthrough } from './js/culture-walkthrough.js';
       import { createClassroomReport } from './js/classroom-report.js';
-      import { createTabbedPanel } from './js/tabs-ui.js';
       import { submitCultureWalkthrough, fetchCultureWalkthroughById, fetchClassroomObservationsForWalkthrough } from './js/culture-walkthroughs.js';
 
       // If opened as culture-walkthrough.html?id=<uuid> (from Past Reports),
@@ -133,9 +127,9 @@
       const macroSectionWrapper = document.getElementById('macro-section-wrapper');
       const walkthroughContainer = document.getElementById('walkthrough-container');
       const classroomsSection = document.getElementById('classrooms-section');
-      const classroomTabsMount = document.getElementById('classroom-tabs-mount');
+      const classroomTabsBar = document.getElementById('classroom-tabs-bar');
+      const classroomPanelsMount = document.getElementById('classroom-panels-mount');
       const addClassroomBtn = document.getElementById('add-classroom-btn');
-      const removeClassroomBtn = document.getElementById('remove-classroom-btn');
       const walkthroughActions = document.getElementById('walkthrough-actions');
       const saveDraftBtn = document.getElementById('save-draft-btn');
       const submitFinalBtn = document.getElementById('submit-final-btn');
@@ -143,9 +137,13 @@
 
       let currentWalkthrough = null; // createCultureWalkthrough() instance
       let currentSchoolCemis = null;
-      let classroomTabs = null; // createTabbedPanel() instance for the classroom switcher
+      const MAX_CLASSROOMS = 3;
+      let classroomOrder = []; // ordered list of active classroom tab ids
+      let activeClassroomId = null;
       let classroomTabCounter = 0; // ever-increasing, for unique tab ids (not reused after removal)
       const classroomReports = {}; // tabId -> createClassroomReport() instance
+      const classroomPanelEls = {}; // tabId -> its mounted panel element
+      let walkthroughLocked = false; // true once submitted — blocks removal
       let activeSection = 'macro'; // 'macro' | 'classrooms' — which section the toggle is showing
 
       // Shows exactly one of the two sections (Macro-Level Walkthrough vs
@@ -172,8 +170,7 @@
       toggleClassroomsBtn.addEventListener('click', () => setActiveSection('classrooms'));
 
       function updateClassroomCountBadge() {
-        const count = classroomTabs ? classroomTabs.getTabIds().length : 0;
-        classroomCountBadge.textContent = String(count);
+        classroomCountBadge.textContent = String(classroomOrder.length);
       }
 
       function showSchoolError(message) {
@@ -228,56 +225,100 @@
         }
       }
 
-      // Relabels every classroom tab "Classroom 1", "Classroom 2", ...
-      // in current tab order, and enables/disables the remove button
-      // based on the 1-classroom floor.
-      function renumberAndUpdateControls() {
-        if (!classroomTabs) return;
-        const ids = classroomTabs.getTabIds();
-        ids.forEach((id, i) => classroomTabs.setTabLabel(id, `Classroom ${i + 1}`));
-        removeClassroomBtn.disabled = ids.length <= 1;
+      // Rebuilds the Classroom 1 / Classroom 2 / ... switcher row —
+      // each pill is a label button plus its own small remove icon,
+      // relabeled in order every time (so numbering never has gaps
+      // after a removal). Also enforces the 1-required / 3-max caps.
+      function renderClassroomTabsBar() {
+        classroomTabsBar.innerHTML = classroomOrder
+          .map((id, i) => {
+            const isActive = id === activeClassroomId;
+            const canRemove = classroomOrder.length > 1 && !walkthroughLocked;
+            return `
+              <div class="inline-flex items-center rounded-lg border overflow-hidden ${isActive ? 'border-[#001489]/40 bg-white shadow-sm' : 'border-slate-200 bg-slate-50'}">
+                <button type="button" data-classroom-select="${id}"
+                  class="px-3 py-1.5 text-xs font-bold transition ${isActive ? 'text-[#001489]' : 'text-slate-500 hover:text-slate-700'}">
+                  Classroom ${i + 1}
+                </button>
+                <button type="button" data-classroom-remove="${id}" ${canRemove ? '' : 'disabled'}
+                  title="${canRemove ? 'Remove this classroom' : 'At least one classroom observation is required'}"
+                  class="px-2 py-1.5 border-l ${isActive ? 'border-[#001489]/20' : 'border-slate-200'} text-slate-300 hover:text-red-600 hover:bg-red-50 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-300">
+                  <i class="fa-solid fa-trash-can text-[11px]"></i>
+                </button>
+              </div>`;
+          })
+          .join('');
+
+        addClassroomBtn.disabled = classroomOrder.length >= MAX_CLASSROOMS || walkthroughLocked;
         updateClassroomCountBadge();
       }
 
+      // Delegated click handling — one listener covers every pill's
+      // label button and remove icon, including ones added later.
+      classroomTabsBar.addEventListener('click', (e) => {
+        const selectBtn = e.target.closest('[data-classroom-select]');
+        if (selectBtn) {
+          setActiveClassroom(selectBtn.getAttribute('data-classroom-select'));
+          return;
+        }
+        const removeBtn = e.target.closest('[data-classroom-remove]');
+        if (removeBtn && !removeBtn.disabled) {
+          removeClassroom(removeBtn.getAttribute('data-classroom-remove'));
+        }
+      });
+
+      function setActiveClassroom(tabId) {
+        if (!classroomPanelEls[tabId]) return;
+        activeClassroomId = tabId;
+        classroomOrder.forEach((id) => {
+          classroomPanelEls[id].classList.toggle('hidden', id !== tabId);
+        });
+        renderClassroomTabsBar();
+      }
+
       function addClassroomInstance(existingRow = null) {
+        if (classroomOrder.length >= MAX_CLASSROOMS) return;
+
         classroomTabCounter += 1;
         const tabId = `classroom-${classroomTabCounter}`;
 
-        const tabDef = {
-          id: tabId,
-          label: `Classroom ${classroomTabCounter}`, // temporary — renumberAndUpdateControls() fixes real numbering
-          render: (panelEl) => {
-            const report = createClassroomReport(panelEl, {
-              schoolCemis: currentSchoolCemis,
-              advisorId: advisor.id,
-              cultureWalkthroughId: currentWalkthrough ? currentWalkthrough.getData().id : null,
-              sticky: false, // avoid stacking on top of the outer Classroom-switcher's own sticky bar
-            });
-            if (existingRow) report.loadData(existingRow);
-            classroomReports[tabId] = report;
-          },
-        };
+        const panelEl = document.createElement('div');
+        panelEl.className = 'hidden';
+        panelEl.setAttribute('data-classroom-panel', tabId);
+        classroomPanelsMount.appendChild(panelEl);
+        classroomPanelEls[tabId] = panelEl;
 
-        if (!classroomTabs) {
-          classroomTabs = createTabbedPanel(classroomTabsMount, [tabDef], { stickyOffset: 56 });
-        } else {
-          classroomTabs.addTab(tabDef);
-        }
+        const report = createClassroomReport(panelEl, {
+          schoolCemis: currentSchoolCemis,
+          advisorId: advisor.id,
+          cultureWalkthroughId: currentWalkthrough ? currentWalkthrough.getData().id : null,
+          stickyOffset: 56,
+        });
+        if (existingRow) report.loadData(existingRow);
+        classroomReports[tabId] = report;
 
-        renumberAndUpdateControls();
+        classroomOrder.push(tabId);
+        setActiveClassroom(tabId); // also re-renders the tab bar
       }
 
-      removeClassroomBtn.addEventListener('click', () => {
-        if (!classroomTabs) return;
-        const ids = classroomTabs.getTabIds();
-        if (ids.length <= 1) return; // guard: at least 1 required
+      function removeClassroom(tabId) {
+        if (classroomOrder.length <= 1) return; // guard: at least 1 required
+        const idx = classroomOrder.indexOf(tabId);
+        if (idx === -1) return;
 
-        const activeId = classroomTabs.getActiveTabId();
-        classroomReports[activeId].destroy();
-        delete classroomReports[activeId];
-        classroomTabs.removeTab(activeId);
-        renumberAndUpdateControls();
-      });
+        classroomReports[tabId].destroy();
+        delete classroomReports[tabId];
+        classroomPanelEls[tabId].remove();
+        delete classroomPanelEls[tabId];
+        classroomOrder.splice(idx, 1);
+
+        if (activeClassroomId === tabId) {
+          const newIdx = Math.max(0, idx - 1);
+          setActiveClassroom(classroomOrder[newIdx]);
+        } else {
+          renderClassroomTabsBar();
+        }
+      }
 
       function mountWalkthroughFor(schoolCemis) {
         if (currentWalkthrough) {
@@ -286,8 +327,11 @@
         }
         Object.values(classroomReports).forEach((report) => report.destroy());
         for (const key in classroomReports) delete classroomReports[key];
-        classroomTabsMount.innerHTML = '';
-        classroomTabs = null;
+        for (const key in classroomPanelEls) delete classroomPanelEls[key];
+        classroomPanelsMount.innerHTML = '';
+        classroomTabsBar.innerHTML = '';
+        classroomOrder = [];
+        activeClassroomId = null;
 
         currentSchoolCemis = schoolCemis;
         updateClassroomCountBadge();
@@ -333,14 +377,14 @@
         saveDraftBtn.disabled = true;
         submitFinalBtn.disabled = true;
         schoolSelect.disabled = true;
-        addClassroomBtn.disabled = true;
-        removeClassroomBtn.disabled = true;
+        walkthroughLocked = true;
+        renderClassroomTabsBar(); // re-render so Add + every remove icon disable too
       }
 
       async function handleSave({ submitted }) {
         if (!currentWalkthrough) return;
 
-        const reportsInOrder = classroomTabs ? classroomTabs.getTabIds().map((id) => classroomReports[id]) : [];
+        const reportsInOrder = classroomOrder.map((id) => classroomReports[id]);
 
         if (submitted) {
           if (!currentWalkthrough.validate()) return;
