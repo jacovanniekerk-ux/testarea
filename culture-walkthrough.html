@@ -53,6 +53,41 @@
         </div>
       </div>
 
+      <!-- School Details Cards (Computer Labs, Smart Classrooms, Learner Devices, Connectivity) -->
+      <div id="school-info-cards" class="hidden mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="card-wrap-computer-labs" class="rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-desktop text-blue-600"></i>
+            <span>Computer Labs</span>
+          </div>
+          <div id="card-computer-labs" class="text-sm font-bold"></div>
+        </div>
+
+        <div id="card-wrap-smart-classrooms" class="rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-chalkboard text-emerald-600"></i>
+            <span>Smart Classrooms</span>
+          </div>
+          <div id="card-smart-classrooms" class="text-sm font-bold"></div>
+        </div>
+
+        <div id="card-wrap-learner-devices" class="rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-tablet-screen-button text-amber-600"></i>
+            <span>Learner Devices</span>
+          </div>
+          <div id="card-learner-devices" class="text-sm font-bold"></div>
+        </div>
+
+        <div id="card-wrap-connectivity" class="rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-wifi text-indigo-600"></i>
+            <span>Connectivity</span>
+          </div>
+          <div id="card-connectivity" class="text-sm font-bold"></div>
+        </div>
+      </div>
+
       <!-- Toggle between Macro-Level Walkthrough and Classroom Observations -->
       <div id="section-toggle" class="hidden mb-6">
         <div class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 gap-1">
@@ -151,6 +186,17 @@
       const submitFinalBtn = document.getElementById('submit-final-btn');
       const saveStatus = document.getElementById('save-status');
 
+      // School Info Cards Elements
+      const schoolInfoCards = document.getElementById('school-info-cards');
+      const cardsConfig = [
+        { key: 'computer_labs', wrap: document.getElementById('card-wrap-computer-labs'), text: document.getElementById('card-computer-labs') },
+        { key: 'smart_classrooms', wrap: document.getElementById('card-wrap-smart-classrooms'), text: document.getElementById('card-smart-classrooms') },
+        { key: 'learner_devices', wrap: document.getElementById('card-wrap-learner-devices'), text: document.getElementById('card-learner-devices') },
+        { key: 'connectivity', wrap: document.getElementById('card-wrap-connectivity'), text: document.getElementById('card-connectivity') },
+      ];
+
+      let loadedSchoolsMap = new Map();
+
       if (visitDateInput && !visitDateInput.value) {
         visitDateInput.value = new Date().toISOString().split('T')[0];
       }
@@ -165,6 +211,33 @@
       const classroomPanelEls = {}; // tabId -> its mounted panel element
       let walkthroughLocked = false; // true once submitted — blocks removal
       let activeSection = 'macro'; // 'macro' | 'classrooms' — which section the toggle is showing
+
+      // Updates school info cards logic for present vs null/empty values
+      function updateSchoolInfoCards(cemis) {
+        if (!cemis || !loadedSchoolsMap.has(String(cemis))) {
+          schoolInfoCards.classList.add('hidden');
+          return;
+        }
+
+        const school = loadedSchoolsMap.get(String(cemis));
+
+        cardsConfig.forEach(({ key, wrap, text }) => {
+          const rawVal = school[key];
+          const hasValue = rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '' && String(rawVal).trim().toLowerCase() !== 'null';
+
+          if (hasValue) {
+            text.textContent = rawVal;
+            text.className = 'text-sm font-bold text-slate-800';
+            wrap.className = 'bg-blue-50/50 border border-blue-200 rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all';
+          } else {
+            text.textContent = 'None';
+            text.className = 'text-sm font-medium italic text-slate-400';
+            wrap.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all opacity-60';
+          }
+        });
+
+        schoolInfoCards.classList.remove('hidden');
+      }
 
       // Shows exactly one of the two sections (Macro-Level Walkthrough vs
       // Classroom Observations) and styles the toggle buttons to match.
@@ -221,6 +294,9 @@
           return;
         }
 
+        // Cache schools in map
+        loadedSchoolsMap = new Map(data.map((s) => [String(s.cemis_number), s]));
+
         if (isHeadOffice(advisor)) {
           const byDistrict = {};
           data.forEach((s) => {
@@ -245,10 +321,7 @@
         }
       }
 
-      // Rebuilds the Classroom 1 / Classroom 2 / ... switcher row —
-      // each pill is a label button plus its own small remove icon,
-      // relabeled in order every time (so numbering never has gaps
-      // after a removal). Also enforces the 1-required / 3-max caps.
+      // Rebuilds the Classroom 1 / Classroom 2 / ... switcher row
       function renderClassroomTabsBar() {
         classroomTabsBar.innerHTML = classroomOrder
           .map((id, i) => {
@@ -273,8 +346,7 @@
         updateClassroomCountBadge();
       }
 
-      // Delegated click handling — one listener covers every pill's
-      // label button and remove icon, including ones added later.
+      // Delegated click handling
       classroomTabsBar.addEventListener('click', (e) => {
         const selectBtn = e.target.closest('[data-classroom-select]');
         if (selectBtn) {
@@ -356,6 +428,9 @@
         currentSchoolCemis = schoolCemis;
         updateClassroomCountBadge();
 
+        // Render card information for selected school
+        updateSchoolInfoCards(schoolCemis);
+
         if (!schoolCemis) {
           walkthroughContainer.innerHTML = '';
           sectionToggle.classList.add('hidden');
@@ -373,12 +448,7 @@
         sectionToggle.classList.remove('hidden');
         walkthroughActions.classList.remove('hidden');
         saveStatus.textContent = '';
-        // Always land on the Macro-Level Walkthrough first — that's step
-        // one of the flow, with Classroom Observations a deliberate switch.
         setActiveSection('macro');
-        // NOTE: does NOT auto-add a classroom instance anymore — the
-        // caller (school-select handler for a fresh walkthrough, or
-        // init() when resuming a draft) decides what to seed in.
       }
 
       schoolSelect.addEventListener('change', (e) => {
@@ -399,7 +469,7 @@
         schoolSelect.disabled = true;
         visitDateInput.disabled = true;
         walkthroughLocked = true;
-        renderClassroomTabsBar(); // re-render so Add + every remove icon disable too
+        renderClassroomTabsBar();
       }
 
       async function handleSave({ submitted }) {
@@ -460,8 +530,6 @@
           return;
         }
 
-        // Feed the returned ids back into each module so a second
-        // save updates these same rows instead of inserting duplicates.
         currentWalkthrough.loadData({ ...walkthroughRow, id: data.id });
         reportsInOrder.forEach((report, i) => {
           const classroomId = data.classroom_ids[i];
@@ -507,9 +575,6 @@
         if (classroomRows && classroomRows.length > 0) {
           classroomRows.forEach((row) => addClassroomInstance(row));
         } else {
-          // Shouldn't normally happen (a walkthrough always has at
-          // least one linked classroom observation), but fall back to
-          // one blank instance rather than leaving the section empty.
           addClassroomInstance();
         }
 
