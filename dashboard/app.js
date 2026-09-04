@@ -39,7 +39,7 @@ async function loadData(){
   try{
     // Deliberately do not select PERSAL, ID_number, Org_Mail, DataID or Control.
     const [attendance,sessions,courses,schools]=await Promise.all([
-      fetchAll('attendance','Timestamp,Session Name,Development Level,Facilitator,Hosting District,Delivery Mode,Surname,First Name,District,School,session_id'),
+      fetchAll('attendance','\"Timestamp\",\"Session Name\",\"Development Level\",\"Facilitator\",\"Hosting District\",\"Delivery Mode\",\"Surname\",\"First Name\",\"District\",\"School\",session_id'),
       fetchAll('sessions','id_key,session_title,hosting_unit,hosting_coordinator,session_date,session_start_time,facilitator,session_delivery_mode,session_link'),
       fetchAll('courses','course_name,developmental_level,integration_level,session_desciption,session_outcomes,programme_duration'),
       fetchAll('schools','EMIS,School_Name,Education_District,Circuit,Quintile,School_Type,Sector')
