@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Report — WCED 4P Diagnostic</title>
+    <link rel="icon" type="image/png" href="imgs/4pfavicon.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,6 +12,9 @@
     <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
+    <div class="site-banner-wrap">
+      <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
+    </div>
     <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm no-print">
       <div class="max-w-4xl mx-auto flex items-center justify-between">
         <a href="past-reports.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
@@ -29,6 +33,11 @@
         <p class="text-sm text-slate-400">Loading report...</p>
       </div>
     </main>
+
+    <footer class="site-footer">
+      <img src="imgs/wced-bug.jpg" alt="WCED Official Crest" class="site-footer-crest" />
+      <span>Western Cape Education Department &mdash; eLearning 4P Affective Transformation</span>
+    </footer>
 
     <script type="module">
       import { requireSession } from './js/session.js';
@@ -115,7 +124,7 @@
       // axis lines, per-pillar colored labels with live scores,
       // filled polygon, colored dot markers per axis.
       // ------------------------------------------------------------
-      const PILLAR_COLORS = { people: '#890C58', practices: '#D73828', pedagogy: '#00A1A3', platforms: '#C8126E' };
+      const PILLAR_COLORS = { people: '#890C58', practices: '#00A1A3', pedagogy: '#C8126E', platforms: '#D73828' };
 
       function radarChartSvg(scores, archetype) {
         const { points, pointsPath } = getRadarGeometry(scores);
