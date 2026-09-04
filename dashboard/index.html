@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WCED eLearning TPD Analytics</title>
+  <meta name="description" content="WCED eLearning Teacher Professional Development analytics dashboard">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">W</div>
+        <div><div class="brand-title">eLearning TPD</div><div class="brand-sub">Analytics</div></div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="overview"><span>▦</span> Overview</button>
+        <button class="nav-item" data-view="attendance"><span>◫</span> Attendance</button>
+        <button class="nav-item" data-view="people"><span>◎</span> People</button>
+        <button class="nav-item" data-view="schools"><span>⌂</span> Schools</button>
+        <button class="nav-item" data-view="sessions"><span>◷</span> Sessions</button>
+        <button class="nav-item" data-view="courses"><span>▤</span> Courses</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-action="filters"><span>⌘</span> Filters</button>
+        <button class="nav-item" data-action="settings"><span>⚙</span> Settings</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn">☰</button>
+        <div class="top-title">
+          <div class="eyebrow">WESTERN CAPE EDUCATION DEPARTMENT</div>
+          <h1 id="pageTitle">Programme Overview</h1>
+        </div>
+        <div class="top-actions">
+          <div class="connection-pill" id="connectionPill"><span class="dot"></span><span id="connectionText">Not connected</span></div>
+          <button class="icon-btn" id="refreshBtn" title="Refresh data">↻</button>
+          <button class="icon-btn" id="themeBtn" title="Toggle theme">◐</button>
+        </div>
+      </header>
+
+      <section class="global-controls">
+        <div class="search-wrap"><span>⌕</span><input id="globalSearch" placeholder="Search sessions, people, schools, facilitators…"></div>
+        <div class="control-group"><label>Date</label><input id="dateFrom" type="date"><span>to</span><input id="dateTo" type="date"></div>
+        <div class="control-group"><label>District</label><select id="districtFilter"><option value="">All districts</option></select></div>
+        <div class="control-group"><label>Level</label><select id="levelFilter"><option value="">All levels</option></select></div>
+        <button class="btn secondary" id="clearFiltersBtn">Clear</button>
+        <button class="btn primary" id="filterBtn">Apply</button>
+      </section>
+
+      <div id="loading" class="loading-overlay hidden"><div class="spinner"></div><div><strong id="loadingTitle">Loading dashboard…</strong><div id="loadingDetail">Connecting to Supabase</div></div></div>
+      <div id="toast" class="toast hidden"></div>
+
+      <section class="content" id="content">
+        <div id="view-overview" class="view active-view">
+          <div class="hero-row">
+            <div>
+              <div class="eyebrow">CURRENT DATASET</div>
+              <h2>Professional development at a glance</h2>
+              <p class="muted" id="overviewSubtitle">Connect Supabase to populate the dashboard.</p>
+            </div>
+            <div class="hero-actions">
+              <button class="btn secondary" data-action="savedViews">Saved views</button>
+              <button class="btn secondary" data-action="export">Export</button>
+              <button class="btn primary" data-action="print">Print report</button>
+            </div>
+          </div>
+          <div class="kpi-grid" id="kpis"></div>
+          <div class="grid-two">
+            <article class="card chart-card"><div class="card-head"><div><h3>Attendance over time</h3><p>Monthly attendance records</p></div><select class="mini-select" id="trendGranularity"><option value="month">Month</option><option value="week">Week</option></select></div><div class="chart-wrap"><canvas id="trendChart"></canvas></div></article>
+            <article class="card chart-card"><div class="card-head"><div><h3>Participation by district</h3><p>Attendance records within current filters</p></div><button class="text-btn" data-drill="district">View data</button></div><div class="chart-wrap"><canvas id="districtChart"></canvas></div></article>
+          </div>
+          <div class="grid-three">
+            <article class="card chart-card"><div class="card-head"><div><h3>Development levels</h3><p>Attendance by level</p></div></div><div class="chart-wrap compact"><canvas id="levelChart"></canvas></div></article>
+            <article class="card chart-card"><div class="card-head"><div><h3>Delivery modes</h3><p>Attendance by mode</p></div></div><div class="chart-wrap compact"><canvas id="modeChart"></canvas></div></article>
+            <article class="card chart-card"><div class="card-head"><div><h3>Top sessions</h3><p>Highest attendance counts</p></div></div><div id="topSessions" class="rank-list"></div></article>
+          </div>
+          <div class="grid-two">
+            <article class="card"><div class="card-head"><div><h3>Top schools</h3><p>Schools generating the most attendance</p></div><button class="text-btn" data-view-link="schools">Open schools</button></div><div id="topSchools" class="mini-table"></div></article>
+            <article class="card"><div class="card-head"><div><h3>Recent sessions</h3><p>Latest scheduled sessions</p></div><button class="text-btn" data-view-link="sessions">Open sessions</button></div><div id="recentSessions" class="mini-table"></div></article>
+          </div>
+        </div>
+
+        <div id="view-attendance" class="view">
+          <div class="section-head"><div><div class="eyebrow">RECORDS</div><h2>Attendance explorer</h2><p class="muted">Filter, sort, export and inspect attendance records.</p></div><div class="head-actions"><button class="btn secondary" data-action="columnPicker">Columns</button><button class="btn secondary" data-action="export">Export CSV</button></div></div>
+          <div class="subfilters" id="attendanceFilters"></div>
+          <div class="table-card"><div class="table-toolbar"><span id="attendanceCount">0 records</span><div><select id="attendancePageSize"><option>25</option><option>50</option><option>100</option><option>250</option></select> rows per page</div></div><div class="table-scroll"><table id="attendanceTable"></table></div><div class="pager" id="attendancePager"></div></div>
+        </div>
+
+        <div id="view-people" class="view">
+          <div class="section-head"><div><div class="eyebrow">PEOPLE</div><h2>Participant analysis</h2><p class="muted">Unique participants are estimated from name + school because identifiers are deliberately not surfaced here.</p></div><div class="head-actions"><button class="btn secondary" data-action="exportPeople">Export people</button></div></div>
+          <div class="kpi-grid" id="peopleKpis"></div>
+          <div class="grid-two"><article class="card chart-card"><div class="card-head"><div><h3>Repeat participation</h3><p>Distribution by number of attendance records</p></div></div><div class="chart-wrap"><canvas id="repeatChart"></canvas></div></article><article class="card"><div class="card-head"><div><h3>Most active participants</h3><p>Highest attendance counts</p></div></div><div id="activePeople" class="rank-list"></div></article></div>
+          <div class="table-card"><div class="table-toolbar"><span id="peopleCount">0 participants</span><input id="peopleSearch" class="table-search" placeholder="Search participant or school"></div><div class="table-scroll"><table id="peopleTable"></table></div><div class="pager" id="peoplePager"></div></div>
+        </div>
+
+        <div id="view-schools" class="view">
+          <div class="section-head"><div><div class="eyebrow">SCHOOLS</div><h2>School engagement</h2><p class="muted">Attendance intensity and reach across schools.</p></div><div class="head-actions"><button class="btn secondary" data-action="exportSchools">Export schools</button></div></div>
+          <div class="grid-two"><article class="card chart-card"><div class="card-head"><div><h3>Attendance by school</h3><p>Top 15 by attendance count</p></div></div><div class="chart-wrap"><canvas id="schoolChart"></canvas></div></article><article class="card"><div class="card-head"><div><h3>School profile</h3><p>Metadata joined from the schools table</p></div></div><div class="school-summary" id="schoolSummary"></div></article></div>
+          <div class="table-card"><div class="table-toolbar"><span id="schoolsCount">0 schools</span><input id="schoolsSearch" class="table-search" placeholder="Search school"></div><div class="table-scroll"><table id="schoolsTable"></table></div><div class="pager" id="schoolsPager"></div></div>
+        </div>
+
+        <div id="view-sessions" class="view">
+          <div class="section-head"><div><div class="eyebrow">DELIVERY</div><h2>Session intelligence</h2><p class="muted">Scheduled sessions, facilitators, delivery mode and attendance.</p></div><div class="head-actions"><button class="btn secondary" data-action="exportSessions">Export sessions</button></div></div>
+          <div class="grid-two"><article class="card chart-card"><div class="card-head"><div><h3>Scheduled sessions over time</h3><p>Sessions with recorded dates</p></div></div><div class="chart-wrap"><canvas id="sessionTrendChart"></canvas></div></article><article class="card chart-card"><div class="card-head"><div><h3>Facilitator workload</h3><p>Sessions by facilitator</p></div></div><div class="chart-wrap"><canvas id="facilitatorChart"></canvas></div></article></div>
+          <div class="table-card"><div class="table-toolbar"><span id="sessionsCount">0 sessions</span><input id="sessionsSearch" class="table-search" placeholder="Search title, facilitator or hosting unit"></div><div class="table-scroll"><table id="sessionsTable"></table></div><div class="pager" id="sessionsPager"></div></div>
+        </div>
+
+        <div id="view-courses" class="view">
+          <div class="section-head"><div><div class="eyebrow">COURSES</div><h2>Course catalogue</h2><p class="muted">Programme duration, development level and learning outcomes.</p></div><div class="head-actions"><button class="btn secondary" data-action="exportCourses">Export courses</button></div></div>
+          <div class="course-grid" id="courseGrid"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="modal"><div class="modal-backdrop" data-close-modal></div><div class="modal-panel"><div class="modal-head"><h3 id="modalTitle">Details</h3><button class="icon-btn" data-close-modal>×</button></div><div id="modalBody"></div></div></div>
+
+  <div class="drawer hidden" id="filterDrawer"><div class="drawer-panel"><div class="drawer-head"><div><div class="eyebrow">CONTROL CENTRE</div><h3>Advanced filters</h3></div><button class="icon-btn" data-close-drawer>×</button></div><div class="drawer-body" id="advancedFilters"></div><div class="drawer-foot"><button class="btn secondary" data-action="saveView">Save view</button><button class="btn primary" data-action="applyAdvancedFilters">Apply filters</button></div></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
