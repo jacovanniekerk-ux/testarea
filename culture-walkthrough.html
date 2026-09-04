@@ -34,13 +34,19 @@
         Both save and submit together.
       </p>
 
-      <!-- School selection -->
-      <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-6">
-        <label class="field-label block mb-2">Select School</label>
-        <select id="school-select" class="form-field w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#001489] focus:outline-none bg-white text-slate-800">
-          <option value="">-- Loading schools... --</option>
-        </select>
-        <p id="school-select-error" class="mt-2 text-xs text-red-600 hidden"></p>
+      <!-- School selection & Date of Engagement -->
+      <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2">
+          <label class="field-label block mb-2">Select School</label>
+          <select id="school-select" class="form-field w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#001489] focus:outline-none bg-white text-slate-800">
+            <option value="">-- Loading schools... --</option>
+          </select>
+          <p id="school-select-error" class="mt-2 text-xs text-red-600 hidden"></p>
+        </div>
+        <div>
+          <label class="field-label block mb-2">Date of Engagement</label>
+          <input type="date" id="visit-date" class="form-field w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#001489] focus:outline-none bg-white text-slate-800" />
+        </div>
       </div>
 
       <!-- Toggle between Macro-Level Walkthrough and Classroom Observations -->
@@ -119,6 +125,7 @@
       document.getElementById('user-district').textContent = advisor.district;
 
       const schoolSelect = document.getElementById('school-select');
+      const visitDateInput = document.getElementById('visit-date');
       const schoolSelectError = document.getElementById('school-select-error');
       const sectionToggle = document.getElementById('section-toggle');
       const toggleMacroBtn = document.getElementById('toggle-macro-btn');
@@ -134,6 +141,10 @@
       const saveDraftBtn = document.getElementById('save-draft-btn');
       const submitFinalBtn = document.getElementById('submit-final-btn');
       const saveStatus = document.getElementById('save-status');
+
+      if (visitDateInput && !visitDateInput.value) {
+        visitDateInput.value = new Date().toISOString().split('T')[0];
+      }
 
       let currentWalkthrough = null; // createCultureWalkthrough() instance
       let currentSchoolCemis = null;
@@ -377,12 +388,19 @@
         saveDraftBtn.disabled = true;
         submitFinalBtn.disabled = true;
         schoolSelect.disabled = true;
+        visitDateInput.disabled = true;
         walkthroughLocked = true;
         renderClassroomTabsBar(); // re-render so Add + every remove icon disable too
       }
 
       async function handleSave({ submitted }) {
         if (!currentWalkthrough) return;
+
+        if (submitted && !visitDateInput.value) {
+          saveStatus.textContent = 'Please select a date of engagement.';
+          saveStatus.className = 'text-xs text-red-600 font-semibold';
+          return;
+        }
 
         const reportsInOrder = classroomOrder.map((id) => classroomReports[id]);
 
@@ -410,6 +428,7 @@
         const submittedAt = submitted ? new Date().toISOString() : null;
 
         const walkthroughRow = currentWalkthrough.getData();
+        walkthroughRow.visit_date = visitDateInput.value || null;
         walkthroughRow.submitted = submitted;
         walkthroughRow.submitted_at = submittedAt;
 
@@ -470,6 +489,9 @@
         }
 
         schoolSelect.value = walkthroughRecord.school_cemis;
+        if (walkthroughRecord.visit_date) {
+          visitDateInput.value = walkthroughRecord.visit_date;
+        }
         mountWalkthroughFor(walkthroughRecord.school_cemis);
         currentWalkthrough.loadData(walkthroughRecord);
 
