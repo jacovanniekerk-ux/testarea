@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Culture Walkthrough — WCED 4P Diagnostic</title>
+    <link rel="icon" type="image/png" href="imgs/4pfavicon.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,6 +12,9 @@
     <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
+    <div class="site-banner-wrap no-print">
+      <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
+    </div>
     <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm">
       <div class="max-w-5xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -104,6 +108,11 @@
         </div>
       </div>
     </main>
+
+    <footer class="site-footer no-print">
+      <img src="imgs/wced-bug.jpg" alt="WCED Official Crest" class="site-footer-crest" />
+      <span>Western Cape Education Department &mdash; eLearning 4P Affective Transformation</span>
+    </footer>
 
     <script type="module">
       import { requireSession } from './js/session.js';

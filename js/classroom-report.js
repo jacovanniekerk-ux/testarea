@@ -61,6 +61,7 @@ const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
+    categoryIcon: 'imgs/people.png',
     field: 'teacher_confidence',
     title: 'Pillar: PEOPLE — Teacher Digital Confidence & Responsiveness',
     subtitle: 'How does the teacher manage digital tools and respond to unexpected technical challenges during the lesson?',
@@ -70,6 +71,7 @@ const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
+    categoryIcon: 'imgs/people.png',
     field: 'learner_confidence',
     title: 'Pillar: PEOPLE — Learner Confidence, Voice & Agency',
     subtitle: 'To what extent do learners demonstrate independence, choice, voice, and ownership when using digital tools in the lesson?',
@@ -79,6 +81,7 @@ const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
+    categoryIcon: 'imgs/people.png',
     field: 'relational_safety',
     title: 'Pillar: PEOPLE — Relational Safety & Help-Seeking',
     subtitle: 'How comfortable are learners with asking questions, making mistakes, seeking help, and supporting one another during digital activities?',
@@ -90,7 +93,8 @@ const PEOPLE_GROUPS = [
 const PRACTICE_GROUPS = [
   {
     category: 'PRACTICE',
-    categoryColor: '#D73828',
+    categoryColor: '#00A1A3',
+    categoryIcon: 'imgs/practices.png',
     field: 'classroom_collab',
     title: 'Pillar: PRACTICE — Collaboration & Shared Digital Practice',
     subtitle: 'How do learners interact, collaborate, share resources, and collectively solve problems or create digital work during the lesson?',
@@ -102,7 +106,8 @@ const PRACTICE_GROUPS = [
 const PEDAGOGY_GROUPS = [
   {
     category: 'PEDAGOGY',
-    categoryColor: '#00A1A3',
+    categoryColor: '#C8126E',
+    categoryIcon: 'imgs/pedagogy.png',
     field: 'pedagogy_design',
     title: 'Pillar: PEDAGOGY — Lesson Design & Digital Integration',
     subtitle: 'What is the functional focus of the technology in this lesson delivery?',
@@ -111,7 +116,8 @@ const PEDAGOGY_GROUPS = [
   },
   {
     category: 'PEDAGOGY',
-    categoryColor: '#00A1A3',
+    categoryColor: '#C8126E',
+    categoryIcon: 'imgs/pedagogy.png',
     field: 'pedagogy_agency',
     title: 'Pillar: PEDAGOGY — Learner Agency & Artefacts',
     subtitle: 'To what extent are learners creating knowledge rather than consuming it?',
@@ -120,7 +126,8 @@ const PEDAGOGY_GROUPS = [
   },
   {
     category: 'PEDAGOGY',
-    categoryColor: '#00A1A3',
+    categoryColor: '#C8126E',
+    categoryIcon: 'imgs/pedagogy.png',
     field: 'pedagogy_inclusivity',
     title: 'Pillar: PEDAGOGY — Cognitive Inclusivity & Differentiation',
     subtitle: 'Does the digital design accommodate multiple paces, abilities, and remediation tracks?',
@@ -129,7 +136,8 @@ const PEDAGOGY_GROUPS = [
   },
   {
     category: 'PEDAGOGY',
-    categoryColor: '#00A1A3',
+    categoryColor: '#C8126E',
+    categoryIcon: 'imgs/pedagogy.png',
     field: 'cyber_wellness',
     title: 'Pillar: PEDAGOGY — Cyber Wellness Integration into Subject Learning',
     subtitle: 'How meaningfully are digital citizenship, cyber wellness, ethics, and online safety woven into subject lesson activities and learner tasks?',
@@ -141,7 +149,8 @@ const PEDAGOGY_GROUPS = [
 const PLATFORMS_GROUPS = [
   {
     category: 'PLATFORMS',
-    categoryColor: '#C8126E',
+    categoryColor: '#D73828',
+    categoryIcon: 'imgs/platforms.png',
     field: 'platforms_integration',
     title: 'Pillar: PLATFORMS — Digital Tool Access & Usability in Lesson',
     subtitle: 'How easily can teachers and learners access and use the available digital tools during the lesson?',
@@ -150,7 +159,8 @@ const PLATFORMS_GROUPS = [
   },
   {
     category: 'PLATFORMS',
-    categoryColor: '#C8126E',
+    categoryColor: '#D73828',
+    categoryIcon: 'imgs/platforms.png',
     field: 'platforms_eportal',
     title: 'Pillar: PLATFORMS — Digital tool and ePortal integration',
     subtitle: 'How effectively are WCED ePortal resources and interactive digital tools integrated into lesson routines and learning workflows?',
@@ -188,7 +198,7 @@ function pillarGroupsHtml(instanceId, groups, state) {
   };
   for (const group of groups) {
     if (group.category !== currentCategory) {
-      out.push(categoryDividerHtml(categoryLabels[group.category], group.categoryColor));
+      out.push(categoryDividerHtml(categoryLabels[group.category], group.categoryColor, group.categoryIcon));
       currentCategory = group.category;
     }
     out.push(pillarGroupHtml(instanceId, group, state[group.field]));
@@ -411,9 +421,15 @@ export function createClassroomReport(containerEl, opts = {}) {
     containerEl.innerHTML = `
       <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm" data-classroom-report-root>
         <div class="border-b border-slate-100 pb-3 mb-3">
-          <h2 class="pillar-title text-slate-900">
-            Micro-Level Classroom Observation (PEDAGOGY &amp; PLATFORMS)${instanceLabel ? ` — ${escapeHtml(instanceLabel)}` : ''}
-          </h2>
+          <div class="flex items-center gap-2 mb-1">
+            <img src="imgs/people.png" alt="People pillar icon" class="pillar-icon" />
+            <img src="imgs/practices.png" alt="Practice pillar icon" class="pillar-icon" />
+            <img src="imgs/pedagogy.png" alt="Pedagogy pillar icon" class="pillar-icon" />
+            <img src="imgs/platforms.png" alt="Platforms pillar icon" class="pillar-icon" />
+            <h2 class="pillar-title text-slate-900">
+              Micro-Level Classroom Observation (PEDAGOGY &amp; PLATFORMS)${instanceLabel ? ` — ${escapeHtml(instanceLabel)}` : ''}
+            </h2>
+          </div>
           <p class="pillar-subtitle mt-0.5">
             Sit in on an active lesson. Observe learner interaction, teacher pivots, and platform tool deployment.
           </p>
@@ -437,6 +453,7 @@ export function createClassroomReport(containerEl, opts = {}) {
       {
         id: 'people',
         label: TAB_LABELS.people,
+        icon: 'imgs/people.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_GROUPS, state);
         },
@@ -444,6 +461,7 @@ export function createClassroomReport(containerEl, opts = {}) {
       {
         id: 'practice',
         label: TAB_LABELS.practice,
+        icon: 'imgs/practices.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PRACTICE_GROUPS, state);
         },
@@ -451,6 +469,7 @@ export function createClassroomReport(containerEl, opts = {}) {
       {
         id: 'pedagogy',
         label: TAB_LABELS.pedagogy,
+        icon: 'imgs/pedagogy.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PEDAGOGY_GROUPS, state);
         },
@@ -458,6 +477,7 @@ export function createClassroomReport(containerEl, opts = {}) {
       {
         id: 'platforms',
         label: TAB_LABELS.platforms,
+        icon: 'imgs/platforms.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
         },

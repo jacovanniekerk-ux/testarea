@@ -1,6 +1,6 @@
 /**
  * @param {HTMLElement} containerEl
- * @param {{id: string, label: string, render: (panelEl: HTMLElement) => void}[]} initialTabs
+ * @param {{id: string, label: string, icon?: string, render: (panelEl: HTMLElement) => void}[]} initialTabs
  * @param {object} [opts]
  * @param {string} [opts.activeTabId] - defaults to the first tab
  * @param {(tabId: string) => string|null} [opts.getStatusDotColor] - optional, returns a CSS color (or null for no dot) shown next to each tab's label; call refreshStatusDots() to re-evaluate after data changes
@@ -97,6 +97,14 @@ export function createTabbedPanel(containerEl, initialTabs, opts = {}) {
     btn.type = 'button';
     btn.className = 'tab-button';
     btn.setAttribute('data-tab-id', tab.id);
+
+    if (tab.icon) {
+      const iconImg = document.createElement('img');
+      iconImg.src = tab.icon;
+      iconImg.alt = '';
+      iconImg.className = 'pillar-icon';
+      btn.appendChild(iconImg);
+    }
 
     const labelSpan = document.createElement('span');
     labelSpan.textContent = tab.label;

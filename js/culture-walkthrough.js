@@ -67,6 +67,7 @@ const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
+    categoryIcon: 'imgs/people.png',
     field: 'people_safety',
     title: 'Pillar: PEOPLE — Psychological Safety & Wellbeing',
     subtitle: 'How safe do teachers feel when running into technical errors or trying new methodologies?',
@@ -76,6 +77,7 @@ const PEOPLE_GROUPS = [
   {
     category: 'PEOPLE',
     categoryColor: '#890C58',
+    categoryIcon: 'imgs/people.png',
     field: 'people_confidence',
     title: 'Pillar: PEOPLE — Digital Confidence & Agency',
     subtitle: 'Rate the underlying capacity and motivation for self-directed growth in technology.',
@@ -88,6 +90,7 @@ const PRACTICES_GROUPS = [
   {
     category: 'PRACTICES',
     categoryColor: '#00A1A3',
+    categoryIcon: 'imgs/practices.png',
     field: 'practices_collab',
     title: 'Pillar: PRACTICES — Collaboration & School Rituals',
     subtitle: 'How does the school manage internal communication, file-sharing, and administrative routines?',
@@ -97,6 +100,7 @@ const PRACTICES_GROUPS = [
   {
     category: 'PRACTICES',
     categoryColor: '#00A1A3',
+    categoryIcon: 'imgs/practices.png',
     field: 'practices_pd',
     title: 'Pillar: PRACTICES — Professional Development & Learning Pathways',
     subtitle: 'How does the school engage with WCED eLearning courses and self-paced modules?',
@@ -106,6 +110,7 @@ const PRACTICES_GROUPS = [
   {
     category: 'PRACTICES',
     categoryColor: '#00A1A3',
+    categoryIcon: 'imgs/practices.png',
     field: 'practices_cyber',
     title: 'Pillar: PRACTICES — Cyber Wellness & Digital Citizenship',
     subtitle: 'How does the school address online safety and the Cyber Effect Ambassador program?',
@@ -118,6 +123,7 @@ const PLATFORMS_GROUPS = [
   {
     category: 'PLATFORMS',
     categoryColor: '#D73828',
+    categoryIcon: 'imgs/platforms.png',
     field: 'platforms_scheduling',
     title: 'Pillar: PLATFORMS — Resource Scheduling, Rosters & Access Mechanics',
     subtitle: 'How are computer labs and mobile devices timetabled to support classrooms?',
@@ -137,7 +143,7 @@ function pillarGroupsHtml(instanceId, groups, state) {
   let currentCategory = null;
   for (const group of groups) {
     if (group.category !== currentCategory) {
-      out.push(categoryDividerHtml(CATEGORY_LABELS[group.category], group.categoryColor));
+      out.push(categoryDividerHtml(CATEGORY_LABELS[group.category], group.categoryColor, group.categoryIcon));
       currentCategory = group.category;
     }
     out.push(pillarGroupHtml(instanceId, group, state[group.field]));
@@ -284,9 +290,14 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
     containerEl.innerHTML = `
       <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm" data-culture-walkthrough-root>
         <div class="border-b border-slate-100 pb-3 mb-3">
-          <h2 class="pillar-title text-slate-900">
-            Macro-Level School Culture Walkthrough (PEOPLE, PRACTICES &amp; PLATFORMS)
-          </h2>
+          <div class="flex items-center gap-2 mb-1">
+            <img src="imgs/people.png" alt="People pillar icon" class="pillar-icon" />
+            <img src="imgs/practices.png" alt="Practices pillar icon" class="pillar-icon" />
+            <img src="imgs/platforms.png" alt="Platforms pillar icon" class="pillar-icon" />
+            <h2 class="pillar-title text-slate-900">
+              Macro-Level School Culture Walkthrough (PEOPLE, PRACTICES &amp; PLATFORMS)
+            </h2>
+          </div>
           <p class="pillar-subtitle mt-0.5">
             Evaluate the emotional infrastructure, psychological safety, cultural routines, and school-wide access mechanics.
           </p>
@@ -303,6 +314,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
       {
         id: 'people',
         label: 'People',
+        icon: 'imgs/people.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PEOPLE_GROUPS, state);
         },
@@ -310,6 +322,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
       {
         id: 'practices',
         label: 'Practices',
+        icon: 'imgs/practices.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PRACTICES_GROUPS, state);
         },
@@ -317,6 +330,7 @@ export function createCultureWalkthrough(containerEl, opts = {}) {
       {
         id: 'platforms',
         label: 'Platforms',
+        icon: 'imgs/platforms.png',
         render: (panel) => {
           panel.innerHTML = pillarGroupsHtml(instanceId, PLATFORMS_GROUPS, state);
         },

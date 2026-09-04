@@ -68,7 +68,9 @@ export function pillarGroupHtml(instanceId, group, currentValue) {
   return `
     <div class="bg-slate-50/50 border border-slate-100 rounded-xl p-4 md:p-5">
       <div class="flex items-center gap-1.5 mb-2">
-        <div class="p-1 ${group.iconBg || 'bg-slate-100'} rounded-md w-6 h-6"></div>
+        ${group.categoryIcon
+          ? `<div class="p-1 ${group.iconBg || 'bg-slate-100'} rounded-md w-6 h-6 flex items-center justify-center"><img src="${escapeHtml(group.categoryIcon)}" alt="" class="pillar-icon" /></div>`
+          : `<div class="p-1 ${group.iconBg || 'bg-slate-100'} rounded-md w-6 h-6"></div>`}
         <h3 class="pillar-title text-slate-800">${escapeHtml(group.title)}</h3>
       </div>
       <p class="pillar-subtitle mb-3 max-w-3xl">${escapeHtml(group.subtitle)}</p>
@@ -76,9 +78,10 @@ export function pillarGroupHtml(instanceId, group, currentValue) {
     </div>`;
 }
 
-export function categoryDividerHtml(name, color) {
+export function categoryDividerHtml(name, color, icon) {
   return `
-    <div class="border-l-4 pl-3 py-1 rounded-r-lg mb-4 mt-6" style="border-color:${color}; background-color:${color}0A;">
+    <div class="border-l-4 pl-3 py-1 rounded-r-lg mb-4 mt-6 flex items-center gap-2" style="border-color:${color}; background-color:${color}0A;">
+      ${icon ? `<img src="${escapeHtml(icon)}" alt="" class="pillar-icon" />` : ''}
       <h4 class="category-divider-label" style="color:${color};">
         Category: ${escapeHtml(name)}
       </h4>

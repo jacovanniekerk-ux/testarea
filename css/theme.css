@@ -30,6 +30,15 @@
   /* ---- Brand colors (used across pages) ---- */
   --color-brand: #001489;
   --color-brand-dark: #000e60;
+
+  /* ---- 4P Pillar colors ----
+     Single source of truth for the pillar palette. Anything that
+     needs to color-code People/Practices/Platforms/Pedagogy should
+     read from these rather than hardcoding hex values inline. */
+  --color-people: #890C58;
+  --color-practices: #00A1A3;
+  --color-platforms: #D73828;
+  --color-pedagogy: #C8126E;
 }
 
 body {
@@ -201,6 +210,9 @@ body {
 }
 
 .tab-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--fs-label);
   font-weight: 800;
   text-transform: uppercase;
@@ -231,7 +243,6 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  margin-left: 6px;
   vertical-align: middle;
 }
 
@@ -242,6 +253,79 @@ body {
 .tab-panel.active {
   display: block;
 }
+
+/* ============================================================
+   Site banner, footer crest, and pillar icons
+   ------------------------------------------------------------
+   Added alongside the imgs/ asset rollout (4P_header.png,
+   wced-bug.jpg, and the four pillar icons). Kept generic/shared
+   here in theme.css rather than per-page so any page can reuse
+   the same banner/footer/icon treatment.
+   ============================================================ */
+
+.site-banner-wrap {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 6px 16px;
+  text-align: center;
+}
+
+.site-banner {
+  display: inline-block;
+  width: 100%;
+  max-width: 911px;
+  height: auto;
+}
+
+/* Inline pillar icon — sits next to pillar labels, tab text, or
+   category dividers at roughly text-height. */
+.pillar-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Larger pillar icon — feature cards / section headers. */
+.pillar-icon-lg {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 16px 32px;
+  color: #94a3b8;
+  font-size: var(--fs-label);
+  text-align: center;
+}
+
+.site-footer-crest {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* Pillar-colored text/border/background helpers, keyed to the 4P
+   palette declared in :root above. */
+.pillar-text-people { color: var(--color-people); }
+.pillar-text-practices { color: var(--color-practices); }
+.pillar-text-platforms { color: var(--color-platforms); }
+.pillar-text-pedagogy { color: var(--color-pedagogy); }
+
+.pillar-border-people { border-color: var(--color-people); }
+.pillar-border-practices { border-color: var(--color-practices); }
+.pillar-border-platforms { border-color: var(--color-platforms); }
+.pillar-border-pedagogy { border-color: var(--color-pedagogy); }
 
 @media print {
   header, .no-print {
