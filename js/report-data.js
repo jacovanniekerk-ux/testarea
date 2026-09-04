@@ -26,6 +26,12 @@ export async function fetchAdvisorPublicInfo(advisorId) {
     .select('id, full_name, district')
     .eq('id', advisorId)
     .single();
+  if (error) {
+    // Surfaced deliberately: a null advisor with no error usually means
+    // RLS/grants on the advisors table are blocking the read, not a bug
+    // in this query. Check policies on the `advisors` table if this fires.
+    console.warn('fetchAdvisorPublicInfo failed for advisorId', advisorId, error);
+  }
   return { data, error };
 }
 
