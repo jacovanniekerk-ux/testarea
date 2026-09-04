@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WCED 4P Culture Diagnostic & Observation Tool</title>
+    <link rel="icon" type="image/png" href="imgs/4pfavicon.png" />
 
     <!-- ONLY ONE Supabase script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,16 +13,37 @@
     <link rel="stylesheet" href="css/theme.css" />
   </head>
   <body class="min-h-screen">
+    <div class="site-banner-wrap no-print">
+      <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
+    </div>
 
     <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+    <div id="login-screen" class="min-h-[70vh] flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
-        <div class="text-center mb-8">
+        <div class="text-center mb-6">
           <div class="w-14 h-14 rounded-2xl bg-[#001489] text-white flex items-center justify-center mx-auto mb-4">
-            <i class="fa-solid fa-brain fa-5x"></i>
+            <i class="fa-solid fa-compass text-2xl"></i>
           </div>
           <h1 class="text-3xl font-bold text-[#001489]">WCED 4P Diagnostic</h1>
           <p class="text-[16px] text-slate-600 mt-2">Affective Transformation Model Diagnostic</p>
+
+          <!-- Four pillar dots — purely a brand touch, ties the login
+               screen back to the People/Practices/Pedagogy/Platforms
+               palette used throughout the rest of the tool. -->
+          <div class="flex items-center justify-center gap-3 mt-4">
+            <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+              <span class="w-2 h-2 rounded-full inline-block" style="background:var(--color-people);"></span>People
+            </span>
+            <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+              <span class="w-2 h-2 rounded-full inline-block" style="background:var(--color-practices);"></span>Practices
+            </span>
+            <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+              <span class="w-2 h-2 rounded-full inline-block" style="background:var(--color-pedagogy);"></span>Pedagogy
+            </span>
+            <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+              <span class="w-2 h-2 rounded-full inline-block" style="background:var(--color-platforms);"></span>Platforms
+            </span>
+          </div>
         </div>
 
         <form id="login-form" class="space-y-4">
@@ -54,7 +76,7 @@
 
     <!-- DASHBOARD -->
     <div id="dashboard" class="min-h-screen hidden">
-      <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm">
+      <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm no-print">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-3">
@@ -73,37 +95,74 @@
       </header>
 
       <main class="max-w-7xl mx-auto p-4 md:p-6">
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">Dashboard</h1>
+        <h1 class="text-[var(--fs-heading-lg)] font-bold text-slate-800 mb-2">Dashboard</h1>
         <p class="text-slate-500 mb-6">Select an option below to continue</p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <a href="culture-walkthrough.html" id="culture-walkthrough-link" class="card hover:shadow-lg transition cursor-pointer">
+          <a href="culture-walkthrough.html" id="culture-walkthrough-link"
+             class="card group hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer overflow-hidden" style="padding:0;">
+            <div class="h-1.5" style="background:linear-gradient(90deg, var(--color-people), var(--color-practices), var(--color-platforms));"></div>
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
+                <div class="flex items-center gap-1.5 mb-3">
+                  <img src="imgs/people.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                  <img src="imgs/practices.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                  <img src="imgs/platforms.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                </div>
                 <h3 class="text-xl font-bold text-[#001489] mb-2">Culture Walkthrough</h3>
-                <p class="text-slate-500 text-sm">School culture assessment across the 4P pillars</p>
+                <p class="text-slate-500 text-sm">Whole-school culture assessment across People, Practices &amp; Platforms, plus at least one linked classroom observation.</p>
               </div>
-              <div class="mt-4"><i class="fa-solid fa-user-group text-3xl text-[#001489]"></i></div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="text-xs font-black text-[#001489] uppercase tracking-wide flex items-center gap-1">
+                  Start <i class="fa-solid fa-arrow-right text-[11px] group-hover:translate-x-1 transition-transform"></i>
+                </span>
+                <i class="fa-solid fa-user-group text-2xl text-[#001489]/15"></i>
+              </div>
             </div>
           </a>
 
-          <a href="classroom-report.html" id="school-report-link" class="card hover:shadow-lg transition cursor-pointer">
+          <a href="classroom-report.html" id="classroom-observation-link"
+             class="card group hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer overflow-hidden" style="padding:0;">
+            <div class="h-1.5" style="background:linear-gradient(90deg, var(--color-people), var(--color-practices), var(--color-pedagogy), var(--color-platforms));"></div>
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
-                <h3 class="text-xl font-bold text-emerald-600 mb-2">School Report</h3>
-                <p class="text-slate-500 text-sm">Standalone school report (same tool)</p>
+                <div class="flex items-center gap-1.5 mb-3">
+                  <img src="imgs/people.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                  <img src="imgs/practices.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                  <img src="imgs/pedagogy.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                  <img src="imgs/platforms.png" alt="" class="pillar-icon" style="width:26px;height:26px;" />
+                </div>
+                <h3 class="text-xl font-bold text-[#001489] mb-2">Classroom Observation</h3>
+                <p class="text-slate-500 text-sm">Standalone lesson observation &mdash; the same People, Practice, Pedagogy &amp; Platforms diagnostic used inside a Culture Walkthrough.</p>
               </div>
-              <div class="mt-4"><i class="fa-solid fa-file-text text-3xl text-emerald-600"></i></div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="text-xs font-black text-[#001489] uppercase tracking-wide flex items-center gap-1">
+                  Start <i class="fa-solid fa-arrow-right text-[11px] group-hover:translate-x-1 transition-transform"></i>
+                </span>
+                <i class="fa-solid fa-chalkboard-user text-2xl text-[#001489]/15"></i>
+              </div>
             </div>
           </a>
 
-          <a href="past-reports.html" id="past-reports-link" class="card hover:shadow-lg transition cursor-pointer">
+          <a href="past-reports.html" id="past-reports-link"
+             class="card group hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer overflow-hidden" style="padding:0;">
+            <div class="h-1.5" style="background:var(--color-brand);"></div>
             <div class="p-6 flex flex-col justify-between h-full">
               <div>
-                <h3 class="text-xl font-bold text-purple-600 mb-2">Past Reports</h3>
-                <p class="text-slate-500 text-sm">View and edit your previous reports</p>
+                <div class="flex items-center gap-1.5 mb-3">
+                  <div class="w-[26px] h-[26px] rounded-md bg-[#001489]/10 flex items-center justify-center">
+                    <i class="fa-solid fa-folder-open text-[#001489] text-sm"></i>
+                  </div>
+                </div>
+                <h3 class="text-xl font-bold text-[#001489] mb-2">Past Reports</h3>
+                <p class="text-slate-500 text-sm">View, filter and resume your previous walkthroughs and classroom observations.</p>
               </div>
-              <div class="mt-4"><i class="fa-solid fa-folder-text text-3xl text-purple-600"></i></div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="text-xs font-black text-[#001489] uppercase tracking-wide flex items-center gap-1">
+                  View <i class="fa-solid fa-arrow-right text-[11px] group-hover:translate-x-1 transition-transform"></i>
+                </span>
+                <i class="fa-solid fa-folder-tree text-2xl text-[#001489]/15"></i>
+              </div>
             </div>
           </a>
         </div>
@@ -111,6 +170,11 @@
         <div id="section-content"></div>
       </main>
     </div>
+
+    <footer class="site-footer no-print">
+      <img src="imgs/wced-bug.jpg" alt="WCED Official Crest" class="site-footer-crest" />
+      <span>Western Cape Education Department &mdash; eLearning 4P Affective Transformation</span>
+    </footer>
 
     <script type="module">
     // ============================================================
@@ -121,6 +185,8 @@
     // ============================================================
     import { supabaseClient } from './js/supabase-client.js';
     import { saveSession, getSession, clearSession } from './js/session.js';
+    import { fetchWalkthroughsForAdvisorScope } from './js/culture-walkthroughs.js';
+    import { fetchStandaloneObservationsForAdvisorScope } from './js/classroom-observations.js';
 
     // ============================================================
     // STATE
@@ -192,11 +258,7 @@
       advisor = profile; // { id, full_name, email, district } — no password, ever
 
       saveSession(advisor);
-
-      loginScreen.classList.add('hidden');
-      dashboard.classList.remove('hidden');
-      userName.textContent = advisor.full_name;
-      userDistrict.textContent = advisor.district;
+      showDashboard();
     });
 
     // ============================================================
@@ -215,6 +277,14 @@
         : '<i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In';
     }
 
+    function showDashboard() {
+      loginScreen.classList.add('hidden');
+      dashboard.classList.remove('hidden');
+      userName.textContent = advisor.full_name;
+      userDistrict.textContent = advisor.district;
+      loadDashboardData();
+    }
+
     // ============================================================
     // LOGOUT HANDLER
     // ============================================================
@@ -230,6 +300,164 @@
     });
 
     // ============================================================
+    // DASHBOARD DATA — a lightweight "at a glance" summary, pulled
+    // straight from Supabase using the exact same fetch helpers
+    // Past Reports already relies on, so this stays in sync with
+    // that page's data with no separate query logic to maintain.
+    // Deliberately count-based (no score aggregation) — this is a
+    // stop-gap landing page, not a second reporting engine.
+    // ============================================================
+    function escapeHtml(str) {
+      if (str === null || str === undefined || str === '') return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function statTileHtml(label, value, color, iconClass) {
+      return `
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-1" style="background:${color};"></div>
+          <div class="flex items-center justify-between">
+            <p class="eyebrow-label text-slate-400">${label}</p>
+            <i class="fa-solid ${iconClass} text-slate-300"></i>
+          </div>
+          <p class="text-2xl font-black text-slate-800 mt-1">${value}</p>
+        </div>`;
+    }
+
+    function statusBadgeHtml(submitted) {
+      return submitted
+        ? '<span class="inline-flex items-center gap-1 text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"><i class="fa-solid fa-lock"></i> Submitted</span>'
+        : '<span class="inline-flex items-center gap-1 text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"><i class="fa-solid fa-pen"></i> Draft</span>';
+    }
+
+    function typeBadgeHtml(type) {
+      return type === 'walkthrough'
+        ? '<span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-blue-50 text-[#001489]">Walkthrough</span>'
+        : '<span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Classroom</span>';
+    }
+
+    function activityRowHtml(r) {
+      const action = r.submitted
+        ? `<a href="${r.reportHref}" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"><span>View</span><i class="fa-solid fa-chart-simple"></i></a>`
+        : `<a href="${r.resumeHref}" class="text-[11px] font-bold text-[#001489] hover:text-[#000e60] flex items-center gap-1"><span>Resume</span><i class="fa-solid fa-arrow-right"></i></a>`;
+
+      return `
+        <div class="flex items-center justify-between gap-3 px-4 py-3">
+          <div class="min-w-0 flex items-center gap-2">
+            ${typeBadgeHtml(r.type)}
+            <div class="min-w-0">
+              <p class="font-bold text-slate-800 text-xs truncate">${escapeHtml(r.schoolName)}</p>
+              <p class="text-[10px] text-slate-400">${formatDate(r.dateValue)}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            ${statusBadgeHtml(r.submitted)}
+            ${action}
+          </div>
+        </div>`;
+    }
+
+    async function loadDashboardData() {
+      sectionContent.innerHTML = `
+        <section class="mb-8">
+          <h2 class="section-heading text-slate-700 mb-3">Your Activity</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            ${[1, 2, 3, 4].map(() => '<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm h-[72px] animate-pulse"></div>').join('')}
+          </div>
+        </section>
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="section-heading text-slate-700">Recent Activity</h2>
+            <a href="past-reports.html" class="text-xs font-bold text-[#001489] hover:text-[#000e60] flex items-center gap-1">
+              View all <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </a>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+            <p class="text-sm text-slate-400">Loading...</p>
+          </div>
+        </section>`;
+
+      const [walkthroughsRes, classroomsRes] = await Promise.all([
+        fetchWalkthroughsForAdvisorScope(advisor),
+        fetchStandaloneObservationsForAdvisorScope(advisor),
+      ]);
+
+      if (walkthroughsRes.error || classroomsRes.error) {
+        sectionContent.innerHTML = `
+          <p class="text-xs text-slate-400">Couldn't load your activity summary right now — head to <a href="past-reports.html" class="text-[#001489] font-bold hover:underline">Past Reports</a> to see everything directly.</p>`;
+        return;
+      }
+
+      const walkthroughRows = (walkthroughsRes.data || []).map((w) => ({
+        id: w.id,
+        type: 'walkthrough',
+        schoolCemis: w.school_cemis,
+        schoolName: w.schools ? w.schools.school_name : w.school_cemis,
+        dateValue: w.visit_date,
+        submitted: w.submitted,
+        resumeHref: `culture-walkthrough.html?id=${w.id}`,
+        reportHref: `report.html?type=walkthrough&id=${w.id}`,
+      }));
+
+      const classroomRows = (classroomsRes.data || []).map((c) => ({
+        id: c.id,
+        type: 'classroom',
+        schoolCemis: c.school_cemis,
+        schoolName: c.schools ? c.schools.school_name : c.school_cemis,
+        dateValue: c.created_at,
+        submitted: c.submitted,
+        resumeHref: `classroom-report.html?id=${c.id}`,
+        reportHref: `report.html?type=classroom&id=${c.id}`,
+      }));
+
+      const allReports = [...walkthroughRows, ...classroomRows].sort(
+        (a, b) => new Date(b.dateValue || 0) - new Date(a.dateValue || 0)
+      );
+
+      const totalWalkthroughs = walkthroughRows.length;
+      const totalClassroomObs = classroomRows.length;
+      const submittedCount = allReports.filter((r) => r.submitted).length;
+      const submissionRate = allReports.length ? Math.round((submittedCount / allReports.length) * 100) : null;
+      const uniqueSchools = new Set(allReports.map((r) => r.schoolCemis).filter(Boolean)).size;
+
+      const statsHtml = `
+        <section class="mb-8">
+          <h2 class="section-heading text-slate-700 mb-3">Your Activity</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            ${statTileHtml('Culture Walkthroughs', totalWalkthroughs, 'var(--color-people)', 'fa-building-columns')}
+            ${statTileHtml('Classroom Observations', totalClassroomObs, 'var(--color-pedagogy)', 'fa-chalkboard-user')}
+            ${statTileHtml('Schools Reached', uniqueSchools, 'var(--color-practices)', 'fa-school')}
+            ${statTileHtml('Submitted', submissionRate === null ? '—' : `${submissionRate}%`, 'var(--color-platforms)', 'fa-circle-check')}
+          </div>
+        </section>`;
+
+      const recentReports = allReports.slice(0, 5);
+      const activityHtml = `
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="section-heading text-slate-700">Recent Activity</h2>
+            <a href="past-reports.html" class="text-xs font-bold text-[#001489] hover:text-[#000e60] flex items-center gap-1">
+              View all <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </a>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm divide-y divide-slate-100">
+            ${
+              recentReports.length
+                ? recentReports.map(activityRowHtml).join('')
+                : '<p class="text-sm text-slate-400 p-6 text-center">No reports yet — start with a Culture Walkthrough or Classroom Observation above.</p>'
+            }
+          </div>
+        </section>`;
+
+      sectionContent.innerHTML = statsHtml + activityHtml;
+    }
+
+    // ============================================================
     // INITIALIZE - Check for existing "session"
     // ------------------------------------------------------------
     // There's no server-verified session here (no Supabase Auth),
@@ -243,10 +471,7 @@
 
     if (existingAdvisor) {
       advisor = existingAdvisor;
-      loginScreen.classList.add('hidden');
-      dashboard.classList.remove('hidden');
-      userName.textContent = advisor.full_name;
-      userDistrict.textContent = advisor.district;
+      showDashboard();
     }
     </script>
   </body>
