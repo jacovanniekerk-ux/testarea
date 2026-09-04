@@ -87,7 +87,7 @@ export async function fetchWalkthroughsForAdvisor(advisorId) {
 export async function fetchWalkthroughsForDistrict(district) {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district, circuit), advisors(full_name)')
+    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
     .eq('schools.district', district)
     .order('created_at', { ascending: false });
   return { data, error };
@@ -96,7 +96,7 @@ export async function fetchWalkthroughsForDistrict(district) {
 export async function fetchAllWalkthroughs() {
   const { data, error } = await supabaseClient
     .from('culture_walkthroughs')
-    .select('*, schools!inner(school_name, district, circuit), advisors(full_name)')
+    .select('*, schools!inner(school_name, district, circuit), advisors:advisor_id(full_name)')
     .order('created_at', { ascending: false });
   return { data, error };
 }
