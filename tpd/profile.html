@@ -80,18 +80,6 @@
         .tab-scroll::-webkit-scrollbar { display: none; }
         .tab-btn { white-space: nowrap; scroll-snap-align: start; }
 
-        /* Hide pre-registration top banner on profile page */
-        .preregister-banner,
-        .prereg-banner,
-        .prereg-bar,
-        #prereg-banner,
-        #preregistration-banner,
-        [data-prereg-banner],
-        .prereg-header,
-        #prereg-header {
-            display: none !important;
-        }
-
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -176,7 +164,10 @@
         }
 
         // Looks up a single teacher in the 'transformers' table using the
-        // same credential (ID or PERSAL) they logged in with.
+        // same credential (ID or PERSAL) they logged in with. Only the
+        // credential is used to match — full_name is not required to match,
+        // per product decision (ID/PERSAL alone is considered sufficient).
+        // Returns the row (with tool_link) if found, otherwise null.
         async function fetchTransformerRecord(searchType, key) {
             const column = searchType === 'id' ? 'id_number' : 'persal';
             const { data: rows, error } = await supabaseClient
@@ -192,11 +183,13 @@
         }
 
         // ============================================================
-        // UPCOMING SESSIONS (sessions + courses join)
+        // UPCOMING SESSIONS (sessions + courses join) — same logic used
+        // in index.html / calendar.html, reused here verbatim so all
+        // three pages stay in sync if the mapping ever changes.
         // ============================================================
         const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const SAST_OFFSET_MS = 2 * 60 * 60 * 1000;
+        const SAST_OFFSET_MS = 2 * 60 * 60 * 1000; // Africa/Johannesburg is a fixed UTC+2, no DST
 
         const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -232,6 +225,8 @@
             return `https://outlook.office.com/calendar/0/action/compose?allday=false&body=${encodeURIComponent(body)}&enddt=${encodeURIComponent(iso(endParts))}&location=Virtual%20Session&path=/calendar/action/compose&rru=addevent&startdt=${encodeURIComponent(iso(startParts))}&subject=${encodeURIComponent(name)}`;
         };
 
+        // Combines `sessions` + `courses` rows fetched from Supabase, filtered
+        // to Virtual delivery mode only (consistent with index.html/calendar.html).
         const combineSessionsAndCourses = (sessionRows, courseRows) => {
             const coursesByName = new Map();
             (courseRows || []).forEach(c => {
@@ -283,6 +278,7 @@
                 .filter(s => s.name !== 'Untitled Session');
         };
 
+
         const SPARK_SESSIONS = [
             'Adoption Strategy',
             'Digital Skills Course',
@@ -309,6 +305,8 @@
             'Introduction to Cyber Wellness Education'
         ];
 
+        // Milestone definitions for the pathway — colors and enrichment
+        // (keyPoints, dovetailEssentials, availability, next) sourced from pathway.html
         const MILESTONES = [
             {
                 id: 'adoption', step: 1, title: 'ICT Adoption Strategy', subtitle: 'The Entry Point',
@@ -400,6 +398,9 @@
             }
         ];
 
+        // Edvance ARC (Facilitator ARC) — specialised, by-invitation track.
+        // Only "Facilitator Think Tank" earns a Spark; Elevate and Shift and
+        // Spark deepen leadership but do not add to the core pathway Sparks.
         const EDVANCE_ARC = {
             icon: '🎓',
             title: 'Edvance ARC',
@@ -416,6 +417,15 @@
 
         // === UTILITIES ===
 
+        // Returns the appropriate call-to-action (register or waitlist link)
+        // for a milestone's availability info, used by Next Steps suggestions.
+        //
+        // For 'registration'-type milestones (Adoption Strategy, Cyber Effect
+        // Ambassador), "open" is now determined purely by whether a course
+        // session with a matching title and a future date exists in the
+        // sessions table (milestoneCourseSessions) — courses aren't managed
+        // through session pre-registration, so the CTA points straight at
+        // the register page for that session's id_key.
         function getAvailabilityCTA(milestoneId, milestoneCourseSessions) {
             const milestone = MILESTONES.find(m => m.id === milestoneId);
             if (!milestone || !milestone.availability) return null;
@@ -507,8 +517,12 @@
             return false;
         };
 
+        // Local-timezone 'YYYY-MM-DD', used to compare against Supabase's
+        // ISO session_date without any UTC-shift surprises near midnight.
         const toISODateString = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
+        // Turn a set of matching Supabase records into the shape the rest
+        // of the app expects (profile + deduplicated, sorted sessions).
         function buildResultsFromRecords(records) {
             if (records.length === 0) {
                 return { profile: null, sessions: [], allSessions: [] };
@@ -542,6 +556,10 @@
         }
 
         // === NAV MENU ===
+        // Clickable Transformation Agent badge shown next to the teacher's
+        // name. `sparkCount` is clamped to the 1–5 range that the badge
+        // images cover (TA1.png … TA5.png); a teacher confirmed as a TA
+        // but with 0 calculated Sparks still gets the TA1 badge as a floor.
         function TransformationAgentBadge({ sparkCount, toolLink }) {
             const badgeNumber = Math.min(5, Math.max(1, sparkCount || 1));
             const badgeSrc = `imgs/badges/TA${badgeNumber}.png`;
@@ -643,7 +661,7 @@
             );
         }
 
-        // === FACILITATOR ARC CARD ===
+        // === FACILITATOR ARC CARD (3-step Edvance ARC track) ===
         function FacilitatorARCCard({ hasThinkTank, hasElevate, hasShiftSpark, totalSessions }) {
             const stepDone = { thinktank: hasThinkTank, elevate: hasElevate, shiftspark: hasShiftSpark };
             const anyStarted = hasThinkTank || hasElevate || hasShiftSpark;
@@ -683,6 +701,8 @@
         function MilestoneModal({ milestone, status, pathwayStatus, milestoneCourseSessions, onClose }) {
             if (!milestone) return null;
 
+            // Renders the registration / waitlist / info block for a milestone,
+            // ported from pathway.html's availability logic.
             const renderAvailability = () => {
                 const avail = milestone.availability;
                 if (!avail) return null;
@@ -889,12 +909,12 @@
                         ))
                     )
                 ) : null,
-                (ctas && ctas.length > 0) ? e('div', { className: "pt-3 mt-3 border-t border-gray-200 flex flex-wrap gap-2" },
-                    ctas.map((cta, idx) => e('a', {
-                        key: idx, href: cta.url, target: "_blank", rel: "noopener noreferrer",
-                        className: `inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs text-white transition-colors shadow ${cta.style === 'primary' ? 'bg-green-600 hover:bg-green-700' : 'bg-wcg-blue hover:bg-blue-800'}`
-                    }, cta.label))
-                ) : null
+(ctas && ctas.length > 0) ? e('div', { className: "pt-3 mt-3 border-t border-gray-200 flex flex-wrap gap-2" },
+    ctas.map((cta, idx) => e('a', {
+        key: idx, href: cta.url, target: "_blank", rel: "noopener noreferrer",
+        className: `inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs text-white transition-colors shadow ${cta.style === 'primary' ? 'bg-green-600 hover:bg-green-700' : 'bg-wcg-blue hover:bg-blue-800'}`
+    }, cta.label))
+) : null
             );
         }
 
@@ -951,29 +971,28 @@
             );
         }
 
-        // === TAB BAR ===
-        function TabBar({ tabs, activeTab, onSelect }) {
-            return e('div', { className: "bg-[#001489] rounded-2xl shadow-lg p-2.5 no-print" },
-                e('div', { className: "flex gap-2 tab-scroll" },
-                    tabs.map(tab => {
-                        const isActive = activeTab === tab.id;
-                        const activeStyle = 'bg-white text-[#001489] font-bold shadow-md';
-                        const inactiveStyle = 'bg-white/20 text-white hover:bg-white/30';
-                        return e('button', {
-                            key: tab.id,
-                            onClick: () => onSelect(isActive ? null : tab.id),
-                            className: `tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex-shrink-0 ${isActive ? activeStyle : inactiveStyle}`
-                        },
-                            e('span', null, tab.label),
-                            (tab.badge !== undefined && tab.badge !== null) ? e('span', {
-                                className: `ml-1 text-xs px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-[#001489]/15 text-[#001489]' : 'bg-white/20 text-white'}`
-                            }, tab.badge) : null
-                        );
-                    })
-                )
-            );
-        }
-
+        // === TAB BAR (mobile-friendly, horizontally scrollable, plain-text pill buttons) ===
+      function TabBar({ tabs, activeTab, onSelect }) {
+    return e('div', { className: "bg-[#001489] rounded-2xl shadow-lg p-2.5 no-print" },
+        e('div', { className: "flex gap-2 tab-scroll" },
+            tabs.map(tab => {
+                const isActive = activeTab === tab.id;
+                const activeStyle = 'bg-white text-[#001489] font-bold shadow-md';
+                const inactiveStyle = 'bg-white/20 text-white hover:bg-white/30';
+                return e('button', {
+                    key: tab.id,
+                    onClick: () => onSelect(isActive ? null : tab.id),
+                    className: `tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex-shrink-0 ${isActive ? activeStyle : inactiveStyle}`
+                },
+                    e('span', null, tab.label),
+                    (tab.badge !== undefined && tab.badge !== null) ? e('span', {
+                        className: `ml-1 text-xs px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-[#001489]/15 text-[#001489]' : 'bg-white/20 text-white'}`
+                    }, tab.badge) : null
+                );
+            })
+        )
+    );
+}
         // === PATHWAY TAB ===
         function PathwayTab({ pathwayStatus, onMilestoneClick }) {
             return e('div', { className: "bg-white rounded-2xl shadow-lg p-6 animate-fade-in-up" },
@@ -1021,6 +1040,7 @@
             );
         }
 
+        // Quarter helpers for the attendance timeline
         const QUARTER_LABELS = { 1: 'Q1 (Jan – Mar)', 2: 'Q2 (Apr – Jun)', 3: 'Q3 (Jul – Sep)', 4: 'Q4 (Oct – Dec)' };
         function getQuarter(date) {
             if (!date) return null;
@@ -1094,6 +1114,7 @@
             );
 
             return e('div', { className: "space-y-6 animate-fade-in-up" },
+                // Filter bar
                 e('div', { className: 'bg-white rounded-2xl shadow-lg p-6 no-print' },
                     e('div', { className: 'flex flex-wrap gap-4 items-end' },
                         e('div', { className: 'flex-1 min-w-[160px]' },
@@ -1158,6 +1179,7 @@
                     )
                 ),
 
+                // Sessions list / table
                 filteredSessions.length === 0
                     ? e('div', { className: 'bg-white rounded-2xl shadow-lg p-8 text-center no-print' },
                         e('p', { className: 'text-gray-600' }, 'No sessions found matching the selected filters.')
@@ -1243,6 +1265,7 @@
                             )
                         ),
 
+                // Legend
                 e('div', { className: 'bg-white rounded-2xl shadow-lg p-4 no-print text-xs text-gray-700 space-y-2' },
                     e('div', { className: 'flex items-center gap-2' },
                         e('span', { className: 'inline-block w-4 h-4 bg-pink-100 border border-gray-400 rounded' }),
@@ -1262,7 +1285,9 @@
             );
         }
 
-        // === PRINT REPORT ===
+        // === PRINT REPORT (always mounted, hidden on screen, shown only when printing) ===
+        // Always reflects the FULL, unfiltered attendance record — independent of
+        // whichever tab is open or how the on-screen table is filtered.
         function PrintReport({ profileName, profile, allSessions }) {
             const sortedSessions = useMemo(() =>
                 [...allSessions].sort((a, b) => (b.parsedDate || 0) - (a.parsedDate || 0)),
@@ -1397,35 +1422,21 @@
             const [viewMode, setViewMode] = useState('cards');
             const [filters, setFilters] = useState({ level: '', district: '', mode: '', category: '' });
 
-            // Dynamically hide pre-register top banner if injected by preregister.js
-            useEffect(() => {
-                const suppressPreregBanner = () => {
-                    const candidateNodes = document.querySelectorAll('div, section, header, p, span');
-                    candidateNodes.forEach(node => {
-                        if (node.children.length < 6 && node.textContent.includes('Welcome back') && node.textContent.includes('Not me?')) {
-                            node.style.setProperty('display', 'none', 'important');
-                            if (node.parentElement && node.parentElement !== document.body && node.parentElement.id !== 'root') {
-                                node.parentElement.style.setProperty('display', 'none', 'important');
-                            }
-                        }
-                    });
-                };
-                suppressPreregBanner();
-                const observer = new MutationObserver(suppressPreregBanner);
-                observer.observe(document.body, { childList: true, subtree: true });
-                return () => observer.disconnect();
-            }, []);
-
+            // Milestones whose availability is governed by an upcoming course
+            // session (Adoption Strategy, Cyber Effect Ambassador) rather than
+            // the regular session pre-registration flow.
             const REGISTRATION_COURSE_NAMES = MILESTONES
                 .filter(m => m.availability && m.availability.type === 'registration' && m.sparkSession)
                 .map(m => m.sparkSession);
 
+            // Load upcoming (Virtual) sessions from Supabase — used by the
+            // Next Steps tab and the today/tomorrow announcement banner.
             useEffect(() => {
                 (async () => {
                     try {
                         const testAnchor = new Date();
-                        testAnchor.setDate(testAnchor.getDate() - 2);
-                        const todayISO = toISODateString(testAnchor);
+testAnchor.setDate(testAnchor.getDate() - 2);
+const todayISO = toISODateString(testAnchor);
                         const [sessionRes, courseRes, milestoneCourseRes] = await Promise.all([
                             supabaseClient.from('sessions').select('*').eq('session_delivery_mode', 'Virtual').gte('session_date', todayISO).order('session_date', { ascending: true }),
                             supabaseClient.from('courses').select('*'),
@@ -1438,6 +1449,8 @@
                         if (milestoneCourseRes.error) throw milestoneCourseRes.error;
                         setUpcomingData(combineSessionsAndCourses(sessionRes.data, courseRes.data));
 
+                        // Keep only the soonest upcoming session per course title
+                        // (rows are already sorted ascending by session_date).
                         const soonestByTitle = {};
                         (milestoneCourseRes.data || []).forEach(row => {
                             const title = row.session_title && row.session_title.trim();
@@ -1452,6 +1465,11 @@
                 })();
             }, []);
 
+            // Swap the document title while printing so browsers that still show a
+            // header/footer display something meaningful rather than the app name.
+            // (Full removal of the browser's own header/footer/URL line is a print
+            // dialog setting on the user's side — "Headers and footers" — that a
+            // web page cannot switch off.)
             useEffect(() => {
                 if (!results || !results.profile) return;
                 const originalTitle = document.title;
@@ -1467,6 +1485,9 @@
                 };
             }, [results]);
 
+            // Auto-login from localStorage — falling back to prefilling the
+            // login form (not auto-submitting) from an on-device Register
+            // profile when there's no previous saved login to take precedence.
             useEffect(() => {
                 (async () => {
                     try {
@@ -1487,6 +1508,9 @@
                                 return;
                             }
                         }
+                        // No previous (working) login — prefill from an on-device
+                        // profile if one exists. PERSAL takes precedence over ID
+                        // number, matching how attendance records are grouped.
                         const device = readDeviceProfile();
                         if (device) {
                             if (device.persal) {
@@ -1537,6 +1561,7 @@
                 setActiveTab(null);
             };
 
+            // === PATHWAY STATUS (drives summary strip + Pathway tab) ===
             const pathwayStatus = useMemo(() => {
                 if (!results || !results.sessions) return null;
                 const sessions = results.sessions;
@@ -1586,6 +1611,7 @@
                 };
             }, [results]);
 
+            // === SUGGESTIONS (drives Next Steps tab) ===
             const suggestions = useMemo(() => {
                 if (!pathwayStatus) return [];
                 const { hasAdoption, hasDigitalSkills, hasCyberEffect, dovetailCount, remainingDovetails, totalSessions, hasDovetailSpark } = pathwayStatus;
@@ -1641,6 +1667,8 @@
                     });
                 }
 
+                // Next 3 upcoming sessions the participant hasn't attended before,
+                // shown regardless of any overlap with the Dovetail suggestion above.
                 const attendedNames = new Set(
                     (results ? results.allSessions : []).map(s => s['Session Name'] && s['Session Name'].trim().toLowerCase()).filter(Boolean)
                 );
@@ -1684,6 +1712,7 @@
                 return items;
             }, [pathwayStatus, upcomingData, milestoneCourseSessions, results]);
 
+            // === HISTORY TAB: filtering, grouping, metrics ===
             const filteredSessions = useMemo(() => {
                 if (!results) return [];
                 let filtered = results.allSessions;
@@ -1736,6 +1765,7 @@
             };
             const canSearch = acknowledged && isValidInput() && !searching;
 
+            // === RENDER ===
             if (loading) {
                 return e('div', { className: "min-h-screen flex items-center justify-center" },
                     e('div', { className: "text-center" },
@@ -1746,9 +1776,7 @@
             }
 
             return e('div', { className: "min-h-screen bg-gray-50" },
-                window.PreRegisterWidget && window.PreRegisterWidget.Provider
-                    ? e(window.PreRegisterWidget.Provider, { hideBanner: true, showBanner: false })
-                    : null,
+                e(window.PreRegisterWidget.Provider),
                 e('header', { className: "bg-white shadow-sm no-print" },
                     e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center" },
                         e('img', { src: "header.png", alt: "WCED Header", className: "h-12 sm:h-16" }),
@@ -1765,6 +1793,7 @@
 
                 e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 print-full-width" },
                     !results ? (
+                        // === LOGIN / SEARCH FORM ===
                         e('div', { className: "max-w-2xl mx-auto animate-fade-in-up" },
                             e('div', { className: "bg-white rounded-2xl shadow-lg p-8" },
                                 e('div', { className: "text-center mb-8" },
@@ -1807,129 +1836,182 @@
                                         e('span', { className: "text-sm text-gray-700" }, "I confirm I am accessing my own professional development records for personal verification purposes only.")
                                     )
                                 ),
-                                searchError && e('p', { className: "text-sm text-red-600 mb-4 text-center font-medium" }, searchError),
+                                e('div', { className: "mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800" },
+                                    e('strong', null, "DISCLAIMER:"),
+                                    " This record is generated from self-captured attendance data. Every effort is made to ensure accuracy; discrepancies may occur due to manual entry errors. Please ensure consistency in your submissions to maintain an accurate transformation profile."
+                                ),
+                                searchError && e('div', { className: 'mb-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700' }, searchError),
                                 e('button', {
-                                    onClick: handleSearch,
+                                    onClick: () => handleSearch(),
                                     disabled: !canSearch,
-                                    className: `w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg transition-all ${canSearch ? 'bg-wcg-blue hover:bg-blue-800 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'}`
-                                }, searching ? 'Searching...' : 'View My Profile')
+                                    className: `w-full py-3 px-4 rounded-lg font-bold text-lg transition-colors ${canSearch ? 'bg-wcg-blue text-white hover:bg-blue-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`
+                                }, searching ? 'Searching…' : 'View My PD')
+                            )
+                        )
+                    ) : results.profile === null ? (
+                        // === NO RECORDS FOUND ===
+                        e('div', { className: "max-w-2xl mx-auto text-center animate-fade-in-up" },
+                            e('div', { className: "bg-white rounded-2xl shadow-lg p-8" },
+                                e('span', { className: "text-5xl block mb-4" }, "🔍"),
+                                e('h2', { className: "text-2xl font-bold text-gray-800 mb-2" }, "No Records Found"),
+                                e('p', { className: "text-gray-600 mb-6" }, `We couldn't find any PD records matching your search. Please check your ${searchType === 'id' ? 'ID' : 'PERSAL'} number and try again.`),
+                                e('button', { onClick: handleLogout, className: "bg-wcg-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-800" }, "Try Again")
                             )
                         )
                     ) : (
-                        e('div', { className: "space-y-6" },
-                            // PROFILE SUMMARY STRIP
-                            e('div', { className: "bg-white rounded-2xl shadow-lg p-6 sm:p-8 animate-fade-in-up relative no-print" },
-                                e('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6" },
-                                    e('div', { className: "flex items-center gap-4 sm:gap-6 flex-1 min-w-0" },
-                                        transformerRecord
-                                            ? e(TransformationAgentBadge, { sparkCount: pathwayStatus.totalSparks, toolLink: transformerRecord.tool_link })
-                                            : null,
-                                        e('div', { className: "min-w-0" },
-                                            e('h2', { className: "text-2xl sm:text-3xl font-bold text-wcg-dark truncate" }, results.profile.name),
-                                            e('p', { className: "text-sm text-gray-600 font-medium truncate mt-1" }, `${results.profile.school} • ${results.profile.district}`),
-                                            transformerRecord && e('div', { className: "mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md text-xs font-bold" },
-                                                e('span', null, '🏆 Registered Transformation Agent')
+                        // === RESULTS DASHBOARD ===
+                        e(React.Fragment, null,
+                            e(ChecklistModal, {
+                                isOpen: modalOpen.isOpen,
+                                onClose: () => setModalOpen({ isOpen: false, type: null }),
+                                type: modalOpen.type,
+                                completedSessions: modalOpen.type === 'spark' ? (historyMetrics ? historyMetrics.uniqueSparks : []) : (historyMetrics ? historyMetrics.uniqueDovetails : []),
+                                allSessions: results.allSessions
+                            }),
+
+                            e('div', { className: "space-y-6" },
+                                // Profile + always-visible summary strip
+                                e('div', { className: "bg-white rounded-2xl shadow-lg p-6 no-print" },
+                                    e('div', { className: "flex flex-col sm:flex-row justify-between items-start gap-4 mb-6" },
+                                        e('div', { className: "flex items-start gap-4" },
+                                            transformerRecord && pathwayStatus && e(TransformationAgentBadge, {
+                                                sparkCount: pathwayStatus.totalSparks,
+                                                toolLink: transformerRecord.tool_link
+                                            }),
+                                            e('div', null,
+                                                e('h2', { className: "text-2xl font-bold text-wcg-dark" }, results.profile.name),
+                                                e('p', { className: "text-gray-600" }, e('span', { className: "font-semibold" }, "School:"), " ", results.profile.school),
+                                                e('p', { className: "text-gray-600" }, e('span', { className: "font-semibold" }, "District:"), " ", results.profile.district)
+                                            )
+                                        ),
+                                  
+                                        e('div', { className: "flex items-center gap-3" },
+                                            pathwayStatus && e('button', {
+                                                onClick: () => setActiveTab('pathway'),
+                                                title: "View Pathway Progress (incl. Facilitator ARC)",
+                                                className: "text-center px-4 py-3 min-w-[90px] rounded-xl bg-wcg-yellow/10 hover:bg-wcg-yellow/20 transition-colors cursor-pointer"
+                                            },
+                                                e('div', { className: "flex items-center justify-center gap-1.5" },
+                                                    e('span', { className: "text-xl" }, "⭐"),
+                                                    e('span', { className: "text-2xl font-bold text-wcg-yellow" }, pathwayStatus.totalSparks)
+                                                ),
+                                                e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "Sparks")
+                                            ),
+                                            pathwayStatus && e('button', {
+                                                onClick: () => setModalOpen({ isOpen: true, type: 'dovetail' }),
+                                                title: "View Dovetail Essentials checklist",
+                                                className: "text-center px-4 py-3 min-w-[90px] rounded-xl bg-wcg-pink/10 hover:bg-wcg-pink/20 transition-colors cursor-pointer"
+                                            },
+                                                e('div', { className: "flex items-center justify-center gap-1.5" },
+                                                    e('span', { className: "text-xl" }, "💎"),
+                                                    e('span', { className: "text-2xl font-bold text-wcg-pink" }, pathwayStatus.dovetailCount)
+                                                ),
+                                                e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "Dovetail")
                                             )
                                         )
                                     ),
-                                    e('div', { className: "flex flex-wrap sm:flex-nowrap gap-3 items-center w-full sm:w-auto" },
+                                    pathwayStatus && e('div', { className: "grid grid-cols-2 md:grid-cols-5 gap-4" },
                                         e('button', {
-                                            onClick: () => setModalOpen({ isOpen: true, type: 'spark' }),
-                                            className: "flex-1 sm:flex-none px-4 py-2.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-300 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm group"
+                                            onClick: () => setActiveTab('history'),
+                                            title: "View Detailed History",
+                                            className: "text-center p-4 bg-gray-50 rounded-xl border-2 border-transparent hover:border-wcg-blue transition-colors cursor-pointer"
                                         },
-                                            e('span', { className: "text-xl group-hover:scale-110 transition-transform" }, "⭐"),
-                                            e('div', { className: "text-left" },
-                                                e('p', { className: "text-[10px] text-yellow-800 uppercase font-extrabold tracking-wider leading-none" }, "Sparks"),
-                                                e('p', { className: "text-lg font-black text-yellow-900 leading-none mt-1" }, `${pathwayStatus.totalSparks} Earned`)
-                                            )
+                                            e('div', { className: "text-3xl font-bold text-wcg-dark" }, pathwayStatus.totalSessions),
+                                            e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "Total Sessions")
                                         ),
-                                        e('button', {
-                                            onClick: () => setModalOpen({ isOpen: true, type: 'dovetail' }),
-                                            className: "flex-1 sm:flex-none px-4 py-2.5 bg-pink-50 hover:bg-pink-100 border border-pink-200 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm group"
-                                        },
-                                            e('span', { className: "text-xl group-hover:scale-110 transition-transform" }, "💎"),
-                                            e('div', { className: "text-left" },
-                                                e('p', { className: "text-[10px] text-pink-800 uppercase font-extrabold tracking-wider leading-none" }, "Dovetail"),
-                                                e('p', { className: "text-lg font-black text-pink-900 leading-none mt-1" }, `${pathwayStatus.dovetailCount}/10`)
-                                            )
+                                        e('div', { className: "text-center p-4 rounded-xl", style: { background: '#76B82A15' } },
+                                            e('div', { className: "text-3xl font-bold text-wcg-green" }, pathwayStatus.byLevel['Laying the Foundation']),
+                                            e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "Foundation")
                                         ),
-                                        e('button', {
-                                            onClick: () => window.print(),
-                                            className: "flex-1 sm:flex-none px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-sm"
-                                        },
-                                            e('span', null, "🖨️"),
-                                            e('span', null, "Print Record")
+                                        e('div', { className: "text-center p-4 rounded-xl", style: { background: '#FDB91315' } },
+                                            e('div', { className: "text-3xl font-bold text-wcg-yellow" }, pathwayStatus.byLevel['I can do it']),
+                                            e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "I Can Do It")
+                                        ),
+                                        e('div', { className: "text-center p-4 rounded-xl", style: { background: '#E3061315' } },
+                                            e('div', { className: "text-3xl font-bold text-wcg-red" }, pathwayStatus.byLevel['I can do it better']),
+                                            e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "Better")
+                                        ),
+                                        e('div', { className: "text-center p-4 rounded-xl", style: { background: '#00148915' } },
+                                            e('div', { className: "text-3xl font-bold text-wcg-blue" }, pathwayStatus.byLevel['The Summit']),
+                                            e('div', { className: "text-xs text-gray-600 mt-1 font-medium" }, "Summit")
+                                        )
+                                    ),
+                                    pathwayStatus && e('button', {
+                                        onClick: () => setActiveTab('pathway'),
+                                        title: "View Pathway Progress",
+                                        className: "mt-4 w-full text-left cursor-pointer group"
+                                    },
+                                        e('div', { className: "flex items-center justify-between mb-1" },
+                                            e('span', { className: "text-xs font-semibold text-gray-500 group-hover:text-wcg-blue" }, "Core Pathway Progress (4 milestones)"),
+                                            e('span', { className: "text-xs text-gray-500" }, `${Math.round(pathwayStatus.overallProgress)}%`)
+                                        ),
+                                        e('div', { className: "w-full bg-gray-200 rounded-full h-2" },
+                                            e('div', { className: "h-2 rounded-full pathway-line-fill", style: { width: `${pathwayStatus.overallProgress}%` } })
                                         )
                                     )
+                                ),
+
+                                // Tabs (mobile-friendly, all collapsed by default) + global download button
+                                e('div', { className: "flex flex-col sm:flex-row gap-3 no-print" },
+                                    e('div', { className: "flex-1 min-w-0" },
+                                        e(TabBar, {
+                                            tabs: [
+                                                { id: 'pathway', label: 'Pathway Progress' },
+                                                { id: 'nextsteps', label: 'Next Steps', badge: suggestions.length || null },
+                                                { id: 'history', label: 'Detailed History' }
+                                            ],
+                                            activeTab, onSelect: setActiveTab
+                                        })
+                                    ),
+                                    e('button', {
+                                        onClick: () => window.print(),
+                                        className: "flex-shrink-0 px-5 py-3 rounded-xl font-semibold text-sm bg-wcg-blue text-white shadow hover:bg-blue-800 transition-colors"
+                                    }, "Download Attendance Record")
+                                ),
+
+                                e('div', { className: "no-print" },
+                                    activeTab === 'pathway' && pathwayStatus ? e(PathwayTab, {
+                                        pathwayStatus, onMilestoneClick: setSelectedMilestone
+                                    }) : null,
+
+                                    activeTab === 'nextsteps' ? e(NextStepsTab, {
+                                        suggestions, onSessionClick: setSelectedSession
+                                    }) : null,
+
+                                    activeTab === 'history' ? e(HistoryTab, {
+                                        profileName: results.profile.name,
+                                        filteredSessions, sessionsByYear, filterOptions,
+                                        filters, setFilters, viewMode, setViewMode
+                                    }) : null
+                                ),
+
+                                // Always mounted, screen-hidden — this is what actually prints
+                                e(PrintReport, {
+                                    profileName: results.profile.name,
+                                    profile: results.profile,
+                                    allSessions: results.allSessions
+                                }),
+
+                                e('div', { className: "border-t border-gray-200 pt-6 text-center text-xs text-gray-500 no-print" },
+                                    e('p', { className: "mb-2" },
+                                        e('strong', null, "DISCLAIMER:"),
+                                        " This record is generated from self-captured attendance data. Every effort is made to ensure accuracy; discrepancies may occur due to manual entry errors. Please ensure consistency in your submissions to maintain an accurate transformation profile."
+                                    ),
                                 )
                             ),
 
-                            // TAB BAR
-                            e(TabBar, {
-                                tabs: [
-                                    { id: 'pathway', label: 'Adoption and Transformation Pathway', badge: `${Math.round(pathwayStatus.overallProgress)}%` },
-                                    { id: 'nextsteps', label: 'Your Next Steps', badge: suggestions.length },
-                                    { id: 'history', label: 'Detailed Attendance Record', badge: results.allSessions.length }
-                                ],
-                                activeTab: activeTab,
-                                onSelect: (tabId) => setActiveTab(tabId)
-                            }),
+                            (selectedMilestone !== null && pathwayStatus) ? e(MilestoneModal, {
+                                milestone: MILESTONES[selectedMilestone],
+                                status: pathwayStatus.milestoneStatuses[selectedMilestone],
+                                pathwayStatus,
+                                milestoneCourseSessions,
+                                onClose: () => setSelectedMilestone(null)
+                            }) : null,
 
-                            // TAB CONTENT
-                            activeTab === 'pathway' && e(PathwayTab, {
-                                pathwayStatus: pathwayStatus,
-                                onMilestoneClick: (index) => setSelectedMilestone(MILESTONES[index])
-                            }),
-
-                            activeTab === 'nextsteps' && e(NextStepsTab, {
-                                suggestions: suggestions,
-                                onSessionClick: (s) => setSelectedSession(s)
-                            }),
-
-                            activeTab === 'history' && e(HistoryTab, {
-                                profileName: results.profile.name,
-                                filteredSessions: filteredSessions,
-                                sessionsByYear: sessionsByYear,
-                                filterOptions: filterOptions,
-                                filters: filters,
-                                setFilters: setFilters,
-                                viewMode: viewMode,
-                                setViewMode: setViewMode
-                            }),
-
-                            // PRINTABLE REPORT
-                            e(PrintReport, {
-                                profileName: results.profile.name,
-                                profile: results.profile,
-                                allSessions: results.allSessions
-                            })
+                            selectedSession ? e(SessionDetailModal, { session: selectedSession, onClose: () => setSelectedSession(null) }) : null
                         )
                     )
-                ),
-
-                // MODALS
-                selectedMilestone && e(MilestoneModal, {
-                    milestone: selectedMilestone,
-                    status: pathwayStatus ? pathwayStatus.milestoneStatuses[selectedMilestone.step - 1] : { state: 'not-started' },
-                    pathwayStatus: pathwayStatus,
-                    milestoneCourseSessions: milestoneCourseSessions,
-                    onClose: () => setSelectedMilestone(null)
-                }),
-
-                selectedSession && e(SessionDetailModal, {
-                    session: selectedSession,
-                    onClose: () => setSelectedSession(null)
-                }),
-
-                modalOpen.isOpen && e(ChecklistModal, {
-                    isOpen: modalOpen.isOpen,
-                    type: modalOpen.type,
-                    completedSessions: modalOpen.type === 'spark'
-                        ? historyMetrics.uniqueSparks
-                        : historyMetrics.uniqueDovetails,
-                    allSessions: results ? results.allSessions : [],
-                    onClose: () => setModalOpen({ isOpen: false, type: null })
-                })
+                )
             );
         }
 
