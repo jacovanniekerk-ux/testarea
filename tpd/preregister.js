@@ -38,7 +38,12 @@
     // ------------------------------------------------------------
     const SUPABASE_URL = 'https://cftpufjzwpmhgzdcgpjb.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_b1H_5DJYLQSrr83T_dvz6A_2UAqOVg4';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+   const supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+        persistSession: false,
+        autoRefreshToken: false
+    }
+});
 
     const PREREG_TABLE = 'session_pre_registrations';
     const UNIQUE_VIOLATION = '23505';
