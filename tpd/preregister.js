@@ -34,14 +34,19 @@
  *    (the same localStorage profile the Register page creates —
  *    'iat_profiles' / 'iat_active_profile_id'). Read-only: this
  *    file never edits or creates a permanent device profile.
- *  - If found, immediately recognizes it and shows a "Welcome
- *    back, <name>" banner right under the page header, with a
- *    "Not me" link (jumps straight into the temporary-profile
- *    form below) and a "My pre-registrations" link out to
- *    my-preregistrations.html?email=<their email>.
- *  - If no device profile exists (or the teacher clicks "Not me"),
- *    a small 3-field form (Name, Email, District > School) creates
- *    a TEMPORARY profile, used for pre-registration only.
+ *  - Always shows a plain WCG-blue-on-white text banner right
+ *    under the page header, in one of three states:
+ *      · No profile loaded yet: "Welcome to our list of upcoming
+ *        sessions. Click here to set your pre-registration
+ *        details." (only "Click here" is a link) — opens the
+ *        temporary-profile form with no session attached.
+ *      · Device-recognized profile: "Welcome back <Name>! (Not
+ *        me?)" plus a "What am I pre-registered for?" link out to
+ *        my-preregistrations.html?email=<their email>.
+ *      · Temporary (one-off) profile: "Pre-registering as <Name>.
+ *        (Not me?)" plus the same lookup link.
+ *  - "Not me?" clears the profile and jumps straight into the
+ *    temporary-profile form (Name, Email, District > School).
  *  - Either way, once a profile is loaded it's remembered in
  *    memory (React state) for the rest of this page view —
  *    Pre-Register clicks just fire off the Supabase write and
@@ -335,38 +340,55 @@
     }
 
     // ------------------------------------------------------------
-    // Top banner — shows the loaded (real or temp) profile.
-    // When the profile came from an on-device recognition (either
-    // automatically on page load, or via the confirm modal), this
-    // renders "Welcome back" copy with a link to the pre-registration
-    // lookup page. Temp (one-off) profiles keep the plainer copy.
+    // Top banner — plain WCG-blue-on-white text, no colored strip,
+    // in every state:
+    //
+    //   No profile loaded yet:
+    //     Welcome to our list of upcoming sessions. Click here to
+    //     set your pre-registration details.        ("Click here" links)
+    //
+    //   Device-recognized profile:
+    //     Welcome back <Name>! (Not me?)
+    //     What am I pre-registered for?
+    //
+    //   Temp (one-off) profile:
+    //     Pre-registering as <Name>. (Not me?)
+    //     What am I pre-registered for?
     // ------------------------------------------------------------
     const MY_PREREGISTRATIONS_URL = 'my-preregistrations.html';
 
-    function Banner({ profile, onSwitch }) {
+    function ProfileBanner({ profile, onSwitch }) {
         const isRecognized = profile.source === 'device';
         const lookupHref = `${MY_PREREGISTRATIONS_URL}?email=${encodeURIComponent(profile.email || '')}`;
-        return e('div', { className: 'relative z-[9998] bg-[#001489] text-white text-xs sm:text-sm shadow-md' },
-            e('div', { className: 'max-w-5xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap' },
-                e('svg', { xmlns: 'http://www.w3.org/2000/svg', width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5', strokeLinecap: 'round', strokeLinejoin: 'round', className: 'flex-shrink-0' },
-                    e('path', { d: 'M20 6 9 17l-5-5' })
-                ),
-                isRecognized
-                    ? e('span', null, 'Welcome back, ', e('strong', null, profile.name), '!')
-                    : e('span', null,
-                        'Pre-registering as ',
-                        e('strong', null, profile.name),
-                        profile.school ? e(React.Fragment, null, ' · ', profile.school) : null
-                    ),
-                e('div', { className: 'ml-auto flex items-center gap-3' },
-                    isRecognized ? e('a', {
-                        href: lookupHref,
-                        className: 'underline underline-offset-2 hover:text-blue-200 transition-colors font-medium'
-                    }, 'My pre-registrations') : null,
+        return e('div', { className: 'relative z-[9998] bg-white text-[#001489] text-xs sm:text-sm' },
+            e('div', { className: 'max-w-5xl mx-auto px-4 py-2 flex flex-col gap-0.5' },
+                e('div', null,
+                    isRecognized
+                        ? e(React.Fragment, null, 'Welcome back ', e('strong', null, profile.name), '! ')
+                        : e(React.Fragment, null, 'Pre-registering as ', e('strong', null, profile.name), '. '),
                     e('button', {
                         type: 'button', onClick: onSwitch,
-                        className: 'underline underline-offset-2 hover:text-blue-200 transition-colors font-medium'
-                    }, isRecognized ? 'Not me' : 'Not you? Switch')
+                        className: 'underline underline-offset-2 hover:text-blue-700 transition-colors font-medium'
+                    }, 'Not me?')
+                ),
+                e('a', {
+                    href: lookupHref,
+                    className: 'underline underline-offset-2 hover:text-blue-700 transition-colors font-medium w-fit'
+                }, 'What am I pre-registered for?')
+            )
+        );
+    }
+
+    function NoProfileBanner({ onSetup }) {
+        return e('div', { className: 'relative z-[9998] bg-white text-[#001489] text-xs sm:text-sm' },
+            e('div', { className: 'max-w-5xl mx-auto px-4 py-2' },
+                e('span', null,
+                    'Welcome to our list of upcoming sessions. ',
+                    e('button', {
+                        type: 'button', onClick: onSetup,
+                        className: 'underline underline-offset-2 hover:text-blue-700 transition-colors font-medium'
+                    }, 'Click here'),
+                    ' to set your pre-registration details.'
                 )
             )
         );
@@ -521,20 +543,39 @@
             };
             setProfile(p);
             setModal(null);
-            performRegister(p, pendingSession);
+            if (pendingSession) {
+                performRegister(p, pendingSession);
+            } else {
+                // Opened via the "Click here to set your pre-registration
+                // details" banner link, not a specific session — just
+                // store the profile in memory, nothing to write yet.
+                showToast('success', 'Your details are set. Click Pre-Register on a session to register.');
+            }
         };
 
         const handleSwitch = () => {
-            // "Not me" / "Not you? Switch" — drop the current profile and
-            // go straight into the temporary-profile form, rather than
-            // just clearing state and waiting for the next click.
+            // "Not me?" — drop the current profile and go straight into
+            // the temporary-profile form, rather than just clearing
+            // state and waiting for the next click.
             setProfile(null);
+            setPendingSession(null);
+            ensureSchoolsLoaded();
+            setModal('tempForm');
+        };
+
+        const handleSetupProfile = () => {
+            // "Click here to set your pre-registration details" — the
+            // same temporary-profile form, but with no session attached
+            // yet, so submitting it only stores the profile.
+            setPendingSession(null);
             ensureSchoolsLoaded();
             setModal('tempForm');
         };
 
         return e(React.Fragment, null,
-            profile ? e(Banner, { profile, onSwitch: handleSwitch }) : null,
+            profile
+                ? e(ProfileBanner, { profile, onSwitch: handleSwitch })
+                : e(NoProfileBanner, { onSetup: handleSetupProfile }),
             modal === 'confirm' && candidateDeviceProfile ? e(ConfirmModal, {
                 profile: candidateDeviceProfile,
                 onConfirm: handleConfirmYes,
