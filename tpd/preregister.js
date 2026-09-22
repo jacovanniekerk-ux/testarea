@@ -27,53 +27,6 @@
  *    idKey  -> the Session ID Key (required, written to Supabase)
  *    title  -> human-readable session name, used only in the
  *              confirmation toast copy (optional)
- *
- * WHAT IT DOES
- * ------------
- *  - On mount (page load), looks for an existing on-device profile
- *    (the same localStorage profile the Register page creates —
- *    'iat_profiles' / 'iat_active_profile_id'). Read-only: this
- *    file never edits or creates a permanent device profile.
- *  - Always shows a plain WCG-blue-on-white text banner right
- *    under the page header, in one of three states:
- *      · No profile loaded yet: "Welcome to our list of upcoming
- *        sessions. Click here to set your pre-registration
- *        details." (only "Click here" is a link) — opens the
- *        temporary-profile form with no session attached.
- *      · Device-recognized profile: "Welcome back <Name>! (Not
- *        me?)" plus a "What am I pre-registered for?" link out to
- *        my-preregistrations.html?email=<their email>.
- *      · Temporary (one-off) profile: "Pre-registering as <Name>.
- *        (Not me?)" plus the same lookup link.
- *  - "Not me?" clears the profile and jumps straight into the
- *    temporary-profile form (Name, Email, District > School).
- *  - Either way, once a profile is loaded it's remembered in
- *    memory (React state) for the rest of this page view —
- *    Pre-Register clicks just fire off the Supabase write and
- *    show a confirmation toast, no re-asking. A page reload
- *    clears it; nothing is written to any browser storage.
- *  - Writes { id_key, name, email, school } to the
- *    `session_pre_registrations` Supabase table.
- *
- * REQUIRED SUPABASE TABLE (create this once — kept intentionally
- * minimal; a future phase may add a way for a profile to look up
- * which sessions it has pre-registered for, at which point an
- * index on `email` will help):
- *
- *   create table session_pre_registrations (
- *     id         bigint generated always as identity primary key,
- *     id_key     text not null,
- *     name       text not null,
- *     email      text not null,
- *     school     text not null,
- *     created_at timestamptz not null default now(),
- *     unique (id_key, email)
- *   );
- *
- * The unique constraint is what lets this file safely "always
- * insert" — a duplicate click/session just gets rejected by
- * Postgres (error code 23505) and is treated as an already-
- * registered success rather than a fresh error.
  * ============================================================
  */
 (function () {
@@ -96,7 +49,6 @@
     // ------------------------------------------------------------
     const DEVICE_PROFILES_KEY = 'iat_profiles';
     const DEVICE_ACTIVE_PROFILE_KEY = 'iat_active_profile_id';
-
 
     function readDeviceProfile() {
         try {
@@ -123,9 +75,7 @@
     }
 
     // ------------------------------------------------------------
-    // Schools (District > School cascade) — same table/columns as
-    // the Register page, fetched lazily only when the temp-profile
-    // form is actually opened.
+    // Schools (District > School cascade)
     // ------------------------------------------------------------
     const SCHOOLS_TABLE_NAME = 'schools';
     const SCHOOL_NAME_COLUMN = 'School_Name';
@@ -151,8 +101,7 @@
     }
 
     // ------------------------------------------------------------
-    // Small UI primitives (kept local to this file so it has no
-    // dependency on whatever form components the host page uses)
+    // UI Primitives
     // ------------------------------------------------------------
     function Modal({ onClose, children }) {
         return e('div', {
@@ -195,7 +144,6 @@
         );
     }
 
-    // Lightweight type-to-search select for the School field.
     function SearchableSelect({ label, options, loading, error, value, onChange, required = false, disabledMessage = 'Select a district first', validationError }) {
         const [query, setQuery] = useState('');
         const [open, setOpen] = useState(false);
@@ -243,7 +191,7 @@
     }
 
     // ------------------------------------------------------------
-    // Confirmation modal: "is this you?"
+    // Confirmation & Temp Profile Modals
     // ------------------------------------------------------------
     function ConfirmModal({ profile, onConfirm, onReject }) {
         const fullName = `${profile.firstName} ${profile.surname}`.trim();
@@ -268,9 +216,6 @@
         );
     }
 
-    // ------------------------------------------------------------
-    // Temporary profile form: Name, Email, District > School
-    // ------------------------------------------------------------
     function TempProfileModal({ schools, schoolsLoading, schoolsError, onSubmit, onClose }) {
         const [firstName, setFirstName] = useState('');
         const [surname, setSurname] = useState('');
@@ -340,28 +285,15 @@
     }
 
     // ------------------------------------------------------------
-    // Top banner — plain WCG-blue-on-white text, no colored strip,
-    // in every state:
-    //
-    //   No profile loaded yet:
-    //     Welcome to our list of upcoming sessions. Click here to
-    //     set your pre-registration details.        ("Click here" links)
-    //
-    //   Device-recognized profile:
-    //     Welcome back <Name>! (Not me?)
-    //     What am I pre-registered for?
-    //
-    //   Temp (one-off) profile:
-    //     Pre-registering as <Name>. (Not me?)
-    //     What am I pre-registered for?
+    // Top Banners (Updated layout widths & z-index)
     // ------------------------------------------------------------
     const MY_PREREGISTRATIONS_URL = 'my-preregistrations.html';
 
     function ProfileBanner({ profile, onSwitch }) {
         const isRecognized = profile.source === 'device';
         const lookupHref = `${MY_PREREGISTRATIONS_URL}?email=${encodeURIComponent(profile.email || '')}`;
-        return e('div', { className: 'relative z-[9998] bg-white text-[#001489] text-xs sm:text-sm' },
-            e('div', { className: 'max-w-5xl mx-auto px-4 py-2 flex flex-col gap-0.5' },
+        return e('div', { className: 'relative z-10 bg-white text-[#001489] text-xs sm:text-sm' },
+            e('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-col gap-0.5' },
                 e('div', null,
                     isRecognized
                         ? e(React.Fragment, null, 'Welcome back ', e('strong', null, profile.name), '! ')
@@ -380,8 +312,8 @@
     }
 
     function NoProfileBanner({ onSetup }) {
-        return e('div', { className: 'relative z-[9998] bg-white text-[#001489] text-xs sm:text-sm' },
-            e('div', { className: 'max-w-5xl mx-auto px-4 py-2' },
+        return e('div', { className: 'relative z-10 bg-white text-[#001489] text-xs sm:text-sm' },
+            e('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2' },
                 e('span', null,
                     'Welcome to our list of upcoming sessions. ',
                     e('button', {
@@ -395,7 +327,7 @@
     }
 
     // ------------------------------------------------------------
-    // Floating toast (success / error)
+    // Floating Toast
     // ------------------------------------------------------------
     function Toast({ toast }) {
         if (!toast) return null;
@@ -413,7 +345,7 @@
     }
 
     // ------------------------------------------------------------
-    // Provider — mount once. Holds all state, exposes `trigger`.
+    // Provider — Main State & Logic Component
     // ------------------------------------------------------------
     let triggerImpl = null;
 
@@ -436,10 +368,6 @@
             toastTimerRef.current = setTimeout(() => setToast(null), 3500);
         }, []);
 
-        // On load — not just on Pre-Register click — check for an
-        // on-device profile and, if found, recognize it immediately so
-        // the "Welcome back" banner can render right away. No write
-        // happens yet; this only primes who a click will register as.
         useEffect(() => {
             const device = readDeviceProfile();
             if (device) {
@@ -492,15 +420,47 @@
             }
         }, [showToast]);
 
+        // Triggered whenever a user clicks "Pre-Register"
         const handleTrigger = useCallback((session) => {
             if (!session || !session.idKey) {
                 console.error('preregister.js: trigger() called without a session idKey');
                 return;
             }
+
+            const currentPath = window.location.pathname.toLowerCase();
+            const isTargetPage = currentPath.includes('calendar') || currentPath.includes('session');
+            const hasSeenPopup = sessionStorage.getItem('hasSeenCalendarSessionPopup');
+
+            // Check if this is the FIRST click in the current tab session on Calendar/Session pages
+            if (isTargetPage && !hasSeenPopup) {
+                sessionStorage.setItem('hasSeenCalendarSessionPopup', 'true');
+                setPendingSession(session);
+
+                // Option 1: Unhide custom HTML element if present
+                const customPopup = document.getElementById('myPopup');
+                if (customPopup) {
+                    customPopup.style.display = 'block';
+                    return;
+                }
+
+                // Option 2: Fallback to built-in confirmation or registration modal
+                const device = readDeviceProfile();
+                if (device) {
+                    setCandidateDeviceProfile(device);
+                    setModal('confirm');
+                } else {
+                    ensureSchoolsLoaded();
+                    setModal('tempForm');
+                }
+                return;
+            }
+
+            // Standard flow for subsequent clicks or non-target pages
             if (profile) {
                 performRegister(profile, session);
                 return;
             }
+
             const device = readDeviceProfile();
             setPendingSession(session);
             if (device) {
@@ -546,17 +506,11 @@
             if (pendingSession) {
                 performRegister(p, pendingSession);
             } else {
-                // Opened via the "Click here to set your pre-registration
-                // details" banner link, not a specific session — just
-                // store the profile in memory, nothing to write yet.
                 showToast('success', 'Your details are set. Click Pre-Register on a session to register.');
             }
         };
 
         const handleSwitch = () => {
-            // "Not me?" — drop the current profile and go straight into
-            // the temporary-profile form, rather than just clearing
-            // state and waiting for the next click.
             setProfile(null);
             setPendingSession(null);
             ensureSchoolsLoaded();
@@ -564,9 +518,6 @@
         };
 
         const handleSetupProfile = () => {
-            // "Click here to set your pre-registration details" — the
-            // same temporary-profile form, but with no session attached
-            // yet, so submitting it only stores the profile.
             setPendingSession(null);
             ensureSchoolsLoaded();
             setModal('tempForm');
