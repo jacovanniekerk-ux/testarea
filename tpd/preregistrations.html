@@ -298,19 +298,25 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
         // it only ever looks at 'Virtual' sessions (the only ones the
         // Pre-Register widget appears on), from 21 days ago through to
         // whatever's upcoming. It does not touch attendance_staging at all.
+        //
+        // session_pre_registrations is no longer readable directly with the
+        // publishable key (RLS blocks it) — the admin-registrations Edge
+        // Function returns it instead, gated by the shared passphrase.
         // ---------------------------------------------------------------
-        async function loadAdminData() {
+        async function loadAdminData(passphrase) {
             const lookback = new Date();
             lookback.setDate(lookback.getDate() - 21);
             const lookbackISO = `${lookback.getFullYear()}-${pad2(lookback.getMonth() + 1)}-${pad2(lookback.getDate())}`;
 
-            const [preregRows, sessionRows, courseRows, schoolRows] = await Promise.all([
-                fetchAllRows('session_pre_registrations', 'id_key, name, email, school, created_at'),
+            const [preregResult, sessionRows, courseRows, schoolRows] = await Promise.all([
+                supabaseClient.functions.invoke('admin-registrations', { body: { passphrase } }),
                 fetchAllRows('sessions', 'id_key, session_title, session_date, session_start_time, session_delivery_mode, hosting_unit, session_link',
                     q => q.eq('session_delivery_mode', 'Virtual').gte('session_date', lookbackISO)),
                 fetchAllRows('courses', 'course_name, developmental_level, programme_duration, session_desciption, session_outcomes'),
                 fetchAllRows('schools', 'School_Name, Education_District')
             ]);
+            if (preregResult.error) throw preregResult.error;
+            const preregRows = preregResult.data || [];
 
             // Real districts are derived from the schools table itself — never
             // hardcoded, since exact names/casing live in the data.
@@ -571,13 +577,45 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
             );
         }
 
+        function PassphraseGate({ onSubmit, error, loading }) {
+            const [value, setValue] = useState('');
+            const handleSubmit = (ev) => {
+                ev.preventDefault();
+                if (!value.trim() || loading) return;
+                onSubmit(value.trim());
+            };
+            return e('div', { className: "min-h-screen flex items-center justify-center bg-gray-50 px-4" },
+                e('div', { className: "max-w-sm w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8" },
+                    e('h2', { className: "text-lg font-bold text-gray-900 mb-1" }, "Admin Access"),
+                    e('p', { className: "text-sm text-gray-500 mb-4" }, "Enter the shared admin passphrase to view session registrations."),
+                    e('form', { onSubmit: handleSubmit },
+                        e('input', {
+                            type: "password", value, autoFocus: true, placeholder: "Passphrase",
+                            onChange: (ev) => setValue(ev.target.value),
+                            className: `w-full px-3.5 py-2.5 rounded-lg border-2 focus:outline-none text-sm mb-2 transition-colors ${error ? 'border-wcg-red' : 'border-gray-200 focus:border-wcg-blue'}`
+                        }),
+                        error ? e('p', { className: "text-xs text-wcg-red font-medium mb-3" }, error) : e('div', { className: "mb-3" }),
+                        e('button', {
+                            type: "submit", disabled: loading,
+                            className: "w-full bg-wcg-blue hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60"
+                        }, loading ? "Checking…" : "Continue")
+                    )
+                )
+            );
+        }
+
         function App() {
             const [sessions, setSessions] = useState([]);
             const [districts, setDistricts] = useState([]);
-            const [loading, setLoading] = useState(true);
+            const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
             const [refreshKey, setRefreshKey] = useState(0);
             const [lastUpdated, setLastUpdated] = useState(null);
+
+            const [authenticated, setAuthenticated] = useState(false);
+            const [passphrase, setPassphrase] = useState('');
+            const [authError, setAuthError] = useState(null);
+            const [authenticating, setAuthenticating] = useState(false);
 
             const [searchTerm, setSearchTerm] = useState('');
             const [levelFilter, setLevelFilter] = useState('All');
@@ -590,13 +628,30 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
             const [toast, setToast] = useState(null);
             const showToast = (kind, text) => { setToast({ kind, text }); setTimeout(() => setToast(null), 3500); };
 
+            const handleAuthSubmit = async (value) => {
+                setAuthenticating(true);
+                setAuthError(null);
+                try {
+                    const { error: invokeError } = await supabaseClient.functions.invoke('admin-registrations', { body: { passphrase: value } });
+                    if (invokeError) throw invokeError;
+                    setPassphrase(value);
+                    setAuthenticated(true);
+                } catch (err) {
+                    console.error('Admin auth failed:', err);
+                    setAuthError('Incorrect passphrase. Please try again.');
+                } finally {
+                    setAuthenticating(false);
+                }
+            };
+
             useEffect(() => {
+                if (!authenticated) return;
                 let cancelled = false;
                 (async () => {
                     setLoading(true);
                     setError(null);
                     try {
-                        const result = await loadAdminData();
+                        const result = await loadAdminData(passphrase);
                         if (!cancelled) {
                             setSessions(result.sessions);
                             setDistricts(result.districts);
@@ -610,7 +665,7 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                     }
                 })();
                 return () => { cancelled = true; };
-            }, [refreshKey]);
+            }, [authenticated, refreshKey]);
 
             const levelOptions = useMemo(() => Array.from(new Set(sessions.map(s => s.level).filter(Boolean))).sort(), [sessions]);
             const hostingDistrictOptions = useMemo(() => Array.from(new Set(sessions.map(s => s.hostingUnit).filter(Boolean))).sort(), [sessions]);
@@ -691,6 +746,10 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                 });
                 downloadCSV('session-registrations-overview.csv', rows, headers);
             };
+
+            if (!authenticated) {
+                return e(PassphraseGate, { onSubmit: handleAuthSubmit, error: authError, loading: authenticating });
+            }
 
             if (loading) {
                 return e('div', { className: "min-h-screen flex flex-col items-center justify-center text-gray-400" }, e(Icons.Loader), e('p', { className: "mt-3 text-sm" }, "Loading session data…"));

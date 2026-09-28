@@ -182,22 +182,24 @@
         };
 
         // ---------------------------------------------------------------
-        // Fetches this person's upcoming pre-registered sessions:
-        // session_pre_registrations (by email) -> sessions (by id_key) ->
-        // courses (for development level), minimal fields only.
+        // Fetches this person's upcoming pre-registered sessions.
+        //
+        // session_pre_registrations is no longer readable directly with the
+        // publishable key (RLS blocks it) — this calls the my-registrations
+        // Edge Function instead, which uses the service_role key server-side
+        // and only ever returns rows matching the email it's given.
+        // sessions/courses aren't personal data, so those are still queried
+        // directly as before.
         // ---------------------------------------------------------------
         async function fetchMyRegistrations(email) {
             const trimmed = (email || '').trim();
             if (!trimmed) return [];
 
-            const { data: preregRows, error: preregErr } = await supabaseClient
-                .from('session_pre_registrations')
-                .select('id_key, email')
-                .ilike('email', trimmed);
+            const { data: preregRows, error: preregErr } = await supabaseClient.functions.invoke('my-registrations', { body: { email: trimmed } });
             if (preregErr) throw preregErr;
 
             const emailByIdKey = new Map();
-            (preregRows || []).forEach(r => { if (r.id_key) emailByIdKey.set(r.id_key, r.email); });
+            (preregRows || []).forEach(r => { if (r.id_key != null) emailByIdKey.set(String(r.id_key), r.email); });
             const idKeys = Array.from(emailByIdKey.keys());
             if (idKeys.length === 0) return [];
 
@@ -227,7 +229,7 @@
                         : (startParts ? `${pad2(startParts.hours)}:${pad2(startParts.minutes)}` : '');
                     return {
                         idKey: s.id_key,
-                        email: emailByIdKey.get(s.id_key) || trimmed,
+                        email: emailByIdKey.get(String(s.id_key)) || trimmed,
                         name: s.session_title || 'Untitled Session',
                         dateISO: s.session_date || '',
                         time: timeDisplay,
@@ -241,12 +243,10 @@
 
         // Deletes a single pre-registration row, scoped to the exact id_key +
         // email pair so it can never affect anyone else's registration.
+        // Routed through the cancel-registration Edge Function since RLS
+        // blocks direct deletes with the publishable key.
         async function deletePreRegistration(idKey, email) {
-            const { error } = await supabaseClient
-                .from('session_pre_registrations')
-                .delete()
-                .eq('id_key', idKey)
-                .eq('email', email);
+            const { error } = await supabaseClient.functions.invoke('cancel-registration', { body: { idKey, email } });
             if (error) throw error;
         }
 
