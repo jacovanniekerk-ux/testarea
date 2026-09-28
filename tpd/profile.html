@@ -1776,7 +1776,7 @@ const todayISO = toISODateString(testAnchor);
             }
 
             return e('div', { className: "min-h-screen bg-gray-50" },
-                e(window.PreRegisterWidget.Provider),
+                e(window.PreRegisterWidget.Provider, { hideBanner: true }),
                 e('header', { className: "bg-white shadow-sm no-print" },
                     e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center" },
                         e('img', { src: "header.png", alt: "WCED Header", className: "h-12 sm:h-16" }),
