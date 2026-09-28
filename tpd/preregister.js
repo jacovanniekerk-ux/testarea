@@ -354,7 +354,7 @@
     // ------------------------------------------------------------
     let triggerImpl = null;
 
-    function Provider() {
+   function Provider({ hideBanner } = {}) {
         const [profile, setProfile] = useState(null);
         const [modal, setModal] = useState(null); // null | 'confirm' | 'tempForm'
         const [candidateDeviceProfile, setCandidateDeviceProfile] = useState(null);
@@ -529,9 +529,11 @@
         };
 
         return e(React.Fragment, null,
-            profile
-                ? e(ProfileBanner, { profile, onSwitch: handleSwitch })
-                : e(NoProfileBanner, { onSetup: handleSetupProfile }),
+           hideBanner
+            ? null
+        : (profile
+            ? e(ProfileBanner, { profile, onSwitch: handleSwitch })
+            : e(NoProfileBanner, { onSetup: handleSetupProfile })),
             modal === 'confirm' && candidateDeviceProfile ? e(ConfirmModal, {
                 profile: candidateDeviceProfile,
                 onConfirm: handleConfirmYes,
