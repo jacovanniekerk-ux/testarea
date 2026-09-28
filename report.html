@@ -43,6 +43,7 @@
       import { requireSession } from './js/session.js';
       import { fetchReportData } from './js/report-data.js';
       import { calculateScores, getArchetypeInfo, getRadarGeometry, buildAffectiveContext } from './js/report-engine.js';
+      import { mountClassroomReport } from './js/classroom-report-view.js';
 
       const advisor = requireSession('4p.html');
       if (!advisor) {
@@ -354,6 +355,12 @@
           </div>`;
       }
 
+      // Stable key used for the toggle tabs / ?view= param. Falls back to the
+      // position if a row somehow has no id.
+      function classroomKey(cls, idx) {
+        return cls && cls.id ? String(cls.id) : `idx-${idx}`;
+      }
+
       function classroomCardHtml(cls, idx, total) {
         const classLabel = total > 1 ? `Observed Classroom ${idx + 1}: ${cls.teacher_name || 'Unnamed'}` : 'Classroom Observation Context';
 
@@ -377,8 +384,13 @@
 
         return `
           <div class="bg-slate-50/50 border border-slate-200/80 rounded-xl p-4 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
               <span class="text-[11px] font-black uppercase text-[#001489] tracking-wider">${escapeHtml(classLabel)}</span>
+              <button type="button" data-view="${escapeHtml(classroomKey(cls, idx))}"
+                class="no-print inline-flex items-center gap-1.5 text-[10px] font-bold text-[#001489] bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-md transition shrink-0">
+                <span>View full Classroom Observation report</span>
+                <i class="fa-solid fa-arrow-right text-[9px]"></i>
+              </button>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs bg-white p-3 rounded-lg border border-slate-200">
               <div><span class="text-[8px] font-black text-slate-400 block uppercase">TEACHER OBSERVED</span><span class="text-slate-800">${escapeHtml(cls.teacher_name) || 'N/A'}</span></div>
@@ -465,7 +477,13 @@
           </div>`;
       }
 
-      function renderReport({ walkthrough, classrooms, school, advisor: reportAdvisor }) {
+      // ------------------------------------------------------------
+      // Culture Walkthrough report — whole-school view. Its People &
+      // Practices scores, affective context and Section 5 are still
+      // informed by the linked classroom observations, but the detailed
+      // classroom analysis lives in its own report (see toggles below).
+      // ------------------------------------------------------------
+      function walkthroughReportHtml({ walkthrough, classrooms, school, advisor: reportAdvisor }) {
         const scores = calculateScores(walkthrough, classrooms);
         scores._classrooms = classrooms; // carried through for buildAffectiveContext()
         const archetype = getArchetypeInfo(scores.scoreAverage);
@@ -474,7 +492,7 @@
         const advisorName = reportAdvisor ? reportAdvisor.full_name : null;
         const dateValue = walkthrough ? walkthrough.visit_date : classrooms[0].created_at;
 
-        rootEl.innerHTML = `
+        return `
           <div id="printable-report" class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-sm">
             ${reportBrandingHeaderHtml(archetype, dateValue)}
             ${section1Html({ scores, archetype, school, district, advisorName, dateValue })}
@@ -484,6 +502,130 @@
             ${section5Html(archetype, walkthrough, classrooms)}
             ${signatureBlockHtml(advisorName)}
           </div>`;
+      }
+
+      // ------------------------------------------------------------
+      // Toggle bar (Culture Walkthrough <-> each Classroom Observation)
+      // ------------------------------------------------------------
+      function tabButtonHtml({ view, icon, label, detail, active }) {
+        return `
+          <button type="button" data-view="${escapeHtml(view)}"
+            class="font-bold text-xs px-3.5 py-2 rounded-md transition flex items-center gap-1.5 max-w-[16rem] ${active ? 'bg-white shadow-sm text-[#001489]' : 'text-slate-500 hover:text-slate-700'}">
+            <i class="fa-solid ${icon} shrink-0"></i>
+            <span class="whitespace-nowrap shrink-0">${escapeHtml(label)}</span>
+            ${detail ? `<span class="hidden sm:inline font-medium truncate min-w-0 ${active ? 'text-slate-500' : 'text-slate-400'}">· ${escapeHtml(detail)}</span>` : ''}
+          </button>`;
+      }
+
+      function tabsBarHtml({ classrooms, activeView }) {
+        const classroomTabs = classrooms
+          .map((cls, i) =>
+            tabButtonHtml({
+              view: classroomKey(cls, i),
+              icon: 'fa-chalkboard-user',
+              label: `Classroom ${i + 1}`,
+              detail: cls.teacher_name || cls.subject_observed || '',
+              active: activeView === classroomKey(cls, i),
+            })
+          )
+          .join('');
+
+        return `
+          <div class="no-print mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <div class="inline-flex flex-wrap rounded-lg border border-slate-200 bg-slate-100 p-1 gap-1">
+              ${tabButtonHtml({ view: 'walkthrough', icon: 'fa-building-columns', label: 'Culture Walkthrough', detail: '', active: activeView === 'walkthrough' })}
+              ${classroomTabs}
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${classrooms.length} classroom observation${classrooms.length === 1 ? '' : 's'} recorded</span>
+          </div>`;
+      }
+
+      function renderWalkthroughWithToggles(ctx) {
+        const { walkthrough, classrooms, school, advisor: reportAdvisor } = ctx;
+        const keys = classrooms.map((c, i) => classroomKey(c, i));
+
+        const requested = params.get('view');
+        let activeView = requested && keys.includes(requested) ? requested : 'walkthrough';
+        let classroomMount = null;
+
+        rootEl.innerHTML = '<div id="report-tabs"></div><div id="report-panel"></div>';
+        const tabsEl = document.getElementById('report-tabs');
+        const panelEl = document.getElementById('report-panel');
+
+        const baseHeader = {
+          schoolName: school ? school.school_name : '',
+          district: school ? school.district : (reportAdvisor ? reportAdvisor.district : ''),
+          visitDate: walkthrough.visit_date,
+          advisorName: reportAdvisor ? reportAdvisor.full_name : '',
+        };
+
+        function show(view, { scroll = false } = {}) {
+          if (classroomMount) {
+            classroomMount.destroy();
+            classroomMount = null;
+          }
+          activeView = view;
+
+          // Keep the URL shareable / refresh-safe without adding history entries.
+          const url = new URL(window.location.href);
+          if (view === 'walkthrough') url.searchParams.delete('view');
+          else url.searchParams.set('view', view);
+          window.history.replaceState(null, '', url);
+
+          tabsEl.innerHTML = tabsBarHtml({ classrooms, activeView });
+
+          if (view === 'walkthrough') {
+            document.title = 'Culture Walkthrough Report — WCED 4P Diagnostic';
+            panelEl.innerHTML = walkthroughReportHtml(ctx);
+          } else {
+            const idx = keys.indexOf(view);
+            document.title = `Classroom ${idx + 1} Observation Report — WCED 4P Diagnostic`;
+            classroomMount = mountClassroomReport(panelEl, {
+              classroom: classrooms[idx],
+              header: baseHeader,
+              walkthroughHref: `report.html?type=walkthrough&id=${encodeURIComponent(reportId)}`,
+            });
+          }
+          if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // One delegated listener covers the toggle bar AND the
+        // "View full Classroom Observation report" buttons in Section 5.
+        rootEl.addEventListener('click', (e) => {
+          const trigger = e.target.closest('[data-view]');
+          if (!trigger) return;
+          const view = trigger.getAttribute('data-view');
+          if (view !== activeView && (view === 'walkthrough' || keys.includes(view))) {
+            show(view, { scroll: true });
+          }
+        });
+
+        show(activeView);
+      }
+
+      // ------------------------------------------------------------
+      // Standalone Classroom Observation — its own report, not a
+      // culture-walkthrough-style summary.
+      // ------------------------------------------------------------
+      function renderStandaloneClassroom({ classrooms, school, advisor: reportAdvisor }) {
+        const cls = classrooms[0];
+        document.title = 'Classroom Observation Report — WCED 4P Diagnostic';
+
+        const header = {
+          schoolName: school ? school.school_name : '',
+          district: school ? school.district : (reportAdvisor ? reportAdvisor.district : ''),
+          visitDate: cls.visit_date || cls.submitted_at || cls.created_at,
+          advisorName: reportAdvisor ? reportAdvisor.full_name : '',
+        };
+
+        // If this observation was captured as part of a Culture Walkthrough,
+        // offer a link across to that whole-school report.
+        const walkthroughHref = cls.culture_walkthrough_id
+          ? `report.html?type=walkthrough&id=${encodeURIComponent(cls.culture_walkthrough_id)}&view=walkthrough`
+          : null;
+
+        rootEl.innerHTML = '';
+        mountClassroomReport(rootEl, { classroom: cls, header, walkthroughHref });
       }
 
       async function init() {
@@ -511,7 +653,11 @@
           return;
         }
 
-        renderReport({ walkthrough, classrooms, school, advisor: reportAdvisor });
+        if (reportType === 'walkthrough') {
+          renderWalkthroughWithToggles({ walkthrough, classrooms, school, advisor: reportAdvisor });
+        } else {
+          renderStandaloneClassroom({ classrooms, school, advisor: reportAdvisor });
+        }
       }
 
       init();
