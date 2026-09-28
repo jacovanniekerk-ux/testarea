@@ -44,6 +44,7 @@
       import { fetchReportData } from './js/report-data.js';
       import { calculateScores, getArchetypeInfo, getRadarGeometry, buildAffectiveContext } from './js/report-engine.js';
       import { mountClassroomReport } from './js/classroom-report-view.js';
+      import { reportIcon } from './js/report-icons.js';
 
       const advisor = requireSession('4p.html');
       if (!advisor) {
@@ -102,13 +103,13 @@
       // Section header banner — the same colored-banner-with-icon-and-
       // pill-badge pattern used above all 5 sections in the original.
       // ------------------------------------------------------------
-      function sectionBannerHtml(archetype, iconClass, title, badgeText) {
+      function sectionBannerHtml(archetype, iconName, title, badgeText) {
         return `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-3.5 rounded-xl border shadow-sm"
                style="background-color:${archetype.color}14; border-color:${archetype.color}45; border-left-width:6px; border-left-color:${archetype.color};">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color:${archetype.color};">
-                <i class="fa-solid ${iconClass}"></i>
+                ${reportIcon(iconName)}
               </div>
               <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-[#001489]">${title}</h3>
             </div>
@@ -211,7 +212,7 @@
 
         return `
           <div class="py-4 border-b border-slate-200 space-y-4">
-            ${sectionBannerHtml(archetype, 'fa-award', '1. Institutional Diagnostic Level', `LEVEL ${archetype.levelNum}: ${archetype.name.toUpperCase()}`)}
+            ${sectionBannerHtml(archetype, 'fourP', '1. Institutional Diagnostic Level', `LEVEL ${archetype.levelNum}: ${archetype.name.toUpperCase()}`)}
 
             <div class="p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
                  style="background-color:${archetype.color}12; border-color:${archetype.color}40; border-left-width:8px; border-left-color:${archetype.color};">
@@ -269,7 +270,7 @@
         const m = archetype.strategicMatrix;
         return `
           <div class="py-4 border-b border-slate-200 space-y-4">
-            ${sectionBannerHtml(archetype, 'fa-compass', '2. Operational to Affective Insight', m.title)}
+            ${sectionBannerHtml(archetype, 'insight', '2. Operational to Affective Insight', m.title)}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div class="bg-white rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
                 <div>
@@ -311,7 +312,7 @@
       function section3Html(archetype) {
         return `
           <div class="py-4 border-b border-slate-200 space-y-3">
-            ${sectionBannerHtml(archetype, 'fa-wand-magic-sparkles', `3. Critical Advisory Lens for Affective Transformation - ${archetype.name}`, 'Cultural Lens')}
+            ${sectionBannerHtml(archetype, 'lens', `3. Critical Advisory Lens for Affective Transformation - ${archetype.name}`, 'Cultural Lens')}
             <div class="rounded-xl p-4 border shadow-sm" style="background-color:${archetype.color}08; border-color:${archetype.color}35; border-left-width:4px; border-left-color:${archetype.color};">
               ${nl2p(archetype.criticalAdvisoryLens)}
             </div>
@@ -339,7 +340,7 @@
 
         return `
           <div class="py-4 border-b border-slate-200 space-y-3">
-            ${sectionBannerHtml(archetype, 'fa-circle-check', '4. Measures of Support', '5 Key Pillars of Support')}
+            ${sectionBannerHtml(archetype, 'support', '4. Measures of Support', '5 Key Pillars of Support')}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">${cards}</div>
           </div>`;
       }
@@ -432,7 +433,7 @@
 
         return `
           <div class="py-4 border-b border-slate-200 space-y-4">
-            ${sectionBannerHtml(archetype, 'fa-layer-group', '5. Field Observation Findings &amp; Evidence', 'Field Logs')}
+            ${sectionBannerHtml(archetype, 'evidence', '5. Field Observation Findings &amp; Evidence', 'Field Logs')}
             ${walkthroughDetails}
             <div class="space-y-6">${classroomCards}</div>
           </div>`;
