@@ -16,6 +16,7 @@
                     colors: {
                         wcg: {
                             blue: '#001489',
+                            bright: '#007DBA',
                             green2: '#8FAD15',
                             grey: '#968C83',
                             red: '#BA0C2F',
@@ -147,6 +148,31 @@
             const d = new Date(iso);
             if (isNaN(d.getTime())) return '—';
             return d.toLocaleString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' });
+        };
+
+        // ---------------------------------------------------------------
+        // Day / week helpers + registration link
+        // ---------------------------------------------------------------
+        const LOW_REG_THRESHOLD = 20;
+        const REGISTER_BASE_URL = 'wcedtpd.pages.dev/register?idkey=';
+        const registerLink = (idKey) => `${REGISTER_BASE_URL}${encodeURIComponent(String(idKey ?? '').trim())}`;
+
+        const toISODate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+        // Week runs Monday -> Sunday.
+        const getDayInfo = () => {
+            const now = new Date();
+            const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+            const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+            const short = (d) => d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' });
+            return {
+                todayISO: toISODate(now),
+                tomorrowISO: toISODate(tomorrow),
+                weekStartISO: toISODate(monday),
+                weekEndISO: toISODate(sunday),
+                weekLabel: `${short(monday)} – ${short(sunday)}`
+            };
         };
 
         // ---------------------------------------------------------------
@@ -394,18 +420,19 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
             return e('span', { className: `px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border ${colorClass} shadow-sm` }, children || '—');
         };
 
-        function StatCard({ label, value, sub }) {
-            return e('div', { className: "bg-white rounded-xl border border-gray-200 shadow-sm p-4" },
-                e('p', { className: "text-[11px] font-bold uppercase tracking-wide text-gray-400 mb-1" }, label),
-                e('p', { className: "text-2xl font-bold text-gray-900" }, value),
-                sub ? e('p', { className: "text-xs text-gray-500 mt-0.5" }, sub) : null
+        function StatCard({ label, value, sub, variant = 'default' }) {
+            const isWeek = variant === 'week';
+            return e('div', { className: `rounded-xl border border-t-4 shadow-sm p-4 ${isWeek ? 'bg-wcg-blue border-wcg-blue border-t-wcg-bright' : 'bg-white border-gray-200 border-t-wcg-bright'}` },
+                e('p', { className: `text-[11px] font-bold uppercase tracking-wide mb-1 ${isWeek ? 'text-blue-200' : 'text-gray-400'}` }, label),
+                e('p', { className: `text-2xl font-bold ${isWeek ? 'text-white' : 'text-wcg-blue'}` }, value),
+                sub ? e('p', { className: `text-xs mt-0.5 ${isWeek ? 'text-blue-100' : 'text-gray-500'}` }, sub) : null
             );
         }
 
         function SortHeader({ label, sortKey, sort, onSort }) {
             const active = sort.key === sortKey;
             return e('th', {
-                className: "px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500 cursor-pointer hover:text-wcg-blue select-none",
+                className: "px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500 cursor-pointer hover:text-wcg-bright select-none",
                 onClick: () => onSort(sortKey)
             },
                 e('span', { className: "inline-flex items-center gap-1" },
@@ -475,8 +502,8 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                                 e('span', { className: "text-[11px] font-bold uppercase tracking-wide text-gray-400" }, "ID Key"),
                                 e('code', { className: "text-sm font-mono font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-800" }, session.idKey),
                                 e('button', {
-                                    onClick: () => copyToClipboard(String(session.idKey)).then(ok => showToast(ok ? 'success' : 'error', ok ? 'Copied ID Key.' : 'Could not copy.')),
-                                    title: "Copy ID Key",
+                                    onClick: () => copyToClipboard(registerLink(session.idKey)).then(ok => showToast(ok ? 'success' : 'error', ok ? 'Copied registration link.' : 'Could not copy.')),
+                                    title: "Copy registration link",
                                     className: "text-gray-400 hover:text-wcg-blue"
                                 }, e(Icons.Copy))
                             ),
@@ -491,11 +518,11 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                     e('div', { className: "px-5 sm:px-6 pt-3 flex items-center gap-1 border-b border-gray-100" },
                         e('button', {
                             onClick: () => setTab('registrants'),
-                            className: `px-3 py-2 text-sm font-bold border-b-2 -mb-px transition-colors ${tab === 'registrants' ? 'border-wcg-blue text-wcg-blue' : 'border-transparent text-gray-400 hover:text-gray-600'}`
+                            className: `px-3 py-2 text-sm font-bold border-b-2 -mb-px transition-colors ${tab === 'registrants' ? 'border-wcg-bright text-wcg-bright' : 'border-transparent text-gray-400 hover:text-gray-600'}`
                         }, `Registrants (${session.totalRegistered})`),
                         e('button', {
                             onClick: () => setTab('email'),
-                            className: `px-3 py-2 text-sm font-bold border-b-2 -mb-px transition-colors ${tab === 'email' ? 'border-wcg-blue text-wcg-blue' : 'border-transparent text-gray-400 hover:text-gray-600'}`
+                            className: `px-3 py-2 text-sm font-bold border-b-2 -mb-px transition-colors ${tab === 'email' ? 'border-wcg-bright text-wcg-bright' : 'border-transparent text-gray-400 hover:text-gray-600'}`
                         }, "Reminder Email")
                     ),
 
@@ -503,7 +530,7 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                         e('div', { className: "p-5 sm:p-6 pb-3 flex flex-wrap items-center gap-2" },
                             e('button', {
                                 onClick: handleCopyEmails,
-                                className: "inline-flex items-center gap-2 bg-wcg-blue hover:bg-blue-800 text-white font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                                className: "inline-flex items-center gap-2 bg-wcg-blue hover:bg-wcg-bright text-white font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
                             }, e(Icons.Copy), `Copy All Emails (${session.totalRegistered})`),
                             e('button', {
                                 onClick: handleDownloadCSV,
@@ -514,7 +541,7 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                                 e('input', {
                                     type: "text", placeholder: "Filter registrants...", value: search,
                                     onChange: (ev) => setSearch(ev.target.value),
-                                    className: "w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-blue text-sm transition-all"
+                                    className: "w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-bright text-sm transition-all"
                                 })
                             )
                         ),
@@ -552,12 +579,12 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                             onChange: (ev) => setPersonalNote(ev.target.value),
                             placeholder: "e.g. Looking forward to seeing your school represented at this one!",
                             rows: 2,
-                            className: "w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-blue text-sm mb-4 resize-none"
+                            className: "w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-bright text-sm mb-4 resize-none"
                         }),
                         e('div', { className: "flex flex-wrap items-center gap-2 mb-4" },
                             e('button', {
                                 onClick: handleCopyEmailBody,
-                                className: "inline-flex items-center gap-2 bg-wcg-blue hover:bg-blue-800 text-white font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                                className: "inline-flex items-center gap-2 bg-wcg-blue hover:bg-wcg-bright text-white font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
                             }, e(Icons.Copy), "Copy Email Body"),
                             e('button', {
                                 onClick: handleCopySubject,
@@ -592,12 +619,12 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                         e('input', {
                             type: "password", value, autoFocus: true, placeholder: "Passphrase",
                             onChange: (ev) => setValue(ev.target.value),
-                            className: `w-full px-3.5 py-2.5 rounded-lg border-2 focus:outline-none text-sm mb-2 transition-colors ${error ? 'border-wcg-red' : 'border-gray-200 focus:border-wcg-blue'}`
+                            className: `w-full px-3.5 py-2.5 rounded-lg border-2 focus:outline-none text-sm mb-2 transition-colors ${error ? 'border-wcg-red' : 'border-gray-200 focus:border-wcg-bright'}`
                         }),
                         error ? e('p', { className: "text-xs text-wcg-red font-medium mb-3" }, error) : e('div', { className: "mb-3" }),
                         e('button', {
                             type: "submit", disabled: loading,
-                            className: "w-full bg-wcg-blue hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60"
+                            className: "w-full bg-wcg-blue hover:bg-wcg-bright text-white font-bold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60"
                         }, loading ? "Checking…" : "Continue")
                     )
                 )
@@ -722,29 +749,39 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                 filteredSessions.forEach(s => districts.concat(UNKNOWN_DISTRICT).forEach(d => { totals[d] += s.districtCounts[d] || 0; }));
                 return totals;
             }, [filteredSessions, districts]);
-            const topDistrict = useMemo(() => {
-                const entries = Object.entries(districtTotals).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-                return entries.length > 0 ? entries[0] : null;
-            }, [districtTotals]);
+            const dayInfo = getDayInfo();
 
-            const handleDownloadOverviewCSV = () => {
-                const allBuckets = districts.concat(UNKNOWN_DISTRICT);
-                const headers = [
-                    { key: 'idKey', label: 'ID Key' },
-                    { key: 'name', label: 'Session' },
-                    { key: 'date', label: 'Date' },
-                    { key: 'time', label: 'Time' },
-                    { key: 'level', label: 'Level' },
-                    { key: 'hostingUnit', label: 'Hosted By' },
-                    { key: 'total', label: 'Total Registered' },
-                    ...allBuckets.map(d => ({ key: d, label: d }))
-                ];
-                const rows = sortedSessions.map(s => {
-                    const row = { idKey: s.idKey, name: s.name, date: s.dateISO, time: s.time, level: s.level, hostingUnit: s.hostingUnit, total: s.totalRegistered };
-                    allBuckets.forEach(d => { row[d] = s.districtCounts[d] || 0; });
-                    return row;
+            // Pre-registrations for sessions happening in the current week (Mon–Sun).
+            // Respects the search / hosting district / level filters, but is not
+            // affected by the "show past sessions" toggle.
+            const thisWeek = useMemo(() => {
+                const list = sessions.filter(s => {
+                    if (!s.dateISO || s.dateISO < dayInfo.weekStartISO || s.dateISO > dayInfo.weekEndISO) return false;
+                    if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                    if (levelFilter !== 'All' && s.level !== levelFilter) return false;
+                    if (districtFilter !== 'All' && s.hostingUnit !== districtFilter) return false;
+                    return true;
                 });
-                downloadCSV('session-registrations-overview.csv', rows, headers);
+                return { sessionCount: list.length, registrations: list.reduce((sum, s) => sum + s.totalRegistered, 0) };
+            }, [sessions, searchTerm, levelFilter, districtFilter, dayInfo.weekStartISO, dayInfo.weekEndISO]);
+
+            // Row highlighting: today (strong blue), tomorrow (lighter blue),
+            // low registration (< 20, upcoming/current sessions only) in light red.
+            const getRowStyle = (s) => {
+                const isToday = s.dateISO === dayInfo.todayISO;
+                const isTomorrow = s.dateISO === dayInfo.tomorrowISO;
+                const isPast = !s.dateISO || s.dateISO < dayInfo.todayISO;
+                const isLow = !isPast && s.totalRegistered < LOW_REG_THRESHOLD;
+                let bg = 'hover:bg-blue-50/50';
+                if (isLow) bg = 'bg-red-50 hover:bg-red-100';
+                else if (isToday) bg = 'bg-wcg-bright/20 hover:bg-wcg-bright/30';
+                else if (isTomorrow) bg = 'bg-wcg-bright/10 hover:bg-wcg-bright/20';
+                return {
+                    row: `border-b border-gray-100 cursor-pointer transition-colors ${bg}`,
+                    edge: isToday ? 'border-l-wcg-bright' : (isTomorrow ? 'border-l-wcg-bright/40' : 'border-l-transparent'),
+                    dateTint: isLow ? (isToday ? 'bg-wcg-bright/25' : (isTomorrow ? 'bg-wcg-bright/15' : '')) : '',
+                    isToday, isTomorrow, isLow
+                };
             };
 
             if (!authenticated) {
@@ -756,13 +793,13 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
             }
 
             return e('div', { className: "min-h-screen pb-16 font-sans bg-gray-50" },
-                e('header', { className: "bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm" },
+                e('header', { className: "bg-white border-b border-gray-200 border-t-4 border-t-wcg-blue sticky top-0 z-30 shadow-sm" },
                     e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4" },
                         e('div', { className: "flex items-center justify-between gap-3 flex-wrap" },
                             e('div', { className: "flex items-center gap-3" },
                                 e('img', { src: "header.png", alt: "WCG Logo", className: "h-9 md:h-12 w-auto object-contain" }),
                                 e('div', null,
-                                    e('h1', { className: "text-base md:text-lg font-bold font-accent text-gray-900" }, "Session Registrations"),
+                                    e('h1', { className: "text-base md:text-lg font-bold font-accent text-wcg-blue" }, "Session Registrations"),
                                     e('p', { className: "text-xs text-gray-500" }, "Virtual sessions · last 21 days + upcoming · pre-registration counts")
                                 )
                             ),
@@ -772,7 +809,7 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                                     onClick: () => setRefreshKey(k => k + 1),
                                     className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
                                 }, e(Icons.RefreshCw), "Refresh"),
-                                e('a', { href: "sessions.html", className: "text-xs font-semibold text-wcg-blue underline underline-offset-2 hover:text-blue-800" }, "Upcoming Sessions ↗")
+                                e('a', { href: "sessions.html", className: "text-xs font-semibold text-wcg-blue underline underline-offset-2 hover:text-wcg-bright" }, "Upcoming Sessions ↗")
                             )
                         )
                     )
@@ -790,32 +827,28 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                             e(StatCard, { label: "Sessions Shown", value: filteredSessions.length }),
                             e(StatCard, { label: "Total Registrations", value: totalRegistrations }),
                             e(StatCard, { label: "Unique Registrants", value: uniqueRegistrants }),
-                            e(StatCard, { label: "Top District", value: topDistrict ? topDistrict[1] : '—', sub: topDistrict ? topDistrict[0] : 'No data yet' })
+                            e(StatCard, { label: "This Week", value: thisWeek.registrations, sub: `${thisWeek.sessionCount} session${thisWeek.sessionCount === 1 ? '' : 's'} · ${dayInfo.weekLabel}`, variant: 'week' })
                         ),
 
                         // --- Filters ---
                         e('div', { className: "mt-5 bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-wrap items-center gap-2" },
-                            e('div', { className: "relative flex-1 min-w-[180px]" },
+                            e('select', {
+                                value: districtFilter, onChange: (ev) => setDistrictFilter(ev.target.value),
+                                className: "border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-wcg-bright"
+                            }, e('option', { value: "All" }, "All Hosting Districts"), hostingDistrictOptions.map(d => e('option', { key: d, value: d }, d))),
+                            e('select', {
+                                value: levelFilter, onChange: (ev) => setLevelFilter(ev.target.value),
+                                className: "border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-wcg-bright"
+                            }, e('option', { value: "All" }, "All Levels"), levelOptions.map(l => e('option', { key: l, value: l }, l))),
+                            e('button', { onClick: clearFilters, className: "text-xs font-semibold text-gray-500 hover:text-wcg-bright underline underline-offset-2" }, "Clear"),
+                            e('div', { className: "relative w-full sm:w-72 sm:ml-auto" },
                                 e('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400" }, e(Icons.Search)),
                                 e('input', {
                                     type: "text", placeholder: "Search session name...", value: searchTerm,
                                     onChange: (ev) => setSearchTerm(ev.target.value),
-                                    className: "w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-blue text-sm transition-all"
+                                    className: "w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-bright text-sm transition-all"
                                 })
-                            ),
-                            e('select', {
-                                value: districtFilter, onChange: (ev) => setDistrictFilter(ev.target.value),
-                                className: "border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-wcg-blue"
-                            }, e('option', { value: "All" }, "All Hosting Districts"), hostingDistrictOptions.map(d => e('option', { key: d, value: d }, d))),
-                            e('select', {
-                                value: levelFilter, onChange: (ev) => setLevelFilter(ev.target.value),
-                                className: "border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-wcg-blue"
-                            }, e('option', { value: "All" }, "All Levels"), levelOptions.map(l => e('option', { key: l, value: l }, l))),
-                            e('button', { onClick: clearFilters, className: "text-xs font-semibold text-gray-500 hover:text-wcg-blue underline underline-offset-2" }, "Clear"),
-                            e('button', {
-                                onClick: handleDownloadOverviewCSV,
-                                className: "ml-auto inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
-                            }, e(Icons.Download), "Export Overview CSV")
+                            )
                         ),
 
                         // --- Toggles: past sessions (left) / district breakdown (right) ---
@@ -824,6 +857,11 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                                 onClick: () => setShowPast(v => !v),
                                 className: "inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-wcg-blue"
                             }, showPast ? e(Icons.ChevronUp) : e(Icons.ChevronDown), showPast ? "Hide sessions older than today" : "Show sessions from the last 21 days too"),
+                            e('div', { className: "flex items-center gap-3 text-[11px] text-gray-500 font-semibold flex-wrap" },
+                                e('span', { className: "inline-flex items-center gap-1.5" }, e('span', { className: "inline-block w-3 h-3 rounded-sm bg-wcg-bright/30 border-l-4 border-wcg-bright" }), "Today"),
+                                e('span', { className: "inline-flex items-center gap-1.5" }, e('span', { className: "inline-block w-3 h-3 rounded-sm bg-wcg-bright/10 border-l-4 border-wcg-bright/40" }), "Tomorrow"),
+                                e('span', { className: "inline-flex items-center gap-1.5" }, e('span', { className: "inline-block w-3 h-3 rounded-sm bg-red-100 border border-red-200" }), `Fewer than ${LOW_REG_THRESHOLD} registered`)
+                            ),
                             e('button', {
                                 onClick: () => setShowDistrictBreakdown(v => !v),
                                 className: "inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-wcg-blue"
@@ -835,7 +873,7 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                             sortedSessions.length === 0
                                 ? e('p', { className: "text-sm text-gray-500 py-10 text-center" }, "No sessions match these filters.")
                                 : e('table', { className: "w-full text-sm" },
-                                    e('thead', { className: "bg-gray-50" },
+                                    e('thead', { className: "bg-wcg-blue/5" },
                                         e('tr', { className: "border-b border-gray-200" },
                                             e(SortHeader, { label: "ID Key", sortKey: "idKey", sort, onSort: handleSort }),
                                             e(SortHeader, { label: "Session", sortKey: "name", sort, onSort: handleSort }),
@@ -852,28 +890,34 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
                                     e('tbody', null,
                                         sortedSessions.map(s => e('tr', {
                                             key: s.idKey,
-                                            className: "border-b border-gray-50 hover:bg-blue-50/50 cursor-pointer transition-colors",
+                                            className: getRowStyle(s).row,
                                             onClick: () => setSelectedSession(s)
                                         },
-                                            e('td', { className: "px-3 py-3" },
+                                            e('td', { className: `px-3 py-3 border-l-4 ${getRowStyle(s).edge}` },
                                                 e('div', { className: "inline-flex items-center gap-1.5" },
                                                     e('code', { className: "text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-700" }, s.idKey),
                                                     e('button', {
                                                         onClick: (ev) => {
                                                             ev.stopPropagation();
-                                                            copyToClipboard(String(s.idKey)).then(ok => showToast(ok ? 'success' : 'error', ok ? 'Copied ID Key.' : 'Could not copy.'));
+                                                            copyToClipboard(registerLink(s.idKey)).then(ok => showToast(ok ? 'success' : 'error', ok ? 'Copied registration link.' : 'Could not copy.'));
                                                         },
-                                                        title: "Copy ID Key",
+                                                        title: "Copy registration link",
                                                         className: "text-gray-400 hover:text-wcg-blue"
                                                     }, e(Icons.Copy))
                                                 )
                                             ),
                                             e('td', { className: "px-3 py-3 font-semibold text-gray-800" }, s.name),
-                                            e('td', { className: "px-3 py-3 text-gray-600" }, formatDateDisplay(parseDate(s.dateISO))),
+                                            e('td', { className: `px-3 py-3 text-gray-600 ${getRowStyle(s).dateTint}` },
+                                                e('span', { className: "inline-flex items-center gap-2" },
+                                                    formatDateDisplay(parseDate(s.dateISO)),
+                                                    getRowStyle(s).isToday ? e('span', { className: "px-1.5 py-0.5 rounded bg-wcg-blue text-white text-[10px] font-bold uppercase tracking-wide" }, "Today") : null,
+                                                    getRowStyle(s).isTomorrow ? e('span', { className: "px-1.5 py-0.5 rounded bg-wcg-bright/20 text-wcg-blue text-[10px] font-bold uppercase tracking-wide" }, "Tomorrow") : null
+                                                )
+                                            ),
                                             e('td', { className: "px-3 py-3 text-gray-600" }, s.time),
                                             e('td', { className: "px-3 py-3" }, s.level ? e(Badge, { type: "level" }, s.level) : '—'),
                                             e('td', { className: "px-3 py-3 text-gray-600" }, s.hostingUnit || '—'),
-                                            e('td', { className: "px-3 py-3 font-bold text-gray-900" }, s.totalRegistered),
+                                            e('td', { className: `px-3 py-3 font-bold ${getRowStyle(s).isLow ? 'text-wcg-red' : 'text-gray-900'}` }, s.totalRegistered),
                                             showDistrictBreakdown ? districts.map(d => e('td', { key: d, className: "px-3 py-3 text-gray-500 text-center" }, s.districtCounts[d] || 0)) : null,
                                             showDistrictBreakdown ? e('td', { className: "px-3 py-3 text-gray-500 text-center" }, s.districtCounts[UNKNOWN_DISTRICT] || 0) : null,
                                             e('td', { className: "px-3 py-3" },
