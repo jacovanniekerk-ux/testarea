@@ -100,6 +100,24 @@
         const UNKNOWN_DISTRICT = 'Unknown / Other';
 
         // ---------------------------------------------------------------
+        // Embed detection: true when the page is running inside an iframe
+        // (e.g. Looker Studio). Append ?embed=1 to force embedded mode, or
+        // ?embed=0 to force the full header, which is handy for testing.
+        // If the browser blocks access to window.top (cross-origin iframe),
+        // that itself means we are embedded.
+        // ---------------------------------------------------------------
+        const isEmbedded = (() => {
+            try {
+                const flag = new URLSearchParams(window.location.search).get('embed');
+                if (flag === '1') return true;
+                if (flag === '0') return false;
+                return window.self !== window.top;
+            } catch (err) {
+                return true;
+            }
+        })();
+
+        // ---------------------------------------------------------------
         // Icons
         // ---------------------------------------------------------------
         const Icons = {
@@ -793,7 +811,13 @@ ${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" 
             }
 
             return e('div', { className: "min-h-screen pb-16 font-sans bg-gray-50" },
-                e('header', { className: "bg-white border-b border-gray-200 border-t-4 border-t-wcg-blue sticky top-0 z-30 shadow-sm" },
+                isEmbedded ? e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 flex items-center justify-end gap-2" },
+                    lastUpdated ? e('span', { className: "text-xs text-gray-400" }, `Updated ${lastUpdated.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}`) : null,
+                    e('button', {
+                        onClick: () => setRefreshKey(k => k + 1),
+                        className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                    }, e(Icons.RefreshCw), "Refresh")
+                ) : e('header', { className: "bg-white border-b border-gray-200 border-t-4 border-t-wcg-blue sticky top-0 z-30 shadow-sm" },
                     e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4" },
                         e('div', { className: "flex items-center justify-between gap-3 flex-wrap" },
                             e('div', { className: "flex items-center gap-3" },
