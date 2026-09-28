@@ -25,6 +25,7 @@
  *   view.destroy();
  */
 import { buildClassroomAnalysis } from './classroom-report-engine.js';
+import { reportIcon } from './report-icons.js';
 
 function esc(str) {
   if (str === null || str === undefined || str === '') return '';
@@ -63,7 +64,7 @@ function bannerHtml({ color, icon, title, subtitle, rightHtml }) {
          style="background-color:${color}12; border-color:${color}45; border-left-width:6px; border-left-color:${color};">
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color:${color};">
-          <i class="fa-solid ${icon}"></i>
+          ${reportIcon(icon)}
         </div>
         <div>
           <h2 class="text-xs sm:text-sm font-black uppercase tracking-wider text-[#001489]">${title}</h2>
@@ -155,7 +156,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: A.color,
-        icon: 'fa-award',
+        icon: 'fourP',
         title: L('1. 4P Diagnostic Output (Classroom Profile)', '1. 4P Diagnostiese Uitset (Klaskamerprofiel)'),
         subtitle: L('Independent dimensional profile without artificial score averaging', 'Onafhanklike dimensionele analise sonder misleidende punte-gemiddeldes'),
         rightHtml: `<span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-[#001489] border-blue-200">${L('Level:', 'Klaskamervlak:')} <strong>${esc(afr ? A.overallLevelAfr : A.overallLevel)}</strong></span>`,
@@ -211,7 +212,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: G.color,
-        icon: 'fa-layer-group',
+        icon: 'frameworks',
         title: L('2. SAMR &amp; TPACK Classroom Integration Framework', '2. SAMR &amp; TPACK Klaskamer Integrasieraamwerk'),
         subtitle: L('Pedagogical models for curriculum-aligned digital transformation', 'Pedagogiese modelle vir kurrikulum-belynde digitale transformasie'),
         rightHtml: `<span class="text-[10px] font-black uppercase px-3 py-1 rounded-md border shadow-sm" style="background-color:${G.color}18; border-color:${G.color}60; color:${G.color};">SAMR: ${esc(afr ? G.levelAfr : G.level)} (${esc(G.stageCode)})</span>`,
@@ -253,7 +254,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: H.color,
-        icon: 'fa-wand-magic-sparkles',
+        icon: 'tpack',
         title: L('3. TPACK Classroom Integration Diagnostic', '3. TPACK Klaskamer Integrasiediagnose'),
         subtitle: L('Observation-based integration lens for technology, pedagogy, and curriculum content', 'Waarnemingsgebaseerde integrasielens vir tegnologie, pedagogie en inhoud'),
         rightHtml: `<span class="text-[10px] font-black uppercase px-3 py-1 rounded-md border text-white shadow-sm" style="background-color:${H.color}; border-color:${H.color};">TPACK: ${esc(afr ? H.levelAfr : H.level)}</span>`,
@@ -291,7 +292,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: A.color,
-        icon: 'fa-circle-check',
+        icon: 'evidence',
         title: L('4. In-Classroom Field Evidence &amp; Artifact Record', '4. Klaskamer Veldwaarnemings &amp; Bewyse'),
         subtitle: L('Summarises captured observation evidence only', 'Uitsluitlik vasgelegde waarnemingsbewyse (onbevestigde velde word nie vervaardig nie)'),
         rightHtml: `<span class="text-[9.5px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-slate-700 border-slate-200">${L('Verified Records', 'Gedokumenteerde Bewyse')}</span>`,
@@ -347,7 +348,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: A.color,
-        icon: 'fa-compass',
+        icon: 'scaffold',
         title: L('5. Classroom Digital Transformation Scaffolding Suggestions', '5. Klaskamer Digitale Transformasie-steierwerkvoorstelle'),
         subtitle: L('Suggested developmental focus areas based directly on observed 4P, SAMR, and TPACK evidence', 'Geteikende ontwikkelingsfokusareas gebaseer op waargenome 4P, SAMR en TPACK bewyse'),
         rightHtml: `<span class="${PILL}">${B.length} ${L('Developmental Focus Areas', 'Ontwikkelingsareas')}</span>`,
@@ -371,7 +372,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: A.color,
-        icon: 'fa-users',
+        icon: 'reflection',
         title: L('6. Critical Pedagogical Reflection Prompts', '6. Kritiese Pedagogiese Refleksievrae'),
         subtitle: L('Invites reflective dialogue and growth rather than testing or judging', 'Gespreksvrae vir die professionele dialoog tussen Adviseur en Onderwyser'),
         rightHtml: `<span class="${PILL}">${L('Coaching Dialogue', 'Afrigtingsdialoog')}</span>`,
@@ -384,7 +385,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="py-4 border-b border-slate-200 space-y-4">
       ${bannerHtml({
         color: A.color,
-        icon: 'fa-arrow-right',
+        icon: 'followUp',
         title: L('7. Strategic eLearning Recommendations &amp; Proposed Follow-Up', '7. Strategiese e-Leer Aanbevelings &amp; Voorgestelde Opvolg'),
         subtitle: L('Suggested developmental focus areas for post-observation dialogue &amp; collaboration', 'Voorgestelde ontwikkelingsfokusareas vir nabetragtingsgesprek en samewerking'),
         rightHtml: `<span class="${PILL}">${L('Advisor Recommendations', 'Adviesaanbevelings')}</span>`,
