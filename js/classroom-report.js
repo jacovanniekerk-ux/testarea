@@ -179,11 +179,11 @@ const PLATFORMS_GROUPS = [
 ];
 
 const CHECKLIST_FIELDS = [
-  { field: 'smartboard_observed', label: 'Smart Classroom Technology Use' },
-  { field: 'tablets_observed', label: 'Learner Tablets' },
-  { field: 'lab_observed', label: 'eLearning Lab in-use' },
-  { field: 'internet_observed', label: 'Online Activities' },
-  { field: 'offline_observed', label: 'Offline Digital Resources/Tool' },
+  { field: 'smartboard_observed', label: 'Smart Classroom Technology Use', icon: 'fa-tv' },
+  { field: 'tablets_observed', label: 'Learner Tablets', icon: 'fa-tablet-screen-button' },
+  { field: 'lab_observed', label: 'eLearning Lab in-use', icon: 'fa-flask' },
+  { field: 'internet_observed', label: 'Online Activities', icon: 'fa-wifi' },
+  { field: 'offline_observed', label: 'Offline Digital Resources/Tool', icon: 'fa-download' },
 ];
 
 const GRADE_OPTIONS = [
@@ -386,23 +386,49 @@ export function createClassroomReport(containerEl, opts = {}) {
     return visitedTabs.has(tabId) ? '#10b981' : '#cbd5e1';
   }
 
+  // Pill-style classes for the checklist toggles — visually consistent
+  // with the pillar rubric cards (rubric-ui.js) but boolean, not leveled,
+  // so it uses its own smaller active/inactive pair rather than the
+  // level-colored badgeBgClass()/activeBgClass() from rubric-ui.js.
+  const CHECKLIST_ACTIVE_CLASS = 'bg-[#001489]/5 border-[#001489] ring-2 ring-[#001489]/20 text-[#001489] shadow-sm';
+  const CHECKLIST_INACTIVE_CLASS = 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50';
+
+  function checklistPillClass(checked) {
+    return `relative flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all duration-150 cursor-pointer select-none ${checked ? CHECKLIST_ACTIVE_CLASS : CHECKLIST_INACTIVE_CLASS}`;
+  }
+
   function checklistHtml() {
-    const items = CHECKLIST_FIELDS.map(
-      (c) => `
-        <label class="flex items-center gap-2 cursor-pointer select-none">
-          <input type="checkbox" data-field="${c.field}" ${state[c.field] ? 'checked' : ''}
-                 class="w-4 h-4 rounded text-[#001489] border-slate-300 focus:ring-[#001489]" />
-          <span class="field-label">${escapeHtml(c.label)}</span>
-        </label>`
-    ).join('');
+    const items = CHECKLIST_FIELDS.map((c) => {
+      const checked = !!state[c.field];
+      return `
+        <label class="${checklistPillClass(checked)}" data-checklist-option data-field="${c.field}">
+          <input type="checkbox" data-field="${c.field}" ${checked ? 'checked' : ''} class="sr-only" />
+          <i class="fa-solid ${c.icon} text-sm w-4 text-center shrink-0" aria-hidden="true"></i>
+          <span class="text-xs font-semibold leading-tight">${escapeHtml(c.label)}</span>
+          <i class="fa-solid fa-circle-check ml-auto text-xs shrink-0 ${checked ? '' : 'invisible'}" aria-hidden="true"></i>
+        </label>`;
+    }).join('');
 
     return `
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 md:p-4 shadow-sm space-y-3">
         <h4 class="field-label">In-Class Technical Checklist (Observable Live Elements)</h4>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded border border-slate-150">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 bg-white p-3 rounded border border-slate-150">
           ${items}
         </div>
       </div>`;
+  }
+
+  /**
+   * Re-applies active/inactive pill classes after a checklist toggle
+   * changes, without re-rendering the whole tab — same idea as
+   * rubric-ui.js's updatePillarVisual() for the rubric radio cards.
+   */
+  function updateChecklistVisual(field, checked) {
+    const label = containerEl.querySelector(`[data-checklist-option][data-field="${field}"]`);
+    if (!label) return;
+    label.className = checklistPillClass(checked);
+    const icon = label.querySelector('.fa-circle-check');
+    if (icon) icon.classList.toggle('invisible', !checked);
   }
 
   function contextFieldsHtml() {
@@ -578,6 +604,7 @@ export function createClassroomReport(containerEl, opts = {}) {
         updatePillarVisual(containerEl, field, state[field]);
       } else if (target.type === 'checkbox') {
         state[field] = target.checked;
+        updateChecklistVisual(field, target.checked);
       } else if (target.tagName === 'SELECT') {
         state[field] = target.value;
       }
