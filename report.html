@@ -10,6 +10,62 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/minimal.min.css" />
     <link rel="stylesheet" href="css/theme.css" />
+    <style>
+      /* Sticky left-hand section nav. Fixed to the viewport, not the
+         centered content column, so it stays put along the left edge
+         of the screen while the report scrolls. Hidden on narrow
+         screens (there's no room) and hidden when printing. */
+      #side-nav {
+        position: fixed;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        max-width: 190px;
+        display: none;
+      }
+      @media (min-width: 1280px) {
+        #side-nav { display: block; }
+      }
+      #side-nav a {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.3;
+        color: #64748b;
+        padding: 6px 10px;
+        border-left: 2px solid #e2e8f0;
+        text-decoration: none;
+        transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+      }
+      #side-nav a:hover {
+        color: #001489;
+        border-left-color: #001489;
+        background-color: #f1f5f9;
+      }
+      #side-nav a.active {
+        color: #001489;
+        border-left-color: #001489;
+      }
+      html { scroll-behavior: smooth; }
+      [data-report-section] { scroll-margin-top: 84px; }
+
+      /* Print pagination: keep each numbered section, and every card
+         inside it, on one page rather than letting them split awkwardly
+         across a page break. */
+      @media print {
+        #side-nav { display: none !important; }
+        [data-report-section] {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        [data-report-section] .grid > div,
+        [data-report-section] > div > div {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+      }
+    </style>
   </head>
   <body class="min-h-screen">
     <div class="site-banner-wrap">
@@ -27,6 +83,8 @@
         </button>
       </div>
     </header>
+
+    <nav id="side-nav" class="no-print" aria-label="Report sections"></nav>
 
     <main class="max-w-6xl mx-auto p-4 md:p-6 pb-24">
       <div id="report-root">
@@ -46,6 +104,24 @@
       import { mountClassroomReport } from './js/classroom-report-view.js';
       import { reportIcon } from './js/report-icons.js';
       import { buildClassroomAnalysis } from './js/classroom-report-engine.js';
+
+// Builds the fixed left-hand section nav from whatever
+      // [data-report-section] elements are currently in #report-root —
+      // works for both the Culture Walkthrough (5 sections) and the
+      // Classroom Observation report (7 sections) without needing to
+      // know in advance which one is showing.
+      function buildSideNav() {
+        const nav = document.getElementById('side-nav');
+        if (!nav) return;
+        const sections = Array.from(document.querySelectorAll('#report-root [data-report-section]'));
+        if (!sections.length) {
+          nav.innerHTML = '';
+          return;
+        }
+        nav.innerHTML = sections
+          .map((el) => `<a href="#${el.id}">${el.getAttribute('data-nav-label') || ''}</a>`)
+          .join('');
+      }
 
       const advisor = requireSession('4p.html');
       if (!advisor) {
@@ -157,7 +233,7 @@
             <circle cx="${platformsX}" cy="${platformsY}" r="4" fill="${PILLAR_COLORS.platforms}" stroke="#fff" stroke-width="1" />`;
 
         return `
-          <svg viewBox="-80 0 360 205" class="w-full max-w-[280px] h-auto">
+          <svg viewBox="-80 0 360 205" class="w-full max-w-[380px] h-auto">
             <circle cx="100" cy="100" r="18" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
             <circle cx="100" cy="100" r="36" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
             <circle cx="100" cy="100" r="54" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
@@ -212,7 +288,7 @@
           : `${pillarBadgeHtml('PEOPLE', PILLAR_COLORS.people, scores.peopleRating, false)}${pillarBadgeHtml('PRACTICES', PILLAR_COLORS.practices, scores.practicesRating, false)}${pillarBadgeHtml('PEDAGOGY', PILLAR_COLORS.pedagogy, scores.pedagogyRating, false)}${pillarBadgeHtml('PLATFORMS', PILLAR_COLORS.platforms, scores.platformsRating, false)}`;
 
         return `
-          <div class="py-4 border-b border-slate-200 space-y-4">
+          <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="wt-section-1" data-nav-label="1. Institutional Diagnostic Level">
             ${sectionBannerHtml(archetype, 'fourP', '1. Institutional Diagnostic Level', `LEVEL ${archetype.levelNum}: ${archetype.name.toUpperCase()}`)}
 
             <div class="p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -235,7 +311,7 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              <div class="lg:col-span-8 space-y-3">
+              <div class="lg:col-span-7 space-y-3">
                 ${metadataGrid}
                 <div>
                   <h4 class="text-[10px] font-black tracking-wider text-slate-400 uppercase mb-1.5">Evaluated Infrastructure Details:</h4>
@@ -245,7 +321,7 @@
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">${pillarBadges}</div>
                 </div>
               </div>
-              <div class="lg:col-span-4 flex flex-col items-center justify-center p-4 border border-slate-200 rounded-lg bg-slate-50/80 shadow-inner">
+              <div class="lg:col-span-5 flex flex-col items-center justify-center p-4 border border-slate-200 rounded-lg bg-slate-50/80 shadow-inner">
                 <div class="flex items-center justify-between w-full mb-2">
                   <span class="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">4P Dimension Vector</span>
                   <span class="font-mono text-[10.5px] font-bold text-slate-700">Avg: <strong style="color:${archetype.color};">${scores.scoreAverage.toFixed(2)}</strong> / 4.00</span>
@@ -270,7 +346,7 @@
       function section2Html(archetype) {
         const m = archetype.strategicMatrix;
         return `
-          <div class="py-4 border-b border-slate-200 space-y-4">
+          <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="wt-section-2" data-nav-label="2. Operational to Affective Insight">
             ${sectionBannerHtml(archetype, 'insight', '2. Operational to Affective Insight', m.title)}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div class="bg-white rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
@@ -312,7 +388,7 @@
       // ------------------------------------------------------------
       function section3Html(archetype) {
         return `
-          <div class="py-4 border-b border-slate-200 space-y-3">
+          <div class="py-4 border-b border-slate-200 space-y-3" data-report-section id="wt-section-3" data-nav-label="3. Critical Advisory Lens">
             ${sectionBannerHtml(archetype, 'lens', `3. Critical Advisory Lens for Affective Transformation - ${archetype.name}`, 'Cultural Lens')}
             <div class="rounded-xl p-4 border shadow-sm" style="background-color:${archetype.color}08; border-color:${archetype.color}35; border-left-width:4px; border-left-color:${archetype.color};">
               ${nl2p(archetype.criticalAdvisoryLens)}
@@ -340,7 +416,7 @@
           .join('');
 
         return `
-          <div class="py-4 border-b border-slate-200 space-y-3">
+          <div class="py-4 border-b border-slate-200 space-y-3" data-report-section id="wt-section-4" data-nav-label="4. Measures of Support">
             ${sectionBannerHtml(archetype, 'support', '4. Measures of Support', '5 Key Pillars of Support')}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">${cards}</div>
           </div>`;
@@ -433,7 +509,7 @@
         const classroomCards = classrooms.map((cls, i) => classroomCardHtml(cls, i, classrooms.length)).join('<div class="h-6"></div>');
 
         return `
-          <div class="py-4 border-b border-slate-200 space-y-4">
+          <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="wt-section-5-detailed" data-nav-label="5. Field Observation Findings &amp; Evidence">
             ${sectionBannerHtml(archetype, 'evidence', '5. Field Observation Findings &amp; Evidence', 'Field Logs')}
             ${walkthroughDetails}
             <div class="space-y-6">${classroomCards}</div>
@@ -476,7 +552,7 @@
         }).join('');
 
         return `
-          <div class="py-4 border-b border-slate-200 space-y-4">
+          <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="wt-section-5" data-nav-label="5. Field Observation Findings &amp; Evidence">
             ${sectionBannerHtml(archetype, 'evidence', '5. Field Observation Findings &amp; Evidence', `${classrooms.length} Classroom${classrooms.length === 1 ? '' : 's'}`)}
             <p class="text-[12px] text-slate-600">Summary of the classroom observations linked to this walkthrough, with the transformation level recorded for each.</p>
             <div class="space-y-3">${rows}</div>
@@ -528,6 +604,23 @@
       // informed by the linked classroom observations, but the detailed
       // classroom analysis lives in its own report (see toggles below).
       // ------------------------------------------------------------
+      function summaryStripHtml(scores, archetype, classroomsCount) {
+        const pill = (label, value, color) => `
+          <div class="flex-1 min-w-[140px] flex items-center gap-2.5 px-3 py-2 rounded-lg border bg-white" style="border-color:${color}45;">
+            <span class="w-2 h-2 rounded-full shrink-0" style="background-color:${color};"></span>
+            <span class="min-w-0">
+              <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block">${label}</span>
+              <span class="text-[13px] font-black truncate block" style="color:${color};">${escapeHtml(value)}</span>
+            </span>
+          </div>`;
+        return `
+          <div class="flex flex-wrap gap-2.5 pt-1">
+            ${pill('Archetype Level', `Level ${archetype.levelNum}: ${archetype.name}`, archetype.color)}
+            ${pill('Composite Score', `${scores.scoreAverage.toFixed(2)} / 4.00`, archetype.color)}
+            ${pill('Classrooms Observed', String(classroomsCount), archetype.color)}
+          </div>`;
+      }
+
       function walkthroughReportHtml({ walkthrough, classrooms, school, advisor: reportAdvisor }) {
         const scores = calculateScores(walkthrough, classrooms);
         scores._classrooms = classrooms; // carried through for buildAffectiveContext()
@@ -544,8 +637,9 @@
         };
 
         return `
-          <div id="printable-report" class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-sm">
+          <div id="printable-report" class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-sm report-print-root">
             ${reportBrandingHeaderHtml(archetype, dateValue)}
+            ${summaryStripHtml(scores, archetype, classrooms.length)}
             ${section1Html({ scores, archetype, school, district, advisorName, dateValue })}
             ${section2Html(archetype)}
             ${section3Html(archetype)}
@@ -637,6 +731,7 @@
               walkthroughHref: `report.html?type=walkthrough&id=${encodeURIComponent(reportId)}`,
             });
           }
+          buildSideNav();
           if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -677,6 +772,7 @@
 
         rootEl.innerHTML = '';
         mountClassroomReport(rootEl, { classroom: cls, header, walkthroughHref });
+        buildSideNav();
       }
 
       async function init() {
