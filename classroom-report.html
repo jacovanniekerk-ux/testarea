@@ -15,21 +15,7 @@
     <div class="site-banner-wrap no-print">
       <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
     </div>
-    <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm">
-      <div class="max-w-5xl mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <a href="4p.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Dashboard</span>
-          </a>
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-user-large text-lg"></i>
-            <span id="user-name" class="font-medium"></span>
-          </div>
-        </div>
-        <span id="user-district" class="font-medium text-sm"></span>
-      </div>
-    </header>
+    <div id="app-header"></div>
 
     <main class="max-w-5xl mx-auto p-4 md:p-6 pb-24">
       <h1 class="text-[var(--fs-heading-lg)] font-bold text-slate-800 mb-1">Classroom Observation</h1>
@@ -83,6 +69,7 @@
       import { createClassroomReport } from './js/classroom-report.js';
       import { saveClassroomObservation, fetchClassroomObservationById } from './js/classroom-observations.js';
       import { showReportReadyModal, reportHref } from './js/report-modal.js';
+      import { mountAppHeader } from './js/app-header.js';
 
       // If opened as classroom-report.html?id=<uuid> (from Past Reports),
       // we're resuming an existing draft rather than starting fresh.
@@ -96,8 +83,6 @@
         throw new Error('No advisor session — redirecting to login.');
       }
 
-      document.getElementById('user-name').textContent = advisor.full_name;
-      document.getElementById('user-district').textContent = advisor.district;
 
       const schoolSelect = document.getElementById('school-select');
       const schoolSelectError = document.getElementById('school-select-error');
@@ -109,6 +94,17 @@
       const saveStatus = document.getElementById('save-status');
 
       let currentReport = null; // the createClassroomReport() instance, once a school is picked
+      let reportLocked = false; // true once submitted — mirrors culture-walkthrough.html's walkthroughLocked
+
+      // Shared nav bar. confirmLeave warns before navigating away via the
+      // bar's own links while a report is in progress and not yet
+      // submitted — it doesn't affect Save Draft/Submit, only the nav links.
+      mountAppHeader(document.getElementById('app-header'), {
+        active: 'classroom',
+        advisor,
+        maxWidth: 'max-w-5xl',
+        confirmLeave: () => !!currentReport && !reportLocked,
+      });
 
       function showSchoolError(message) {
         if (!message) {
@@ -255,6 +251,7 @@
           saveDraftBtn.disabled = true;
           submitFinalBtn.disabled = true;
           schoolSelect.disabled = true;
+          reportLocked = true;
           enableViewReport(data.id);
           openReportModal();
         } else {
@@ -290,6 +287,7 @@
           saveDraftBtn.disabled = true;
           submitFinalBtn.disabled = true;
           schoolSelect.disabled = true;
+          reportLocked = true;
           enableViewReport(data.id);
         } else {
           saveStatus.textContent = 'Resumed draft — continue editing below.';

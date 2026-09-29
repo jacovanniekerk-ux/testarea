@@ -71,18 +71,7 @@
     <div class="site-banner-wrap">
       <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
     </div>
-    <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm no-print">
-      <div class="max-w-6xl mx-auto flex items-center justify-between">
-        <a href="past-reports.html" class="text-white/80 hover:text-white transition text-[15px] flex items-center gap-1.5">
-          <i class="fa-solid fa-arrow-left"></i>
-          <span>Past Reports</span>
-        </a>
-        <button id="print-btn" class="bg-[#001489] hover:bg-[#000e60] text-white font-black text-[13px] px-4 py-2 rounded-lg shadow-md transition flex items-center gap-1.5 uppercase tracking-wide border border-blue-900">
-          <i class="fa-solid fa-print"></i>
-          <span>Print / Save as PDF</span>
-        </button>
-      </div>
-    </header>
+    <div id="app-header"></div>
 
     <nav id="side-nav" class="no-print" aria-label="Report sections"></nav>
 
@@ -104,6 +93,7 @@
       import { mountClassroomReport } from './js/classroom-report-view.js';
       import { reportIcon } from './js/report-icons.js';
       import { buildClassroomAnalysis } from './js/classroom-report-engine.js';
+      import { mountAppHeader } from './js/app-header.js';
 
 // Builds the fixed left-hand section nav from whatever
       // [data-report-section] elements are currently in #report-root —
@@ -128,12 +118,19 @@
         throw new Error('No advisor session — redirecting to login.');
       }
 
+      mountAppHeader(document.getElementById('app-header'), {
+        active: 'reports',
+        advisor,
+        maxWidth: 'max-w-6xl',
+        actions: `<button type="button" id="print-btn" class="bg-white text-[#001489] hover:bg-slate-100 font-black text-[13px] px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5 uppercase tracking-wide"><i class="fa-solid fa-print"></i><span>Print / Save as PDF</span></button>`,
+      });
+      document.getElementById('print-btn').addEventListener('click', () => window.print());
+
       const params = new URLSearchParams(window.location.search);
       const reportType = params.get('type'); // 'walkthrough' | 'classroom'
       const reportId = params.get('id');
 
       const rootEl = document.getElementById('report-root');
-      document.getElementById('print-btn').addEventListener('click', () => window.print());
 
       function escapeHtml(str) {
         if (str === null || str === undefined || str === '') return '';
