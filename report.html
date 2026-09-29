@@ -16,21 +16,21 @@
       <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
     </div>
     <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm no-print">
-      <div class="max-w-4xl mx-auto flex items-center justify-between">
-        <a href="past-reports.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
+      <div class="max-w-6xl mx-auto flex items-center justify-between">
+        <a href="past-reports.html" class="text-white/80 hover:text-white transition text-[15px] flex items-center gap-1.5">
           <i class="fa-solid fa-arrow-left"></i>
           <span>Past Reports</span>
         </a>
-        <button id="print-btn" class="bg-[#001489] hover:bg-[#000e60] text-white font-black text-xs px-4 py-2 rounded-lg shadow-md transition flex items-center gap-1.5 uppercase tracking-wide border border-blue-900">
+        <button id="print-btn" class="bg-[#001489] hover:bg-[#000e60] text-white font-black text-[13px] px-4 py-2 rounded-lg shadow-md transition flex items-center gap-1.5 uppercase tracking-wide border border-blue-900">
           <i class="fa-solid fa-print"></i>
           <span>Print / Save as PDF</span>
         </button>
       </div>
     </header>
 
-    <main class="max-w-4xl mx-auto p-4 md:p-6 pb-24">
+    <main class="max-w-6xl mx-auto p-4 md:p-6 pb-24">
       <div id="report-root">
-        <p class="text-sm text-slate-400">Loading report...</p>
+        <p class="text-[15px] text-slate-400">Loading report...</p>
       </div>
     </main>
 
@@ -45,6 +45,7 @@
       import { calculateScores, getArchetypeInfo, getRadarGeometry, buildAffectiveContext } from './js/report-engine.js';
       import { mountClassroomReport } from './js/classroom-report-view.js';
       import { reportIcon } from './js/report-icons.js';
+      import { buildClassroomAnalysis } from './js/classroom-report-engine.js';
 
       const advisor = requireSession('4p.html');
       if (!advisor) {
@@ -66,7 +67,7 @@
       function nl2p(text) {
         return text
           .split('\n\n')
-          .map((p) => `<p class="text-[11px] text-slate-700 font-medium leading-relaxed mb-2 last:mb-0">${escapeHtml(p)}</p>`)
+          .map((p) => `<p class="text-[12px] text-slate-700 font-medium leading-relaxed mb-2 last:mb-0">${escapeHtml(p)}</p>`)
           .join('');
       }
 
@@ -83,16 +84,16 @@
       function renderError(message) {
         rootEl.innerHTML = `
           <div class="bg-white border border-red-200 rounded-xl p-6 shadow-sm">
-            <p class="text-sm text-red-600 font-semibold">${escapeHtml(message)}</p>
+            <p class="text-[15px] text-red-600 font-semibold">${escapeHtml(message)}</p>
           </div>`;
       }
 
       function renderNotSubmitted(resumeHref) {
         rootEl.innerHTML = `
           <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 shadow-sm">
-            <p class="text-sm text-amber-800 font-semibold mb-2">This report hasn't been submitted yet.</p>
-            <p class="text-xs text-amber-700 mb-4">A report can only be generated once a walkthrough or classroom report has been finally submitted, since drafts are still subject to change.</p>
-            <a href="${resumeHref}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#001489] hover:text-[#000e60]">
+            <p class="text-[15px] text-amber-800 font-semibold mb-2">This report hasn't been submitted yet.</p>
+            <p class="text-[13px] text-amber-700 mb-4">A report can only be generated once a walkthrough or classroom report has been finally submitted, since drafts are still subject to change.</p>
+            <a href="${resumeHref}" class="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#001489] hover:text-[#000e60]">
               <span>Go to draft</span>
               <i class="fa-solid fa-arrow-right"></i>
             </a>
@@ -111,9 +112,9 @@
               <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color:${archetype.color};">
                 ${reportIcon(iconName)}
               </div>
-              <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-[#001489]">${title}</h3>
+              <h3 class="text-[13px] sm:text-[15px] font-black uppercase tracking-wider text-[#001489]">${title}</h3>
             </div>
-            <span class="text-[9px] sm:text-[10px] font-black uppercase px-2.5 py-1 rounded-md border"
+            <span class="text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-1 rounded-md border"
                   style="background-color:${archetype.color}25; color:#001489; border-color:${archetype.color}50;">
               ${escapeHtml(badgeText)}
             </span>
@@ -175,8 +176,8 @@
       function pillarBadgeHtml(label, color, value, dimmed) {
         return `
           <div class="p-2 rounded-lg border text-center ${dimmed ? 'opacity-40' : ''}" style="background-color:${color}08; border-color:${color}25;">
-            <span class="text-[8px] font-bold text-slate-500 block tracking-wider uppercase">${label}</span>
-            <span class="text-sm font-black" style="color:${color};">${dimmed ? 'N/A' : `L${value.toFixed(1)}`}</span>
+            <span class="text-[9px] font-bold text-slate-500 block tracking-wider uppercase">${label}</span>
+            <span class="text-[15px] font-black" style="color:${color};">${dimmed ? 'N/A' : `L${value.toFixed(1)}`}</span>
           </div>`;
       }
 
@@ -190,7 +191,7 @@
         return items
           .map(([label, value]) => {
             const has = value && value.trim() !== '';
-            return `<span class="text-[9.5px] font-semibold px-2 py-0.5 rounded border ${has ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200/50'}">
+            return `<span class="text-[10.5px] font-semibold px-2 py-0.5 rounded border ${has ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200/50'}">
               ${label}: ${has ? escapeHtml(value) : 'Not on file'}
             </span>`;
           })
@@ -199,7 +200,7 @@
 
       function section1Html({ scores, archetype, school, district, advisorName, dateValue }) {
         const metadataGrid = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-slate-700 bg-slate-50/60 p-3 rounded-lg border border-slate-200/80">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px] font-medium text-slate-700 bg-slate-50/60 p-3 rounded-lg border border-slate-200/80">
             <div class="flex items-center gap-2"><i class="fa-solid fa-building text-slate-400"></i><span><strong>School Name:</strong> ${escapeHtml(school ? school.school_name : 'N/A')}</span></div>
             <div class="flex items-center gap-2"><i class="fa-solid fa-layer-group text-slate-400"></i><span><strong>District Name:</strong> ${escapeHtml(district || 'N/A')}</span></div>
             <div class="flex items-center gap-2"><i class="fa-solid fa-calendar text-slate-400"></i><span><strong>Date of Visit:</strong> ${formatDate(dateValue)}</span></div>
@@ -218,18 +219,18 @@
                  style="background-color:${archetype.color}12; border-color:${archetype.color}40; border-left-width:8px; border-left-color:${archetype.color};">
               <div class="space-y-1.5 max-w-2xl">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="text-[11px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md text-white shadow-sm" style="background-color:${archetype.color};">LEVEL ${archetype.levelNum}</span>
+                  <span class="text-[12px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md text-white shadow-sm" style="background-color:${archetype.color};">LEVEL ${archetype.levelNum}</span>
                   <h2 class="text-xl sm:text-2xl font-black tracking-tight text-[#001489]">${archetype.name.toUpperCase()}</h2>
                 </div>
-                <p class="text-xs sm:text-sm font-semibold text-slate-700 leading-snug">${escapeHtml(archetype.tagline)}</p>
+                <p class="text-[13px] sm:text-[15px] font-semibold text-slate-700 leading-snug">${escapeHtml(archetype.tagline)}</p>
               </div>
               <div class="flex md:flex-col items-center md:items-end justify-between border-t md:border-t-0 md:border-l border-slate-200/80 pt-3 md:pt-0 md:pl-5 shrink-0">
-                <span class="text-[9px] font-extrabold uppercase tracking-widest text-slate-500">Composite Score</span>
+                <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Composite Score</span>
                 <div class="flex items-baseline gap-1">
                   <span class="text-2xl sm:text-3xl font-black font-mono text-[#001489]">${scores.scoreAverage.toFixed(2)}</span>
-                  <span class="text-xs font-bold text-slate-500 font-mono">/ 4.00</span>
+                  <span class="text-[13px] font-bold text-slate-500 font-mono">/ 4.00</span>
                 </div>
-                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded mt-1" style="background-color:${archetype.color}25; color:#001489;">Level ${archetype.levelNum} of 4</span>
+                <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded mt-1" style="background-color:${archetype.color}25; color:#001489;">Level ${archetype.levelNum} of 4</span>
               </div>
             </div>
 
@@ -237,7 +238,7 @@
               <div class="lg:col-span-8 space-y-3">
                 ${metadataGrid}
                 <div>
-                  <h4 class="text-[9px] font-black tracking-wider text-slate-400 uppercase mb-1.5">Evaluated Infrastructure Details:</h4>
+                  <h4 class="text-[10px] font-black tracking-wider text-slate-400 uppercase mb-1.5">Evaluated Infrastructure Details:</h4>
                   <div class="flex flex-wrap gap-1.5">${infrastructureBadgesHtml(school)}</div>
                 </div>
                 <div class="pt-1">
@@ -246,8 +247,8 @@
               </div>
               <div class="lg:col-span-4 flex flex-col items-center justify-center p-4 border border-slate-200 rounded-lg bg-slate-50/80 shadow-inner">
                 <div class="flex items-center justify-between w-full mb-2">
-                  <span class="text-[9px] font-extrabold uppercase text-slate-500 tracking-wider">4P Dimension Vector</span>
-                  <span class="font-mono text-[9.5px] font-bold text-slate-700">Avg: <strong style="color:${archetype.color};">${scores.scoreAverage.toFixed(2)}</strong> / 4.00</span>
+                  <span class="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">4P Dimension Vector</span>
+                  <span class="font-mono text-[10.5px] font-bold text-slate-700">Avg: <strong style="color:${archetype.color};">${scores.scoreAverage.toFixed(2)}</strong> / 4.00</span>
                 </div>
                 ${radarChartSvg(scores, archetype)}
               </div>
@@ -256,7 +257,7 @@
             <div class="rounded-xl p-4 border shadow-sm" style="background-color:${archetype.color}0a; border-color:${archetype.color}35; border-left-width:4px; border-left-color:${archetype.color};">
               <div class="flex items-center gap-2 mb-2">
                 <span class="w-2.5 h-2.5 rounded-full" style="background-color:${archetype.color};"></span>
-                <h4 class="text-[11px] font-black uppercase tracking-wider text-[#001489]">Affective Diagnosis &amp; Context</h4>
+                <h4 class="text-[12px] font-black uppercase tracking-wider text-[#001489]">Affective Diagnosis &amp; Context</h4>
               </div>
               ${nl2p(buildAffectiveContext(archetype, school, scores._classrooms))}
             </div>
@@ -275,29 +276,29 @@
               <div class="bg-white rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
                 <div>
                   <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                    <span class="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded" style="background-color:${archetype.color}15; color:#001489;">Operational Signals</span>
+                    <span class="text-[9.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded" style="background-color:${archetype.color}15; color:#001489;">Operational Signals</span>
                   </div>
-                  <p class="text-[11px] text-slate-700 font-medium leading-relaxed">${escapeHtml(m.operationalSignals)}</p>
+                  <p class="text-[12px] text-slate-700 font-medium leading-relaxed">${escapeHtml(m.operationalSignals)}</p>
                 </div>
-                <div class="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase">What is monitored &amp; visible</div>
+                <div class="mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-bold uppercase">What is monitored &amp; visible</div>
               </div>
               <div class="bg-white rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
                 <div>
                   <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100">
-                    <span class="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded" style="background-color:${archetype.color}20; color:#001489;">Affective &amp; Cultural Insight</span>
+                    <span class="text-[9.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded" style="background-color:${archetype.color}20; color:#001489;">Affective &amp; Cultural Insight</span>
                   </div>
-                  <p class="text-[11px] text-slate-700 font-medium leading-relaxed">${escapeHtml(m.affectiveInsight)}</p>
+                  <p class="text-[12px] text-slate-700 font-medium leading-relaxed">${escapeHtml(m.affectiveInsight)}</p>
                 </div>
-                <div class="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase">Human meaning behind the data</div>
+                <div class="mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-bold uppercase">Human meaning behind the data</div>
               </div>
               <div class="rounded-xl p-4 border shadow-sm flex flex-col justify-between" style="background-color:${archetype.color}10; border-color:${archetype.color}45;">
                 <div>
                   <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b" style="border-color:${archetype.color}25;">
-                    <span class="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded text-white shadow-sm" style="background-color:${archetype.color};">Affective Reading</span>
+                    <span class="text-[9.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded text-white shadow-sm" style="background-color:${archetype.color};">Affective Reading</span>
                   </div>
-                  <p class="text-[11px] font-black leading-relaxed text-[#001489]">${escapeHtml(m.affectiveReading)}</p>
+                  <p class="text-[12px] font-black leading-relaxed text-[#001489]">${escapeHtml(m.affectiveReading)}</p>
                 </div>
-                <div class="mt-3 pt-2 border-t border-slate-200/50 text-[9px] font-black uppercase text-slate-500">Cultural mindset summary</div>
+                <div class="mt-3 pt-2 border-t border-slate-200/50 text-[10px] font-black uppercase text-slate-500">Cultural mindset summary</div>
               </div>
             </div>
           </div>`;
@@ -328,11 +329,11 @@
             (m) => `
             <div class="bg-white border rounded-xl p-3.5 shadow-sm flex flex-col justify-between" style="border-color:${archetype.color}35;">
               <div>
-                <span class="inline-flex items-center justify-center text-[9.5px] font-black rounded px-2 py-1 mb-2.5 uppercase tracking-wide border w-full text-center"
+                <span class="inline-flex items-center justify-center text-[10.5px] font-black rounded px-2 py-1 mb-2.5 uppercase tracking-wide border w-full text-center"
                       style="background-color:${archetype.color}18; color:#001489; border-color:${archetype.color}45;">
                   ${escapeHtml(m.title)}
                 </span>
-                <p class="text-[10.5px] text-slate-700 leading-relaxed font-medium">${escapeHtml(m.text)}</p>
+                <p class="text-[11.5px] text-slate-700 leading-relaxed font-medium">${escapeHtml(m.text)}</p>
               </div>
             </div>`
           )
@@ -351,7 +352,7 @@
       function evidenceFieldHtml(label, value, placeholder) {
         return `
           <div>
-            <dt class="text-[8px] font-black uppercase text-slate-400 tracking-wider">${label}</dt>
+            <dt class="text-[9px] font-black uppercase text-slate-400 tracking-wider">${label}</dt>
             <dd class="text-slate-800 font-medium mt-0.5 bg-slate-50 border border-slate-150 rounded p-2 whitespace-pre-line min-h-[46px]">${escapeHtml(value) || placeholder}</dd>
           </div>`;
       }
@@ -375,9 +376,9 @@
         const activeFlags = techFlags.filter(([field]) => cls[field]);
         const techHtml = activeFlags.length > 0
           ? `
-            <div class="bg-white p-2.5 text-xs rounded border border-slate-200">
-              <span class="text-[8px] font-black text-slate-400 block uppercase mb-1.5">Observed Live Technical Evidence:</span>
-              <div class="flex flex-wrap gap-2 text-[9px] font-extrabold uppercase">
+            <div class="bg-white p-2.5 text-[13px] rounded border border-slate-200">
+              <span class="text-[9px] font-black text-slate-400 block uppercase mb-1.5">Observed Live Technical Evidence:</span>
+              <div class="flex flex-wrap gap-2 text-[10px] font-extrabold uppercase">
                 ${activeFlags.map(([, label]) => `<span class="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded">✓ ${label}</span>`).join('')}
               </div>
             </div>`
@@ -386,23 +387,23 @@
         return `
           <div class="bg-slate-50/50 border border-slate-200/80 rounded-xl p-4 space-y-4">
             <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
-              <span class="text-[11px] font-black uppercase text-[#001489] tracking-wider">${escapeHtml(classLabel)}</span>
+              <span class="text-[12px] font-black uppercase text-[#001489] tracking-wider">${escapeHtml(classLabel)}</span>
               <button type="button" data-view="${escapeHtml(classroomKey(cls, idx))}"
-                class="no-print inline-flex items-center gap-1.5 text-[10px] font-bold text-[#001489] bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-md transition shrink-0">
+                class="no-print inline-flex items-center gap-1.5 text-[11px] font-bold text-[#001489] bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-md transition shrink-0">
                 <span>View full Classroom Observation report</span>
-                <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
               </button>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs bg-white p-3 rounded-lg border border-slate-200">
-              <div><span class="text-[8px] font-black text-slate-400 block uppercase">TEACHER OBSERVED</span><span class="text-slate-800">${escapeHtml(cls.teacher_name) || 'N/A'}</span></div>
-              <div><span class="text-[8px] font-black text-slate-400 block uppercase">SUBJECT</span><span class="text-slate-800">${escapeHtml(cls.subject_observed) || 'N/A'}</span></div>
-              <div><span class="text-[8px] font-black text-slate-400 block uppercase">GRADE CLASS</span><span class="text-slate-800">${escapeHtml(cls.grade_observed) || 'N/A'}</span></div>
-              <div><span class="text-[8px] font-black text-slate-400 block uppercase">LESSON FOCUS TOPIC</span><span class="text-slate-800">${escapeHtml(cls.lesson_topic) || 'N/A'}</span></div>
-              <div><span class="text-[8px] font-black text-slate-400 block uppercase">LEARNERS IN CLASS</span><span class="text-slate-800">${escapeHtml(cls.learners_count) || 'N/A'}</span></div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-[13px] bg-white p-3 rounded-lg border border-slate-200">
+              <div><span class="text-[9px] font-black text-slate-400 block uppercase">TEACHER OBSERVED</span><span class="text-slate-800">${escapeHtml(cls.teacher_name) || 'N/A'}</span></div>
+              <div><span class="text-[9px] font-black text-slate-400 block uppercase">SUBJECT</span><span class="text-slate-800">${escapeHtml(cls.subject_observed) || 'N/A'}</span></div>
+              <div><span class="text-[9px] font-black text-slate-400 block uppercase">GRADE CLASS</span><span class="text-slate-800">${escapeHtml(cls.grade_observed) || 'N/A'}</span></div>
+              <div><span class="text-[9px] font-black text-slate-400 block uppercase">LESSON FOCUS TOPIC</span><span class="text-slate-800">${escapeHtml(cls.lesson_topic) || 'N/A'}</span></div>
+              <div><span class="text-[9px] font-black text-slate-400 block uppercase">LEARNERS IN CLASS</span><span class="text-slate-800">${escapeHtml(cls.learners_count) || 'N/A'}</span></div>
             </div>
             ${techHtml}
             <div class="bg-white border border-slate-200 rounded-xl p-4 space-y-3.5 shadow-sm">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">
                 ${evidenceFieldHtml('Active Digital Tools &amp; Platforms Used in the Lesson', cls.tools_used, 'Not documented during classroom visit')}
                 ${evidenceFieldHtml('Describe the learner activities in the lesson', cls.artifact_verified, 'Not documented')}
                 ${evidenceFieldHtml('eAdvisor In-Classroom Suggestions &amp; Interventions', cls.advisor_support, 'No recommendations or interventions documented')}
@@ -412,18 +413,18 @@
           </div>`;
       }
 
-      function section5Html(archetype, walkthrough, classrooms) {
+      function section5DetailedHtml(archetype, walkthrough, classrooms) {
         const walkthroughDetails = walkthrough && (walkthrough.primary_barrier || walkthrough.collaboration_channel)
           ? `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[13px] mb-4">
               ${walkthrough.primary_barrier ? `
-                <div class="bg-slate-50 p-2.5 text-[10.5px] rounded border border-slate-200">
-                  <span class="text-[8px] font-black text-slate-400 block uppercase mb-0.5">Primary Identified Barrier</span>
+                <div class="bg-slate-50 p-2.5 text-[11.5px] rounded border border-slate-200">
+                  <span class="text-[9px] font-black text-slate-400 block uppercase mb-0.5">Primary Identified Barrier</span>
                   <span class="text-slate-700 font-semibold">${escapeHtml(walkthrough.primary_barrier)}</span>
                 </div>` : ''}
               ${walkthrough.collaboration_channel ? `
-                <div class="bg-slate-50 p-2.5 text-[10.5px] rounded border border-slate-200">
-                  <span class="text-[8px] font-black text-slate-400 block uppercase mb-0.5">Staff Peer-Sharing Mindset &amp; Trust</span>
+                <div class="bg-slate-50 p-2.5 text-[11.5px] rounded border border-slate-200">
+                  <span class="text-[9px] font-black text-slate-400 block uppercase mb-0.5">Staff Peer-Sharing Mindset &amp; Trust</span>
                   <span class="text-slate-700 font-semibold">${escapeHtml(walkthrough.collaboration_channel)}</span>
                 </div>` : ''}
             </div>`
@@ -439,19 +440,62 @@
           </div>`;
       }
 
+      // Section 5 (summary version): one compact row per classroom with its
+// transformation levels. The full field-log version is kept above as
+// section5DetailedHtml() in case it's needed again.
+      function section5Html(archetype, walkthrough, classrooms, header) {
+        const levelPill = (label, level, color) => `
+          <span class="inline-flex flex-col items-start gap-0.5">
+            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">${label}</span>
+            <span class="text-[11px] font-black uppercase px-2.5 py-1 rounded-md border" style="background-color:${color}18; border-color:${color}60; color:${color};">${escapeHtml(level)}</span>
+          </span>`;
+
+        const rows = classrooms.map((cls, i) => {
+          let a = null;
+          try { a = buildClassroomAnalysis(header, cls); } catch (err) { a = null; }
+          const label = classrooms.length > 1 ? `Classroom ${i + 1}: ${cls.teacher_name || 'Unnamed'}` : (cls.teacher_name || 'Classroom Observation');
+          const meta = [cls.subject_observed, cls.grade_observed ? `Grade ${cls.grade_observed}` : '', cls.lesson_topic].filter(Boolean).join(' · ');
+          return `
+            <div class="bg-slate-50/50 border border-slate-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="min-w-0 lg:w-1/3">
+                <span class="block text-[12px] font-black uppercase text-[#001489] tracking-wider">${escapeHtml(label)}</span>
+                <span class="block text-[12px] text-slate-500 mt-0.5">${escapeHtml(meta) || 'Details not documented'}</span>
+              </div>
+              <div class="flex flex-wrap items-end gap-x-6 gap-y-3 flex-1">
+                ${a ? levelPill('4P Level', a.fourP.overallLevel, a.fourP.color) : ''}
+                ${a ? levelPill('SAMR', a.samr.level, a.samr.color) : ''}
+                ${a ? levelPill('TPACK', a.tpack.level, a.tpack.color) : ''}
+                ${a ? '' : '<span class="text-[12px] text-slate-400">Levels could not be calculated for this classroom.</span>'}
+              </div>
+              <button type="button" data-view="${escapeHtml(classroomKey(cls, i))}"
+                class="no-print inline-flex items-center gap-1.5 text-[11px] font-bold text-[#001489] bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1.5 rounded-md transition shrink-0">
+                <span>View full report</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="py-4 border-b border-slate-200 space-y-4">
+            ${sectionBannerHtml(archetype, 'evidence', '5. Field Observation Findings &amp; Evidence', `${classrooms.length} Classroom${classrooms.length === 1 ? '' : 's'}`)}
+            <p class="text-[12px] text-slate-600">Summary of the classroom observations linked to this walkthrough, with the transformation level recorded for each.</p>
+            <div class="space-y-3">${rows}</div>
+          </div>`;
+      }
+
       function signatureBlockHtml(advisorName) {
         return `
           <div class="pt-8 grid grid-cols-2 gap-8">
             <div class="text-center space-y-8">
               <div class="h-px bg-slate-300 w-full"></div>
-              <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">
+              <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none">
                 eLearning Advisor Signature
                 <span class="block font-semibold lowercase text-slate-500 mt-1">${escapeHtml(advisorName) || 'Full name'}</span>
               </div>
             </div>
             <div class="text-center space-y-8">
               <div class="h-px bg-slate-300 w-full"></div>
-              <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">
+              <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none">
                 School Principal Signature
                 <span class="block font-semibold lowercase text-slate-500 mt-1">Authorized Seal &amp; Sign</span>
               </div>
@@ -465,15 +509,15 @@
           <div class="no-print absolute top-0 left-0 right-0 h-1.5" style="background-color:${archetype.color};"></div>
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
             <div class="flex items-start gap-3">
-              <div class="text-white font-extrabold text-lg w-10 h-10 rounded-md flex items-center justify-center shadow-sm shrink-0" style="background-color:${archetype.color};">4P</div>
+              <div class="text-white font-extrabold text-[19px] w-10 h-10 rounded-md flex items-center justify-center shadow-sm shrink-0" style="background-color:${archetype.color};">4P</div>
               <div>
-                <h2 class="text-base font-black text-[#001489] tracking-tight uppercase leading-none">Western Cape Education Department</h2>
-                <p class="text-[9px] font-bold text-slate-500 tracking-wider mt-1 uppercase">ELEARNING DIRECTORATE — 4P AFFECTIVE TRANSFORMATION SUMMARY</p>
+                <h2 class="text-[17px] font-black text-[#001489] tracking-tight uppercase leading-none">Western Cape Education Department</h2>
+                <p class="text-[10px] font-bold text-slate-500 tracking-wider mt-1 uppercase">ELEARNING DIRECTORATE — 4P AFFECTIVE TRANSFORMATION SUMMARY</p>
               </div>
             </div>
             <div class="text-right flex flex-col items-start md:items-end bg-slate-50 border border-slate-200 p-2 rounded-lg shrink-0">
-              <span class="text-[8px] font-black tracking-wider text-slate-400 block uppercase">Report Ref Number:</span>
-              <span class="font-mono text-[10px] font-bold text-slate-700">WCED-4P-${refDate}</span>
+              <span class="text-[9px] font-black tracking-wider text-slate-400 block uppercase">Report Ref Number:</span>
+              <span class="font-mono text-[11px] font-bold text-slate-700">WCED-4P-${refDate}</span>
             </div>
           </div>`;
       }
@@ -492,6 +536,12 @@
         const district = school ? school.district : (reportAdvisor ? reportAdvisor.district : '—');
         const advisorName = reportAdvisor ? reportAdvisor.full_name : null;
         const dateValue = walkthrough ? walkthrough.visit_date : classrooms[0].created_at;
+        const header5 = {
+          schoolName: school ? school.school_name : '',
+          district,
+          visitDate: dateValue,
+          advisorName: advisorName || '',
+        };
 
         return `
           <div id="printable-report" class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-sm">
@@ -500,7 +550,7 @@
             ${section2Html(archetype)}
             ${section3Html(archetype)}
             ${section4Html(archetype)}
-            ${section5Html(archetype, walkthrough, classrooms)}
+            ${section5Html(archetype, walkthrough, classrooms, header5)}
             ${signatureBlockHtml(advisorName)}
           </div>`;
       }
@@ -511,7 +561,7 @@
       function tabButtonHtml({ view, icon, label, detail, active }) {
         return `
           <button type="button" data-view="${escapeHtml(view)}"
-            class="font-bold text-xs px-3.5 py-2 rounded-md transition flex items-center gap-1.5 max-w-[16rem] ${active ? 'bg-white shadow-sm text-[#001489]' : 'text-slate-500 hover:text-slate-700'}">
+            class="font-bold text-[13px] px-3.5 py-2 rounded-md transition flex items-center gap-1.5 max-w-[16rem] ${active ? 'bg-white shadow-sm text-[#001489]' : 'text-slate-500 hover:text-slate-700'}">
             <i class="fa-solid ${icon} shrink-0"></i>
             <span class="whitespace-nowrap shrink-0">${escapeHtml(label)}</span>
             ${detail ? `<span class="hidden sm:inline font-medium truncate min-w-0 ${active ? 'text-slate-500' : 'text-slate-400'}">· ${escapeHtml(detail)}</span>` : ''}
@@ -537,7 +587,7 @@
               ${tabButtonHtml({ view: 'walkthrough', icon: 'fa-building-columns', label: 'Culture Walkthrough', detail: '', active: activeView === 'walkthrough' })}
               ${classroomTabs}
             </div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${classrooms.length} classroom observation${classrooms.length === 1 ? '' : 's'} recorded</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">${classrooms.length} classroom observation${classrooms.length === 1 ? '' : 's'} recorded</span>
           </div>`;
       }
 
