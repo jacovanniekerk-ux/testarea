@@ -27,6 +27,10 @@
 import { buildClassroomAnalysis } from './classroom-report-engine.js';
 import { reportIcon } from './report-icons.js';
 
+// Afrikaans is switched off for now. All AFR strings and the toggle code are
+// still here — set this to true to bring the EN / AFR switch back.
+const ENABLE_AFRIKAANS = false;
+
 function esc(str) {
   if (str === null || str === undefined || str === '') return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -67,15 +71,15 @@ function bannerHtml({ color, icon, title, subtitle, rightHtml }) {
           ${reportIcon(icon)}
         </div>
         <div>
-          <h2 class="text-xs sm:text-sm font-black uppercase tracking-wider text-[#001489]">${title}</h2>
-          <span class="text-[10px] font-bold text-slate-600">${subtitle}</span>
+          <h2 class="text-[13px] sm:text-[15px] font-black uppercase tracking-wider text-[#001489]">${title}</h2>
+          <span class="text-[11px] font-bold text-slate-600">${subtitle}</span>
         </div>
       </div>
       <div class="flex items-center gap-2">${rightHtml}</div>
     </div>`;
 }
 
-const PILL = 'text-[9.5px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-[#001489] border-blue-200';
+const PILL = 'text-[10.5px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-[#001489] border-blue-200';
 
 // ---------------------------------------------------------------------
 // The report itself
@@ -103,35 +107,35 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="border-b-2 border-[#001489] pb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div class="space-y-1">
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-[10px] font-black uppercase tracking-wider text-[#001489] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${L('Western Cape Education Department', 'Wes-Kaap Onderwysdepartement')}</span>
-          <span class="text-[10px] font-bold text-slate-400">|</span>
-          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-600">${L('Directorate: eLearning', 'Direktoraat: e-Leer')}</span>
+          <span class="text-[11px] font-black uppercase tracking-wider text-[#001489] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${L('Western Cape Education Department', 'Wes-Kaap Onderwysdepartement')}</span>
+          <span class="text-[11px] font-bold text-slate-400">|</span>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-600">${L('Directorate: eLearning', 'Direktoraat: e-Leer')}</span>
         </div>
-        <h1 class="text-base sm:text-lg font-black uppercase tracking-tight text-[#001489]">${L('Classroom Observation &amp; Digital Transformation Report 2026', 'Klaskamerwaarneming &amp; Digitale Transformasieverslag 2026')}</h1>
-        <p class="text-[10.5px] text-slate-600 font-medium">${L('Focused in-lesson observation, SAMR &amp; TPACK integration, learner agency, and classroom-level digital scaffolding', 'Gefokusde leswaarneming, SAMR- en TPACK-integrasie, leerder-agentskap en klaskamer-gebaseerde e-leer steierwerk')}</p>
+        <h1 class="text-[17px] sm:text-[19px] font-black uppercase tracking-tight text-[#001489]">${L('Classroom Observation &amp; Digital Transformation Report 2026', 'Klaskamerwaarneming &amp; Digitale Transformasieverslag 2026')}</h1>
+        <p class="text-[11.5px] text-slate-600 font-medium">${L('Focused in-lesson observation, SAMR &amp; TPACK integration, learner agency, and classroom-level digital scaffolding', 'Gefokusde leswaarneming, SAMR- en TPACK-integrasie, leerder-agentskap en klaskamer-gebaseerde e-leer steierwerk')}</p>
       </div>
       <div class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border shrink-0" style="background-color:${A.color}0c; border-color:${A.color}40;">
-        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-lg shadow-sm shrink-0" style="background-color:${A.color};">4P</div>
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-[19px] shadow-sm shrink-0" style="background-color:${A.color};">4P</div>
         <div>
-          <span class="text-[8.5px] font-black uppercase tracking-wider text-slate-500 block">${L('Classroom Transformation Level', 'Klaskamer Transformasievlak')}</span>
-          <span class="text-xs font-black tracking-tight" style="color:${A.color};">${esc(afr ? A.overallLevelAfr : A.overallLevel)}</span>
-          <span class="text-[9px] font-bold text-slate-500 block mt-0.5">${L('Qualitative 4P Profile', 'Kwalitatiewe 4P Profiel')}</span>
+          <span class="text-[9.5px] font-black uppercase tracking-wider text-slate-500 block">${L('Classroom Transformation Level', 'Klaskamer Transformasievlak')}</span>
+          <span class="text-[13px] font-black tracking-tight" style="color:${A.color};">${esc(afr ? A.overallLevelAfr : A.overallLevel)}</span>
+          <span class="text-[10px] font-bold text-slate-500 block mt-0.5">${L('Qualitative 4P Profile', 'Kwalitatiewe 4P Profiel')}</span>
         </div>
       </div>
     </div>`;
 
   // ----- Meta block --------------------------------------------------
   const metaCell = (label, value, extra = '') => `
-    <div><span class="text-[8px] font-black text-slate-400 block uppercase">${label}</span>
+    <div><span class="text-[9px] font-black text-slate-400 block uppercase">${label}</span>
     <span class="text-slate-800 font-semibold truncate block ${extra}">${esc(value)}</span></div>`;
 
   const metaBlock = `
-    <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 sm:p-4 text-xs space-y-3">
+    <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 sm:p-4 text-[13px] space-y-3">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div><span class="text-[8.5px] font-black text-slate-400 block uppercase">${L('SCHOOL NAME', 'SKOOLNAAM')}</span><span class="text-slate-900 font-bold">${esc(header.schoolName) || 'N/A'}</span></div>
-        <div><span class="text-[8.5px] font-black text-slate-400 block uppercase">${L('DISTRICT', 'DISTRIK')}</span><span class="text-slate-900 font-bold">${esc(header.district) || 'N/A'}</span></div>
-        <div><span class="text-[8.5px] font-black text-slate-400 block uppercase">${L('DATE OF VISIT', 'BESOEKDATUM')}</span><span class="text-slate-900 font-bold">${esc(formatDate(header.visitDate))}</span></div>
-        <div><span class="text-[8.5px] font-black text-slate-400 block uppercase">${L('eLEARNING ADVISOR', 'e-LEER ADVISEUR')}</span><span class="text-slate-900 font-bold">${esc(header.advisorName) || 'N/A'}</span></div>
+        <div><span class="text-[9.5px] font-black text-slate-400 block uppercase">${L('SCHOOL NAME', 'SKOOLNAAM')}</span><span class="text-slate-900 font-bold">${esc(header.schoolName) || 'N/A'}</span></div>
+        <div><span class="text-[9.5px] font-black text-slate-400 block uppercase">${L('DISTRICT', 'DISTRIK')}</span><span class="text-slate-900 font-bold">${esc(header.district) || 'N/A'}</span></div>
+        <div><span class="text-[9.5px] font-black text-slate-400 block uppercase">${L('DATE OF VISIT', 'BESOEKDATUM')}</span><span class="text-slate-900 font-bold">${esc(formatDate(header.visitDate))}</span></div>
+        <div><span class="text-[9.5px] font-black text-slate-400 block uppercase">${L('eLEARNING ADVISOR', 'e-LEER ADVISEUR')}</span><span class="text-slate-900 font-bold">${esc(header.advisorName) || 'N/A'}</span></div>
       </div>
       <div class="pt-2.5 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-5 gap-3">
         ${metaCell(L('TEACHER OBSERVED', 'ONDERWYSER'), teacherName)}
@@ -146,10 +150,10 @@ export function classroomReportHtml({ analysis, header, lang }) {
   const dimCard = (label, code, badgeClasses, narrative) => `
     <div class="p-3 rounded-xl border bg-slate-50/80 border-slate-200 space-y-1">
       <div class="flex items-center justify-between">
-        <span class="text-[9px] font-black text-slate-500 uppercase tracking-wider">${label}</span>
-        <span class="text-xs font-black px-2 py-0.5 rounded ${badgeClasses}">${esc(code)}</span>
+        <span class="text-[10px] font-black text-slate-500 uppercase tracking-wider">${label}</span>
+        <span class="text-[13px] font-black px-2 py-0.5 rounded ${badgeClasses}">${esc(code)}</span>
       </div>
-      <p class="text-[10.5px] text-slate-700 font-medium leading-tight pt-1">${esc(narrative)}</p>
+      <p class="text-[11.5px] text-slate-700 font-medium leading-tight pt-1">${esc(narrative)}</p>
     </div>`;
 
   const section1 = `
@@ -159,7 +163,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
         icon: 'fourP',
         title: L('1. 4P Diagnostic Output (Classroom Profile)', '1. 4P Diagnostiese Uitset (Klaskamerprofiel)'),
         subtitle: L('Independent dimensional profile without artificial score averaging', 'Onafhanklike dimensionele analise sonder misleidende punte-gemiddeldes'),
-        rightHtml: `<span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-[#001489] border-blue-200">${L('Level:', 'Klaskamervlak:')} <strong>${esc(afr ? A.overallLevelAfr : A.overallLevel)}</strong></span>`,
+        rightHtml: `<span class="text-[11px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-[#001489] border-blue-200">${L('Level:', 'Klaskamervlak:')} <strong>${esc(afr ? A.overallLevelAfr : A.overallLevel)}</strong></span>`,
       })}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         ${dimCard(L('PEOPLE', 'MENSE (PEOPLE)'), A.people.levelCode, 'bg-blue-100 text-[#001489]', afr ? A.people.narrativeAfr : A.people.narrative)}
@@ -169,11 +173,11 @@ export function classroomReportHtml({ analysis, header, lang }) {
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-8 rounded-xl p-4 border bg-blue-50/40 border-blue-200 space-y-2">
-          <h4 class="text-[11px] font-black uppercase tracking-wider text-[#001489]">${L('Dynamic Relationship &amp; Synthesis Across the 4Ps', 'Dinamiese Verhouding tussen die 4P Dimensies')}</h4>
-          <p class="text-[11px] text-slate-800 font-medium leading-relaxed">${esc(afr ? A.relationshipNarrativeAfr : A.relationshipNarrative)}</p>
+          <h4 class="text-[12px] font-black uppercase tracking-wider text-[#001489]">${L('Dynamic Relationship &amp; Synthesis Across the 4Ps', 'Dinamiese Verhouding tussen die 4P Dimensies')}</h4>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? A.relationshipNarrativeAfr : A.relationshipNarrative)}</p>
         </div>
         <div class="lg:col-span-4 flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl bg-slate-50/80 shadow-sm">
-          <span class="text-[8.5px] font-black uppercase text-slate-500 tracking-wider mb-1">${L('4P Dimensional Polygon', '4P Klaskamer Vektordiagram')}</span>
+          <span class="text-[9.5px] font-black uppercase text-slate-500 tracking-wider mb-1">${L('4P Dimensional Polygon', '4P Klaskamer Vektordiagram')}</span>
           <svg viewBox="-60 0 320 205" class="w-full max-w-[220px] h-auto">
             <circle cx="100" cy="100" r="18" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
             <circle cx="100" cy="100" r="36" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
@@ -199,11 +203,11 @@ export function classroomReportHtml({ analysis, header, lang }) {
         <div class="p-3 rounded-xl border relative ${on ? 'shadow-sm' : 'bg-white/90 border-slate-200'}"
              style="${on ? `background-color:${st.color}12; border-color:${st.color}; box-shadow:0 0 0 1px ${st.color}40;` : ''}">
           <div class="flex items-center justify-between mb-1">
-            <span class="text-[11px] font-black tracking-tight" style="color:${st.color};">${st.code}: ${esc(afr ? st.nameAfr : st.name)}</span>
-            ${on ? `<span class="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-black" style="background-color:${st.color};">✓</span>` : ''}
+            <span class="text-[12px] font-black tracking-tight" style="color:${st.color};">${st.code}: ${esc(afr ? st.nameAfr : st.name)}</span>
+            ${on ? `<span class="w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-black" style="background-color:${st.color};">✓</span>` : ''}
           </div>
-          <p class="text-[10px] text-slate-600 font-medium leading-tight">${esc(afr ? st.subtitleAfr : st.subtitle)}</p>
-          ${on ? `<span class="inline-block mt-2 text-[8px] font-black uppercase px-1.5 py-0.5 rounded" style="background-color:${st.color}25; color:${st.color};">${L('Observed In Lesson', 'Waargeneem')}</span>` : ''}
+          <p class="text-[11px] text-slate-600 font-medium leading-tight">${esc(afr ? st.subtitleAfr : st.subtitle)}</p>
+          ${on ? `<span class="inline-block mt-2 text-[9px] font-black uppercase px-1.5 py-0.5 rounded" style="background-color:${st.color}25; color:${st.color};">${L('Observed In Lesson', 'Waargeneem')}</span>` : ''}
         </div>`;
     })
     .join('');
@@ -215,28 +219,28 @@ export function classroomReportHtml({ analysis, header, lang }) {
         icon: 'frameworks',
         title: L('2. SAMR &amp; TPACK Classroom Integration Framework', '2. SAMR &amp; TPACK Klaskamer Integrasieraamwerk'),
         subtitle: L('Pedagogical models for curriculum-aligned digital transformation', 'Pedagogiese modelle vir kurrikulum-belynde digitale transformasie'),
-        rightHtml: `<span class="text-[10px] font-black uppercase px-3 py-1 rounded-md border shadow-sm" style="background-color:${G.color}18; border-color:${G.color}60; color:${G.color};">SAMR: ${esc(afr ? G.levelAfr : G.level)} (${esc(G.stageCode)})</span>`,
+        rightHtml: `<span class="text-[11px] font-black uppercase px-3 py-1 rounded-md border shadow-sm" style="background-color:${G.color}18; border-color:${G.color}60; color:${G.color};">SAMR: ${esc(afr ? G.levelAfr : G.level)} (${esc(G.stageCode)})</span>`,
       })}
-      <div class="flex items-start sm:items-center gap-2.5 p-3 rounded-xl border text-xs bg-slate-50 border-slate-200">
-        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0 mt-0.5 sm:mt-0" style="background-color:${G.color};"><i class="fa-solid fa-arrow-right text-[10px]"></i></div>
+      <div class="flex items-start sm:items-center gap-2.5 p-3 rounded-xl border text-[13px] bg-slate-50 border-slate-200">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0 mt-0.5 sm:mt-0" style="background-color:${G.color};"><i class="fa-solid fa-arrow-right text-[11px]"></i></div>
         <div class="flex-1">
-          <span class="text-[9px] font-black uppercase tracking-wider text-slate-500 block">${L('OBSERVED SAMR STAGE IN THIS LESSON:', 'WAARGENOME SAMR-FASE IN HIERDIE LES:')}</span>
-          <p class="text-[11.5px] font-bold text-slate-900 leading-snug">${esc(afr ? G.ladderStepSummaryAfr : G.ladderStepSummary)}</p>
+          <span class="text-[10px] font-black uppercase tracking-wider text-slate-500 block">${L('OBSERVED SAMR STAGE IN THIS LESSON:', 'WAARGENOME SAMR-FASE IN HIERDIE LES:')}</span>
+          <p class="text-[12.5px] font-bold text-slate-900 leading-snug">${esc(afr ? G.ladderStepSummaryAfr : G.ladderStepSummary)}</p>
         </div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">${samrStages}</div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[13px]">
         <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
-          <div class="border-b border-slate-100 pb-1.5"><span class="text-[9px] font-black uppercase text-[#001489] tracking-wider block">${L('Observed In-Lesson Reality (SAMR Evidence)', 'Waargenome Klaskamerwerklikheid (SAMR Bewys)')}</span></div>
-          <p class="text-[11px] text-slate-800 font-medium leading-relaxed">${esc(afr ? G.observedRealityAfr : G.observedReality)}</p>
-          <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-[10.5px] text-slate-600 leading-relaxed">
+          <div class="border-b border-slate-100 pb-1.5"><span class="text-[10px] font-black uppercase text-[#001489] tracking-wider block">${L('Observed In-Lesson Reality (SAMR Evidence)', 'Waargenome Klaskamerwerklikheid (SAMR Bewys)')}</span></div>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? G.observedRealityAfr : G.observedReality)}</p>
+          <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-[11.5px] text-slate-600 leading-relaxed">
             <span class="font-bold text-slate-700 block mb-0.5">${L('Diagnostic Rationale:', 'Kaderanalise:')}</span>${esc(afr ? G.explanationAfr : G.explanation)}
           </div>
         </div>
         <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
-          <div class="border-b border-slate-100 pb-1.5"><span class="text-[9px] font-black uppercase text-[#00A1A3] tracking-wider block">${L('Actionable Step to Advance Up SAMR Ladder', 'Praktiese Stap om op SAMR-leer te Vorder')}</span></div>
-          <p class="text-[11px] text-slate-800 font-medium leading-relaxed">${esc(afr ? G.actionableNextTierStepAfr : G.actionableNextTierStep)}</p>
-          <div class="bg-teal-50/50 p-2.5 rounded-lg border border-teal-100/70 text-[10.5px] text-teal-900 leading-relaxed">
+          <div class="border-b border-slate-100 pb-1.5"><span class="text-[10px] font-black uppercase text-[#00A1A3] tracking-wider block">${L('Actionable Step to Advance Up SAMR Ladder', 'Praktiese Stap om op SAMR-leer te Vorder')}</span></div>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? G.actionableNextTierStepAfr : G.actionableNextTierStep)}</p>
+          <div class="bg-teal-50/50 p-2.5 rounded-lg border border-teal-100/70 text-[11.5px] text-teal-900 leading-relaxed">
             <span class="font-bold text-teal-950 block mb-0.5">${L('Topic-Specific Learning Task Example:', 'Onderwerpspesifieke Leertaak-voorbeeld:')}</span>${esc(afr ? G.developmentalOpportunityAfr : G.developmentalOpportunity)}
           </div>
         </div>
@@ -246,8 +250,8 @@ export function classroomReportHtml({ analysis, header, lang }) {
   // ----- 3. TPACK ---------------------------------------------------
   const tpackCard = (labelColor, label, text) => `
     <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-      <span class="text-[8.5px] font-black uppercase block" style="color:${labelColor};">${label}</span>
-      <p class="text-[10.5px] text-slate-700 font-medium leading-relaxed">${esc(text)}</p>
+      <span class="text-[9.5px] font-black uppercase block" style="color:${labelColor};">${label}</span>
+      <p class="text-[11.5px] text-slate-700 font-medium leading-relaxed">${esc(text)}</p>
     </div>`;
 
   const section3 = `
@@ -257,21 +261,21 @@ export function classroomReportHtml({ analysis, header, lang }) {
         icon: 'tpack',
         title: L('3. TPACK Classroom Integration Diagnostic', '3. TPACK Klaskamer Integrasiediagnose'),
         subtitle: L('Observation-based integration lens for technology, pedagogy, and curriculum content', 'Waarnemingsgebaseerde integrasielens vir tegnologie, pedagogie en inhoud'),
-        rightHtml: `<span class="text-[10px] font-black uppercase px-3 py-1 rounded-md border text-white shadow-sm" style="background-color:${H.color}; border-color:${H.color};">TPACK: ${esc(afr ? H.levelAfr : H.level)}</span>`,
+        rightHtml: `<span class="text-[11px] font-black uppercase px-3 py-1 rounded-md border text-white shadow-sm" style="background-color:${H.color}; border-color:${H.color};">TPACK: ${esc(afr ? H.levelAfr : H.level)}</span>`,
       })}
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[13px]">
         ${tpackCard('#8D6E97', L('Technological Fit / TK Evidence', 'Tegnologiese Passing (TK Bewys)'), afr ? H.technologicalFitAfr : H.technologicalFit)}
         ${tpackCard('#007DBA', L('Pedagogical Fit / PK Evidence', 'Pedagogiese Passing (PK Bewys)'), afr ? H.pedagogicalFitAfr : H.pedagogicalFit)}
         ${tpackCard('#8FAD15', L('Content Fit / CK Evidence', 'Inhoudspassing (CK Bewys)'), afr ? H.contentFitAfr : H.contentFit)}
       </div>
-      <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 text-[13px]">
         <div>
-          <span class="text-[8.5px] font-black uppercase tracking-wider text-[#001489] block">${L('TPACK Synthesis:', 'TPACK Sintese:')}</span>
-          <p class="text-[11px] text-slate-800 font-bold leading-relaxed mt-0.5">${esc(afr ? H.tpackSynthesisAfr : H.tpackSynthesis)}</p>
+          <span class="text-[9.5px] font-black uppercase tracking-wider text-[#001489] block">${L('TPACK Synthesis:', 'TPACK Sintese:')}</span>
+          <p class="text-[12px] text-slate-800 font-bold leading-relaxed mt-0.5">${esc(afr ? H.tpackSynthesisAfr : H.tpackSynthesis)}</p>
         </div>
         <div class="pt-2 border-t border-slate-100">
-          <span class="text-[8.5px] font-black uppercase tracking-wider text-[#007DBA] block">${L('Core Developmental Focus for Next Lesson:', 'Kernontwikkelingsfokus vir Volgende Les:')}</span>
-          <p class="text-[10.5px] text-slate-700 font-medium leading-relaxed mt-0.5">${esc(afr ? H.coreDevelopmentalFocusAfr : H.coreDevelopmentalFocus)}</p>
+          <span class="text-[9.5px] font-black uppercase tracking-wider text-[#007DBA] block">${L('Core Developmental Focus for Next Lesson:', 'Kernontwikkelingsfokus vir Volgende Les:')}</span>
+          <p class="text-[11.5px] text-slate-700 font-medium leading-relaxed mt-0.5">${esc(afr ? H.coreDevelopmentalFocusAfr : H.coreDevelopmentalFocus)}</p>
         </div>
       </div>
     </div>`;
@@ -279,12 +283,12 @@ export function classroomReportHtml({ analysis, header, lang }) {
   // ----- 4. Field evidence -----------------------------------------
   const evCell = (label, value, cls = '') => `
     <div class="bg-white p-2.5 rounded-lg border border-slate-200 ${cls}">
-      <span class="text-[8px] font-black uppercase text-slate-400 block">${label}</span>
+      <span class="text-[9px] font-black uppercase text-slate-400 block">${label}</span>
       <span class="text-slate-800 font-semibold">${esc(value)}</span>
     </div>`;
   const evBlock = (labelHtml, labelClass, value, boxClass = 'bg-white border-slate-200', pClass = 'text-slate-700') => `
     <div class="${boxClass} p-3 rounded-lg border space-y-1">
-      <span class="text-[8px] font-black uppercase block ${labelClass}">${labelHtml}</span>
+      <span class="text-[9px] font-black uppercase block ${labelClass}">${labelHtml}</span>
       <p class="${pClass} font-medium whitespace-pre-line">${esc(value)}</p>
     </div>`;
 
@@ -295,9 +299,9 @@ export function classroomReportHtml({ analysis, header, lang }) {
         icon: 'evidence',
         title: L('4. In-Classroom Field Evidence &amp; Artifact Record', '4. Klaskamer Veldwaarnemings &amp; Bewyse'),
         subtitle: L('Summarises captured observation evidence only', 'Uitsluitlik vasgelegde waarnemingsbewyse (onbevestigde velde word nie vervaardig nie)'),
-        rightHtml: `<span class="text-[9.5px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-slate-700 border-slate-200">${L('Verified Records', 'Gedokumenteerde Bewyse')}</span>`,
+        rightHtml: `<span class="text-[10.5px] font-black uppercase px-2.5 py-1 rounded-md border bg-white text-slate-700 border-slate-200">${L('Verified Records', 'Gedokumenteerde Bewyse')}</span>`,
       })}
-      <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-4 space-y-3 text-xs">
+      <div class="bg-slate-50/80 border border-slate-200 rounded-xl p-4 space-y-3 text-[13px]">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           ${evCell(L('SUBJECT &amp; GRADE', 'VAK &amp; GRAAD'), `${D.subject} (${D.grade})`)}
           ${evCell(L('LESSON TOPIC &amp; INTENTION', 'LESFOKUS / LEERBEDOELING'), D.lessonTopic)}
@@ -322,24 +326,24 @@ export function classroomReportHtml({ analysis, header, lang }) {
       <div class="bg-white border rounded-xl p-3.5 shadow-sm flex flex-col justify-between" style="border-color:${A.color}35;">
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-[8.5px] font-black uppercase px-2 py-0.5 rounded border" style="background-color:${A.color}15; color:#001489; border-color:${A.color}40;">${L(`Focus Area ${i + 1}`, `Fokusarea ${i + 1}`)}</span>
-            <span class="text-[8px] font-bold text-slate-400 uppercase">${L('Development Area', 'Ontwikkelingsarea')}</span>
+            <span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded border" style="background-color:${A.color}15; color:#001489; border-color:${A.color}40;">${L(`Focus Area ${i + 1}`, `Fokusarea ${i + 1}`)}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase">${L('Development Area', 'Ontwikkelingsarea')}</span>
           </div>
-          <h3 class="text-xs font-black text-slate-800">${esc(afr ? o.developmentAreaAfr : o.developmentArea)}</h3>
-          <div class="space-y-1.5 text-[10.5px]">
+          <h3 class="text-[13px] font-black text-slate-800">${esc(afr ? o.developmentAreaAfr : o.developmentArea)}</h3>
+          <div class="space-y-1.5 text-[11.5px]">
             <div>
-              <span class="text-[8px] font-black uppercase text-slate-400 block">${L('WHY THIS MATTERS:', 'WAAROM DIT SAAK MAAK:')}</span>
+              <span class="text-[9px] font-black uppercase text-slate-400 block">${L('WHY THIS MATTERS:', 'WAAROM DIT SAAK MAAK:')}</span>
               <p class="text-slate-600 font-medium leading-relaxed">${esc(afr ? o.whyThisMattersAfr : o.whyThisMatters)}</p>
             </div>
             <div class="pt-1">
-              <span class="text-[8px] font-black uppercase text-[#001489] block">${L('SUGGESTED NEXT STEP:', 'VOORGESTELDE VOLGENDE STAP:')}</span>
+              <span class="text-[9px] font-black uppercase text-[#001489] block">${L('SUGGESTED NEXT STEP:', 'VOORGESTELDE VOLGENDE STAP:')}</span>
               <p class="text-slate-800 font-semibold leading-relaxed">${esc(afr ? o.practicalNextStepAfr : o.practicalNextStep)}</p>
             </div>
           </div>
         </div>
         <div class="mt-3 pt-2.5 border-t border-slate-100">
-          <span class="text-[8px] font-black text-slate-400 block uppercase mb-1">${L('Suggested Resource / Tool:', 'Aanbevole Hulpbron of Gereedskap:')}</span>
-          <span class="text-[9px] font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 block">${esc(afr ? o.suggestedResourceOrToolAfr : o.suggestedResourceOrTool)}</span>
+          <span class="text-[9px] font-black text-slate-400 block uppercase mb-1">${L('Suggested Resource / Tool:', 'Aanbevole Hulpbron of Gereedskap:')}</span>
+          <span class="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 block">${esc(afr ? o.suggestedResourceOrToolAfr : o.suggestedResourceOrTool)}</span>
         </div>
       </div>`
   ).join('');
@@ -353,7 +357,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
         subtitle: L('Suggested developmental focus areas based directly on observed 4P, SAMR, and TPACK evidence', 'Geteikende ontwikkelingsfokusareas gebaseer op waargenome 4P, SAMR en TPACK bewyse'),
         rightHtml: `<span class="${PILL}">${B.length} ${L('Developmental Focus Areas', 'Ontwikkelingsareas')}</span>`,
       })}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">${scaffoldCards}</div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">${scaffoldCards}</div>
     </div>`;
 
   // ----- 6. Reflection prompts -------------------------------------
@@ -361,10 +365,10 @@ export function classroomReportHtml({ analysis, header, lang }) {
     (o, i) => `
       <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 shadow-sm">
         <div class="flex items-center justify-between">
-          <span class="w-5 h-5 rounded-full bg-[#001489] text-white text-[10px] font-bold flex items-center justify-center">${i + 1}</span>
-          <span class="text-[8.5px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">${esc(afr ? o.lensAfr : o.lens)}</span>
+          <span class="w-5 h-5 rounded-full bg-[#001489] text-white text-[11px] font-bold flex items-center justify-center">${i + 1}</span>
+          <span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">${esc(afr ? o.lensAfr : o.lens)}</span>
         </div>
-        <p class="text-[11px] font-semibold text-slate-800 leading-relaxed">"${esc(afr ? o.promptAfr : o.prompt)}"</p>
+        <p class="text-[12px] font-semibold text-slate-800 leading-relaxed">"${esc(afr ? o.promptAfr : o.prompt)}"</p>
       </div>`
   ).join('');
 
@@ -390,31 +394,31 @@ export function classroomReportHtml({ analysis, header, lang }) {
         subtitle: L('Suggested developmental focus areas for post-observation dialogue &amp; collaboration', 'Voorgestelde ontwikkelingsfokusareas vir nabetragtingsgesprek en samewerking'),
         rightHtml: `<span class="${PILL}">${L('Advisor Recommendations', 'Adviesaanbevelings')}</span>`,
       })}
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-[13px]">
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5">
-          <span class="text-[8.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Instructional Focus Area', 'Voorgestelde Onderrigfokusarea')}</span>
-          <p class="text-[11px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.immediatePriorityAfr : Q.immediatePriority)}</p>
+          <span class="text-[9.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Instructional Focus Area', 'Voorgestelde Onderrigfokusarea')}</span>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.immediatePriorityAfr : Q.immediatePriority)}</p>
         </div>
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5">
-          <span class="text-[8.5px] font-black uppercase text-[#007DBA] tracking-wider block">${L('Suggested Resource or Support', 'Aanbevole Hulpbron of Ondersteuning')}</span>
-          <p class="text-[11px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.suggestedResourceOrSupportAfr : Q.suggestedResourceOrSupport)}</p>
+          <span class="text-[9.5px] font-black uppercase text-[#007DBA] tracking-wider block">${L('Suggested Resource or Support', 'Aanbevole Hulpbron of Ondersteuning')}</span>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.suggestedResourceOrSupportAfr : Q.suggestedResourceOrSupport)}</p>
         </div>
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between gap-1 mb-1">
-              <span class="text-[8.5px] font-black uppercase text-[#8D6E97] tracking-wider block">${L('Teacher Professional Development &amp; Capacity Building Suggestions', 'Onderwyser Professionele Ontwikkeling &amp; Kapasiteitsbou-voorstelle')}</span>
-              <a href="https://wcedtpd.pages.dev/sessions" target="_blank" rel="noreferrer" class="no-print inline-flex items-center gap-1 text-[8.5px] font-bold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">eTPD Sessions ↗</a>
+              <span class="text-[9.5px] font-black uppercase text-[#8D6E97] tracking-wider block">${L('Teacher Professional Development &amp; Capacity Building Suggestions', 'Onderwyser Professionele Ontwikkeling &amp; Kapasiteitsbou-voorstelle')}</span>
+              <a href="https://wcedtpd.pages.dev/sessions" target="_blank" rel="noreferrer" class="no-print inline-flex items-center gap-1 text-[9.5px] font-bold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">eTPD Sessions ↗</a>
             </div>
-            <p class="text-[11px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.teacherDevelopmentFocusAfr : Q.teacherDevelopmentFocus)}</p>
+            <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.teacherDevelopmentFocusAfr : Q.teacherDevelopmentFocus)}</p>
           </div>
-          <div class="pt-1.5 border-t border-slate-200/80 flex items-center justify-between text-[8.5px] text-slate-500">
+          <div class="pt-1.5 border-t border-slate-200/80 flex items-center justify-between text-[9.5px] text-slate-500">
             <span class="font-semibold">Guidance: WCED eTPD Microlearning</span>
             <a href="https://wcedtpd.pages.dev/sessions" target="_blank" rel="noreferrer" class="text-blue-700 hover:underline font-bold">wcedtpd.pages.dev/sessions ↗</a>
           </div>
         </div>
         <div class="bg-blue-50/60 border border-blue-200 p-3.5 rounded-xl md:col-span-3 space-y-1.5">
-          <span class="text-[8.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Focus &amp; Evidence for Next Visit', 'Voorgestelde Waarneembare Fokus vir Volgende Besoek')}</span>
-          <p class="text-[11px] text-slate-800 font-semibold leading-relaxed">${esc(afr ? Q.followUpEvidenceAfr : Q.followUpEvidence)}</p>
+          <span class="text-[9.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Focus &amp; Evidence for Next Visit', 'Voorgestelde Waarneembare Fokus vir Volgende Besoek')}</span>
+          <p class="text-[12px] text-slate-800 font-semibold leading-relaxed">${esc(afr ? Q.followUpEvidenceAfr : Q.followUpEvidence)}</p>
         </div>
       </div>
     </div>`;
@@ -423,14 +427,14 @@ export function classroomReportHtml({ analysis, header, lang }) {
     <div class="pt-8 grid grid-cols-2 gap-8">
       <div class="text-center space-y-8">
         <div class="h-px bg-slate-300 w-full"></div>
-        <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">
+        <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none">
           ${L('eLearning Advisor Signature', 'e-Leer Adviseur Handtekening')}
           <span class="block font-semibold lowercase text-slate-500 mt-1">${esc(header.advisorName) || L('Full name', 'Volle naam')}</span>
         </div>
       </div>
       <div class="text-center space-y-8">
         <div class="h-px bg-slate-300 w-full"></div>
-        <div class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">
+        <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none">
           ${L('Observed Teacher / Subject HOD Signature', 'Waargenome Onderwyser / Vakhoof Handtekening')}
           <span class="block font-semibold lowercase text-slate-500 mt-1">${esc(teacherName !== 'N/A' ? teacherName : '') || L('Full name', 'Volle naam')}</span>
         </div>
@@ -582,25 +586,25 @@ export function mountClassroomReport(rootEl, { classroom, header, walkthroughHre
     const afr = lang === 'afr';
     const langBtn = (code, label) => `
       <button type="button" data-lang="${code}"
-        class="px-2.5 py-1 rounded text-xs font-extrabold transition ${lang === code ? 'bg-[#001489] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">${label}</button>`;
+        class="px-2.5 py-1 rounded text-[13px] font-extrabold transition ${lang === code ? 'bg-[#001489] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}">${label}</button>`;
 
     rootEl.innerHTML = `
       <div class="space-y-4">
         <div class="no-print bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200">${afr ? 'Gefokusde Klaskamerwaarneming' : 'Focused Classroom Observation'}</span>
-              <span class="text-xs font-black text-slate-800 tracking-tight">${afr ? 'SAMR / TPACK &amp; 4P Klaskamertransformasie' : 'SAMR / TPACK &amp; 4P Classroom Transformation'}</span>
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200">${afr ? 'Gefokusde Klaskamerwaarneming' : 'Focused Classroom Observation'}</span>
+              <span class="text-[13px] font-black text-slate-800 tracking-tight">${afr ? 'SAMR / TPACK &amp; 4P Klaskamertransformasie' : 'SAMR / TPACK &amp; 4P Classroom Transformation'}</span>
             </div>
-            <p class="text-[10px] text-slate-500 mt-0.5">${afr ? 'Bewysgebaseerde pedagogiese analise sonder arbitrêre gemiddelde tellings' : 'Evidence-based pedagogical diagnosis without misleading statistical averaging'}</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">${afr ? 'Bewysgebaseerde pedagogiese analise sonder arbitrêre gemiddelde tellings' : 'Evidence-based pedagogical diagnosis without misleading statistical averaging'}</p>
           </div>
           <div class="flex flex-wrap items-center gap-2 justify-end">
-            ${walkthroughHref ? `<a href="${esc(walkthroughHref)}" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">${afr ? 'Wys Heel-Skool 4P Verslag' : 'View Whole-School 4P Report'}</a>` : ''}
-            <button type="button" data-action="copy" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">${afr ? 'Kopieer vir E-pos' : 'Copy for Email / SMT'}</button>
-            <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">${langBtn('en', 'EN')}${langBtn('afr', 'AFR')}</div>
+            ${walkthroughHref ? `<a href="${esc(walkthroughHref)}" class="text-[13px] font-bold px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">${afr ? 'Wys Heel-Skool 4P Verslag' : 'View Whole-School 4P Report'}</a>` : ''}
+            <button type="button" data-action="copy" class="text-[13px] font-bold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">${afr ? 'Kopieer vir E-pos' : 'Copy for Email / SMT'}</button>
+            ${ENABLE_AFRIKAANS ? `<div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">${langBtn('en', 'EN')}${langBtn('afr', 'AFR')}</div>` : ''}
           </div>
         </div>
-        <p data-role="toast" class="no-print text-xs font-semibold text-emerald-700 hidden"></p>
+        <p data-role="toast" class="no-print text-[13px] font-semibold text-emerald-700 hidden"></p>
         ${classroomReportHtml({ analysis, header, lang })}
       </div>`;
   }
@@ -616,7 +620,7 @@ export function mountClassroomReport(rootEl, { classroom, header, walkthroughHre
 
   async function onClick(e) {
     const langBtn = e.target.closest('[data-lang]');
-    if (langBtn) {
+    if (langBtn && ENABLE_AFRIKAANS) {
       lang = langBtn.getAttribute('data-lang');
       render();
       return;

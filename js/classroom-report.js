@@ -27,7 +27,8 @@
 // dropped):
 //   - The "Enhance with AI" note-rewriting buttons per textarea
 //   - The searchable EdTech tool catalog / quick-add chips
-//   - Subject-domain auto-detection badges (CAPS phase, playbooks)
+//   (Subject-domain matching is now handled by the fixed Subject dropdown +
+//    match badge — see subject-catalogue.js.)
 //
 // The Back/Submit/Generate-Report buttons are NOT part of this
 // module either — the calling page owns navigation and submission
@@ -49,6 +50,14 @@ import {
   PLATFORMS_EPORTAL_RUBRIC,
 } from './rubrics.js';
 import { escapeHtml, pillarGroupHtml, categoryDividerHtml, updatePillarVisual } from './rubric-ui.js';
+import {
+  SUBJECT_GROUPS,
+  DOMAIN_LABELS,
+  OTHER_VALUE,
+  subjectDomain,
+  canonicalSubject,
+  isListedSubject,
+} from './subject-catalogue.js';
 import { createTabbedPanel } from './tabs-ui.js';
 
 // ------------------------------------------------------------
@@ -280,6 +289,10 @@ export function createClassroomReport(containerEl, opts = {}) {
   const visitedTabs = new Set();
   let tabsApi = null; // set by render(); referenced by attachListeners() to live-refresh status dots
 
+  // UI-only (deliberately NOT in `state`, so getData() stays a pure DB row):
+  // true while "Other (not listed)" is chosen in the Subject dropdown.
+  let subjectOtherMode = false;
+
   const TAB_LABELS = {
     context: 'Context & Tech',
     people: 'People',
@@ -288,6 +301,60 @@ export function createClassroomReport(containerEl, opts = {}) {
     platforms: 'Platforms',
     evidence: 'Evidence',
   };
+
+  // ---- Subject field: fixed dropdown so the report can match its
+  // subject-specific recommendations exactly, with an "Other" escape hatch.
+  function subjectFieldHtml() {
+    const current = String(state.subject_observed || '');
+    const canon = canonicalSubject(current);
+    const showOther = subjectOtherMode || (current.trim() !== '' && !canon);
+    const selected = showOther ? OTHER_VALUE : canon || '';
+    const groups = SUBJECT_GROUPS.map(
+      (g) =>
+        `<optgroup label="${escapeHtml(g.label)}">` +
+        g.subjects
+          .map((sub) => `<option value="${escapeHtml(sub)}" ${selected === sub ? 'selected' : ''}>${escapeHtml(sub)}</option>`)
+          .join('') +
+        '</optgroup>'
+    ).join('');
+
+    return `
+      <div>
+        <label class="field-label block mb-1">Subject Observed</label>
+        <select data-subject-select
+                class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white outline-none text-slate-800">
+          <option value="">-- Select Subject --</option>
+          ${groups}
+          <option value="${OTHER_VALUE}" ${selected === OTHER_VALUE ? 'selected' : ''}>Other (not listed)…</option>
+        </select>
+        <input type="text" data-field="subject_observed" data-subject-other value="${escapeHtml(showOther ? current : '')}"
+               placeholder="Type the subject"
+               class="form-field w-full mt-1.5 px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800 ${showOther ? '' : 'hidden'}" />
+        <p data-role="subject-badge" class="mt-1 text-[10px] leading-tight font-semibold"></p>
+      </div>`;
+  }
+
+  /** Updates the match badge + shows/hides the "Other" text box. No re-render. */
+  function refreshSubjectUi() {
+    const badge = containerEl.querySelector('[data-role="subject-badge"]');
+    const otherInput = containerEl.querySelector('[data-subject-other]');
+    if (otherInput) otherInput.classList.toggle('hidden', !subjectOtherMode);
+    if (!badge) return;
+
+    const current = String(state.subject_observed || '').trim();
+    const domain = subjectDomain(current);
+    if (domain) {
+      badge.className = 'mt-1 text-[10px] leading-tight font-semibold text-emerald-700';
+      badge.textContent = `✓ Recommendations matched to: ${DOMAIN_LABELS[domain]}`;
+    } else if (subjectOtherMode && current) {
+      badge.className = 'mt-1 text-[10px] leading-tight font-semibold text-amber-700';
+      badge.textContent =
+        'Custom subject — the report will try to match it by keyword, otherwise it uses general cross-curricular recommendations.';
+    } else {
+      badge.className = 'mt-1 text-[10px] leading-tight font-semibold text-slate-400';
+      badge.textContent = '';
+    }
+  }
 
   function isContextComplete() {
     return Boolean(state.teacher_name.trim() && state.subject_observed.trim() && state.grade_observed);
@@ -353,12 +420,7 @@ export function createClassroomReport(containerEl, opts = {}) {
                    placeholder="e.g. Mrs. S. Adams"
                    class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
           </div>
-          <div>
-            <label class="field-label block mb-1">Subject Observed</label>
-            <input type="text" data-field="subject_observed" value="${escapeHtml(state.subject_observed)}"
-                   placeholder="e.g. Physical Sciences"
-                   class="form-field w-full px-2.5 py-1.5 border border-slate-200 rounded focus:bg-white focus:ring-1 focus:ring-[#001489] transition bg-white text-slate-800" />
-          </div>
+          ${subjectFieldHtml()}
           <div>
             <label class="field-label block mb-1">Grade Observed</label>
             <select data-field="grade_observed"
@@ -448,6 +510,8 @@ export function createClassroomReport(containerEl, opts = {}) {
         label: TAB_LABELS.context,
         render: (panel) => {
           panel.innerHTML = `${contextFieldsHtml()}<div class="mt-4">${checklistHtml()}</div>`;
+          // Panel is (re)built whenever the tab is shown — repopulate the subject match badge.
+          refreshSubjectUi();
         },
       },
       {
@@ -518,6 +582,33 @@ export function createClassroomReport(containerEl, opts = {}) {
         state[field] = target.value;
       }
       if (tabsApi) tabsApi.refreshStatusDots();
+    });
+
+    // Subject dropdown ("Other" reveals a free-text box) — handled here
+    // rather than via data-field, since the select's value isn't what gets stored.
+    containerEl.addEventListener('change', (e) => {
+      const sel = e.target;
+      if (!sel.matches || !sel.matches('[data-subject-select]')) return;
+      if (sel.value === OTHER_VALUE) {
+        subjectOtherMode = true;
+        state.subject_observed = '';
+        const otherInput = containerEl.querySelector('[data-subject-other]');
+        if (otherInput) otherInput.value = '';
+        refreshSubjectUi();
+        if (otherInput) otherInput.focus();
+      } else {
+        subjectOtherMode = false;
+        state.subject_observed = sel.value;
+        refreshSubjectUi();
+      }
+      if (tabsApi) tabsApi.refreshStatusDots();
+    });
+
+    containerEl.addEventListener('input', (e) => {
+      if (e.target.matches && e.target.matches('[data-subject-other]')) {
+        // state is updated by the generic handler below; just refresh the badge.
+        setTimeout(refreshSubjectUi, 0);
+      }
     });
 
     containerEl.addEventListener('input', (e) => {
@@ -604,6 +695,12 @@ export function createClassroomReport(containerEl, opts = {}) {
     loadData(record) {
       if (!record) return;
       Object.assign(state, record);
+      // Older drafts (or DB nulls) may hold free-text / missing subjects:
+      // tidy the spelling if it matches the list, otherwise show it under "Other".
+      state.subject_observed = state.subject_observed || '';
+      const canon = canonicalSubject(state.subject_observed);
+      if (canon) state.subject_observed = canon;
+      subjectOtherMode = state.subject_observed.trim() !== '' && !canon;
       render();
     },
 
