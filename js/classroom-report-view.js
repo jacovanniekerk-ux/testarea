@@ -124,6 +124,23 @@ export function classroomReportHtml({ analysis, header, lang }) {
       </div>
     </div>`;
 
+  // ----- Summary strip: headline levels at a glance, before any detail ----
+  const summaryPill = (label, value, color) => `
+    <div class="flex-1 min-w-[120px] flex items-center gap-2.5 px-3 py-2 rounded-lg border bg-white" style="border-color:${color}45;">
+      <span class="w-2 h-2 rounded-full shrink-0" style="background-color:${color};"></span>
+      <span class="min-w-0">
+        <span class="text-[8.5px] font-black uppercase tracking-wider text-slate-400 block">${label}</span>
+        <span class="text-[12.5px] font-black truncate block" style="color:${color};">${esc(value)}</span>
+      </span>
+    </div>`;
+
+  const summaryStrip = `
+    <div class="flex flex-wrap gap-2.5">
+      ${summaryPill(L('4P Level', '4P-vlak'), afr ? A.overallLevelAfr : A.overallLevel, A.color)}
+      ${summaryPill('SAMR', afr ? G.levelAfr : G.level, G.color)}
+      ${summaryPill('TPACK', afr ? H.levelAfr : H.level, H.color)}
+    </div>`;
+
   // ----- Meta block --------------------------------------------------
   const metaCell = (label, value, extra = '') => `
     <div><span class="text-[9px] font-black text-slate-400 block uppercase">${label}</span>
@@ -157,7 +174,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     </div>`;
 
   const section1 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-1" data-nav-label="1. 4P Diagnostic Output">
       ${bannerHtml({
         color: A.color,
         icon: 'fourP',
@@ -172,13 +189,13 @@ export function classroomReportHtml({ analysis, header, lang }) {
         ${dimCard('PLATFORMS', A.platforms.levelCode, 'bg-amber-100 text-[#D73828]', afr ? A.platforms.narrativeAfr : A.platforms.narrative)}
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-        <div class="lg:col-span-8 rounded-xl p-4 border bg-blue-50/40 border-blue-200 space-y-2">
+        <div class="lg:col-span-7 rounded-xl p-4 border bg-blue-50/40 border-blue-200 space-y-2">
           <h4 class="text-[12px] font-black uppercase tracking-wider text-[#001489]">${L('Dynamic Relationship &amp; Synthesis Across the 4Ps', 'Dinamiese Verhouding tussen die 4P Dimensies')}</h4>
           <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? A.relationshipNarrativeAfr : A.relationshipNarrative)}</p>
         </div>
-        <div class="lg:col-span-4 flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl bg-slate-50/80 shadow-sm">
+        <div class="lg:col-span-5 flex flex-col items-center justify-center p-4 border border-slate-200 rounded-xl bg-slate-50/80 shadow-sm">
           <span class="text-[9.5px] font-black uppercase text-slate-500 tracking-wider mb-1">${L('4P Dimensional Polygon', '4P Klaskamer Vektordiagram')}</span>
-          <svg viewBox="-60 0 320 205" class="w-full max-w-[220px] h-auto">
+          <svg viewBox="-60 0 320 205" class="w-full max-w-[340px] h-auto">
             <circle cx="100" cy="100" r="18" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
             <circle cx="100" cy="100" r="36" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
             <circle cx="100" cy="100" r="54" fill="none" stroke="#cbd5e1" stroke-width="0.5" stroke-dasharray="2,2" />
@@ -213,7 +230,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     .join('');
 
   const section2 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-2" data-nav-label="2. SAMR &amp; TPACK Framework">
       ${bannerHtml({
         color: G.color,
         icon: 'frameworks',
@@ -255,7 +272,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     </div>`;
 
   const section3 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-3" data-nav-label="3. TPACK Diagnostic">
       ${bannerHtml({
         color: H.color,
         icon: 'tpack',
@@ -293,7 +310,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
     </div>`;
 
   const section4 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-4" data-nav-label="4. Field Evidence">
       ${bannerHtml({
         color: A.color,
         icon: 'evidence',
@@ -349,7 +366,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
   ).join('');
 
   const section5 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-5" data-nav-label="5. Scaffolding Suggestions">
       ${bannerHtml({
         color: A.color,
         icon: 'scaffold',
@@ -373,7 +390,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
   ).join('');
 
   const section6 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-6" data-nav-label="6. Reflection Prompts">
       ${bannerHtml({
         color: A.color,
         icon: 'reflection',
@@ -386,7 +403,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
 
   // ----- 7. Recommendations & follow-up ----------------------------
   const section7 = `
-    <div class="py-4 border-b border-slate-200 space-y-4">
+    <div class="py-4 border-b border-slate-200 space-y-4" data-report-section id="cls-section-7" data-nav-label="7. Recommendations &amp; Follow-Up">
       ${bannerHtml({
         color: A.color,
         icon: 'followUp',
@@ -442,8 +459,9 @@ export function classroomReportHtml({ analysis, header, lang }) {
     </div>`;
 
   return `
-    <div id="printable-report" class="bg-white border border-slate-300 rounded-xl p-5 sm:p-7 shadow-sm text-slate-800 space-y-6 print:border-none print:shadow-none print:p-0 print:m-0">
+    <div id="printable-report" class="bg-white border border-slate-300 rounded-xl p-5 sm:p-7 shadow-sm text-slate-800 space-y-6 print:border-none print:shadow-none print:p-0 print:m-0 report-print-root">
       ${titleBlock}
+      ${summaryStrip}
       ${metaBlock}
       ${section1}
       ${section2}
