@@ -112,7 +112,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
           <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-600">${L('Directorate: eLearning', 'Direktoraat: e-Leer')}</span>
         </div>
         <h1 class="text-[17px] sm:text-[19px] font-black uppercase tracking-tight text-[#001489]">${L('Classroom Observation &amp; Digital Transformation Report 2026', 'Klaskamerwaarneming &amp; Digitale Transformasieverslag 2026')}</h1>
-        <p class="text-[11.5px] text-slate-600 font-medium">${L('Focused in-lesson observation, SAMR &amp; TPACK integration, learner agency, and classroom-level digital scaffolding', 'Gefokusde leswaarneming, SAMR- en TPACK-integrasie, leerder-agentskap en klaskamer-gebaseerde e-leer steierwerk')}</p>
+        <p class="text-[11.5px] text-slate-600 font-normal">${L('Focused in-lesson observation, SAMR &amp; TPACK integration, learner agency, and classroom-level digital scaffolding', 'Gefokusde leswaarneming, SAMR- en TPACK-integrasie, leerder-agentskap en klaskamer-gebaseerde e-leer steierwerk')}</p>
       </div>
       <div class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border shrink-0" style="background-color:${A.color}0c; border-color:${A.color}40;">
         <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-[19px] shadow-sm shrink-0" style="background-color:${A.color};">4P</div>
@@ -153,7 +153,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
         <span class="text-[10px] font-black text-slate-500 uppercase tracking-wider">${label}</span>
         <span class="text-[13px] font-black px-2 py-0.5 rounded ${badgeClasses}">${esc(code)}</span>
       </div>
-      <p class="text-[11.5px] text-slate-700 font-medium leading-tight pt-1">${esc(narrative)}</p>
+      <p class="text-[11.5px] text-slate-700 font-normal leading-tight pt-1">${esc(narrative)}</p>
     </div>`;
 
   const section1 = `
@@ -174,7 +174,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-7 rounded-xl p-4 border bg-blue-50/40 border-blue-200 space-y-2">
           <h4 class="text-[12px] font-black uppercase tracking-wider text-[#001489]">${L('Dynamic Relationship &amp; Synthesis Across the 4Ps', 'Dinamiese Verhouding tussen die 4P Dimensies')}</h4>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? A.relationshipNarrativeAfr : A.relationshipNarrative)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? A.relationshipNarrativeAfr : A.relationshipNarrative)}</p>
         </div>
         <div class="lg:col-span-5 flex flex-col items-center justify-center p-4 border border-slate-200 rounded-xl bg-slate-50/80 shadow-sm">
           <span class="text-[9.5px] font-black uppercase text-slate-500 tracking-wider mb-1">${L('4P Dimensional Polygon', '4P Klaskamer Vektordiagram')}</span>
@@ -206,7 +206,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
             <span class="text-[12px] font-black tracking-tight" style="color:${st.color};">${st.code}: ${esc(afr ? st.nameAfr : st.name)}</span>
             ${on ? `<span class="w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-black" style="background-color:${st.color};">✓</span>` : ''}
           </div>
-          <p class="text-[11px] text-slate-600 font-medium leading-tight">${esc(afr ? st.subtitleAfr : st.subtitle)}</p>
+          <p class="text-[11px] text-slate-600 font-normal leading-tight">${esc(afr ? st.subtitleAfr : st.subtitle)}</p>
           ${on ? `<span class="inline-block mt-2 text-[9px] font-black uppercase px-1.5 py-0.5 rounded" style="background-color:${st.color}25; color:${st.color};">${L('Observed In Lesson', 'Waargeneem')}</span>` : ''}
         </div>`;
     })
@@ -225,21 +225,21 @@ export function classroomReportHtml({ analysis, header, lang }) {
         <div class="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0 mt-0.5 sm:mt-0" style="background-color:${G.color};"><i class="fa-solid fa-arrow-right text-[11px]"></i></div>
         <div class="flex-1">
           <span class="text-[10px] font-black uppercase tracking-wider text-slate-500 block">${L('OBSERVED SAMR STAGE IN THIS LESSON:', 'WAARGENOME SAMR-FASE IN HIERDIE LES:')}</span>
-          <p class="text-[12.5px] font-medium text-slate-900 leading-snug">${esc(afr ? G.ladderStepSummaryAfr : G.ladderStepSummary)}</p>
+          <p class="text-[12.5px] font-normal text-slate-900 leading-snug">${esc(afr ? G.ladderStepSummaryAfr : G.ladderStepSummary)}</p>
         </div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">${samrStages}</div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[13px]">
         <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
           <div class="border-b border-slate-100 pb-1.5"><span class="text-[10px] font-black uppercase text-[#001489] tracking-wider block">${L('Observed In-Lesson Reality (SAMR Evidence)', 'Waargenome Klaskamerwerklikheid (SAMR Bewys)')}</span></div>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? G.observedRealityAfr : G.observedReality)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? G.observedRealityAfr : G.observedReality)}</p>
           <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-[11.5px] text-slate-600 leading-relaxed">
             <span class="font-bold text-slate-700 block mb-0.5">${L('Diagnostic Rationale:', 'Kaderanalise:')}</span>${esc(afr ? G.explanationAfr : G.explanation)}
           </div>
         </div>
         <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
           <div class="border-b border-slate-100 pb-1.5"><span class="text-[10px] font-black uppercase text-[#00A1A3] tracking-wider block">${L('Actionable Step to Advance Up SAMR Ladder', 'Praktiese Stap om op SAMR-leer te Vorder')}</span></div>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? G.actionableNextTierStepAfr : G.actionableNextTierStep)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? G.actionableNextTierStepAfr : G.actionableNextTierStep)}</p>
           <div class="bg-teal-50/50 p-2.5 rounded-lg border border-teal-100/70 text-[11.5px] text-teal-900 leading-relaxed">
             <span class="font-bold text-teal-950 block mb-0.5">${L('Topic-Specific Learning Task Example:', 'Onderwerpspesifieke Leertaak-voorbeeld:')}</span>${esc(afr ? G.developmentalOpportunityAfr : G.developmentalOpportunity)}
           </div>
@@ -251,7 +251,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
   const tpackCard = (labelColor, label, text) => `
     <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
       <span class="text-[9.5px] font-black uppercase block" style="color:${labelColor};">${label}</span>
-      <p class="text-[11.5px] text-slate-700 font-medium leading-relaxed">${esc(text)}</p>
+      <p class="text-[11.5px] text-slate-700 font-normal leading-relaxed">${esc(text)}</p>
     </div>`;
 
   const section3 = `
@@ -271,11 +271,11 @@ export function classroomReportHtml({ analysis, header, lang }) {
       <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 text-[13px]">
         <div>
           <span class="text-[9.5px] font-black uppercase tracking-wider text-[#001489] block">${L('TPACK Synthesis:', 'TPACK Sintese:')}</span>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed mt-0.5">${esc(afr ? H.tpackSynthesisAfr : H.tpackSynthesis)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed mt-0.5">${esc(afr ? H.tpackSynthesisAfr : H.tpackSynthesis)}</p>
         </div>
         <div class="pt-2 border-t border-slate-100">
           <span class="text-[9.5px] font-black uppercase tracking-wider text-[#007DBA] block">${L('Core Developmental Focus for Next Lesson:', 'Kernontwikkelingsfokus vir Volgende Les:')}</span>
-          <p class="text-[11.5px] text-slate-700 font-medium leading-relaxed mt-0.5">${esc(afr ? H.coreDevelopmentalFocusAfr : H.coreDevelopmentalFocus)}</p>
+          <p class="text-[11.5px] text-slate-700 font-normal leading-relaxed mt-0.5">${esc(afr ? H.coreDevelopmentalFocusAfr : H.coreDevelopmentalFocus)}</p>
         </div>
       </div>
     </div>`;
@@ -289,7 +289,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
   const evBlock = (labelHtml, labelClass, value, boxClass = 'bg-white border-slate-200', pClass = 'text-slate-700') => `
     <div class="${boxClass} p-3 rounded-lg border space-y-1">
       <span class="text-[9px] font-black uppercase block ${labelClass}">${labelHtml}</span>
-      <p class="${pClass} font-medium whitespace-pre-line">${esc(value)}</p>
+      <p class="${pClass} font-normal whitespace-pre-line">${esc(value)}</p>
     </div>`;
 
   const section4 = `
@@ -333,11 +333,11 @@ export function classroomReportHtml({ analysis, header, lang }) {
           <div class="space-y-1.5 text-[11.5px]">
             <div>
               <span class="text-[9px] font-black uppercase text-slate-400 block">${L('WHY THIS MATTERS:', 'WAAROM DIT SAAK MAAK:')}</span>
-              <p class="text-slate-600 font-medium leading-relaxed">${esc(afr ? o.whyThisMattersAfr : o.whyThisMatters)}</p>
+              <p class="text-slate-600 font-normal leading-relaxed">${esc(afr ? o.whyThisMattersAfr : o.whyThisMatters)}</p>
             </div>
             <div class="pt-1">
               <span class="text-[9px] font-black uppercase text-[#001489] block">${L('SUGGESTED NEXT STEP:', 'VOORGESTELDE VOLGENDE STAP:')}</span>
-              <p class="text-slate-800 font-medium leading-relaxed">${esc(afr ? o.practicalNextStepAfr : o.practicalNextStep)}</p>
+              <p class="text-slate-800 font-normal leading-relaxed">${esc(afr ? o.practicalNextStepAfr : o.practicalNextStep)}</p>
             </div>
           </div>
         </div>
@@ -368,7 +368,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
           <span class="w-5 h-5 rounded-full bg-[#001489] text-white text-[11px] font-bold flex items-center justify-center">${i + 1}</span>
           <span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">${esc(afr ? o.lensAfr : o.lens)}</span>
         </div>
-        <p class="text-[12px] font-medium text-slate-800 leading-relaxed">"${esc(afr ? o.promptAfr : o.prompt)}"</p>
+        <p class="text-[12px] font-normal text-slate-800 leading-relaxed">"${esc(afr ? o.promptAfr : o.prompt)}"</p>
       </div>`
   ).join('');
 
@@ -397,11 +397,11 @@ export function classroomReportHtml({ analysis, header, lang }) {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-[13px]">
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5">
           <span class="text-[9.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Instructional Focus Area', 'Voorgestelde Onderrigfokusarea')}</span>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.immediatePriorityAfr : Q.immediatePriority)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? Q.immediatePriorityAfr : Q.immediatePriority)}</p>
         </div>
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5">
           <span class="text-[9.5px] font-black uppercase text-[#007DBA] tracking-wider block">${L('Suggested Resource or Support', 'Aanbevole Hulpbron of Ondersteuning')}</span>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.suggestedResourceOrSupportAfr : Q.suggestedResourceOrSupport)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? Q.suggestedResourceOrSupportAfr : Q.suggestedResourceOrSupport)}</p>
         </div>
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 flex flex-col justify-between">
           <div>
@@ -409,7 +409,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
               <span class="text-[9.5px] font-black uppercase text-[#8D6E97] tracking-wider block">${L('Teacher Professional Development &amp; Capacity Building Suggestions', 'Onderwyser Professionele Ontwikkeling &amp; Kapasiteitsbou-voorstelle')}</span>
               <a href="https://wcedtpd.pages.dev/sessions" target="_blank" rel="noreferrer" class="no-print inline-flex items-center gap-1 text-[9.5px] font-bold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">eTPD Sessions ↗</a>
             </div>
-            <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.teacherDevelopmentFocusAfr : Q.teacherDevelopmentFocus)}</p>
+            <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? Q.teacherDevelopmentFocusAfr : Q.teacherDevelopmentFocus)}</p>
           </div>
           <div class="pt-1.5 border-t border-slate-200/80 flex items-center justify-between text-[9.5px] text-slate-500">
             <span class="font-semibold">Guidance: WCED eTPD Microlearning</span>
@@ -418,7 +418,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
         </div>
         <div class="bg-blue-50/60 border border-blue-200 p-3.5 rounded-xl md:col-span-3 space-y-1.5">
           <span class="text-[9.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Focus &amp; Evidence for Next Visit', 'Voorgestelde Waarneembare Fokus vir Volgende Besoek')}</span>
-          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.followUpEvidenceAfr : Q.followUpEvidence)}</p>
+          <p class="text-[12px] text-slate-800 font-normal leading-relaxed">${esc(afr ? Q.followUpEvidenceAfr : Q.followUpEvidence)}</p>
         </div>
       </div>
     </div>`;
