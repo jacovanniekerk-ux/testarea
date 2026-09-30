@@ -305,12 +305,22 @@
             'Introduction to Cyber Wellness Education'
         ];
 
+        // Milestone / pathway graphics (replace the former emoji)
+        const ICONS = {
+            adoption: 'imgs/icons/adoption.png',
+            dovetail: 'imgs/icons/dovetail.png',
+            digitalskills: 'imgs/icons/digital.png',
+            cybereffect: 'imgs/icons/cyber.png',
+            edvance: 'imgs/icons/edvance.png'
+        };
+        const IconImg = ({ src, className }) => e('img', { src, alt: '', className, loading: 'lazy' });
+
         // Milestone definitions for the pathway — colors and enrichment
         // (keyPoints, dovetailEssentials, availability, next) sourced from pathway.html
         const MILESTONES = [
             {
                 id: 'adoption', step: 1, title: 'ICT Adoption Strategy', subtitle: 'The Entry Point',
-                icon: '🧭', color: '#00A1A3', lightColor: '#E5F6F6', sparkSession: 'Adoption Strategy',
+                icon: ICONS.adoption, color: '#00A1A3', lightColor: '#E5F6F6', sparkSession: 'Adoption Strategy',
                 duration: '24-hour self-paced course',
                 description: 'A foundational online course providing a broad perspective on the visibility of the digital landscape and the "Transformation Agenda." This journey moves you from digital novice to confident ICT integrator.',
                 keyPoints: [
@@ -330,7 +340,7 @@
             },
             {
                 id: 'dovetail', step: 2, title: 'Dovetail Essentials', subtitle: 'Customisation & Micro-Learning',
-                icon: '🧰', color: '#8FAD15', lightColor: '#F2F6E3', sparkSession: null,
+                icon: ICONS.dovetail, color: '#8FAD15', lightColor: '#F2F6E3', sparkSession: null,
                 duration: '10 focused micro-learning sessions',
                 description: 'A non-linear pathway through targeted 60-120 minute sessions that build practical digital competency (the how). Choose the sessions that match your needs and context across multiple platforms and tools.',
                 dovetailEssentials: [
@@ -357,7 +367,7 @@
             },
             {
                 id: 'digitalskills', step: 3, title: 'Digital Skills Course', subtitle: 'The Experiential Shift',
-                icon: '📖', color: '#007DBA', lightColor: '#E5F2F8', sparkSession: 'Digital Skills Course',
+                icon: ICONS.digitalskills, color: '#007DBA', lightColor: '#E5F2F8', sparkSession: 'Digital Skills Course',
                 duration: '4-week hybrid immersion',
                 description: 'An experiential hybrid course that shifts your focus from "how to use" to "how to learn." View technology from the learner\'s perspective and develop digital wisdom (the why).',
                 keyPoints: [
@@ -377,7 +387,7 @@
             },
             {
                 id: 'cybereffect', step: 4, title: 'Cyber Effect Ambassador', subtitle: 'Ethical Capstone',
-                icon: '🌐', color: '#C8126E', lightColor: '#FBE7F0', sparkSession: 'Cyber Effect Ambassador Initiation Course',
+                icon: ICONS.cybereffect, color: '#C8126E', lightColor: '#FBE7F0', sparkSession: 'Cyber Effect Ambassador Initiation Course',
                 duration: 'Self-paced 4-week course',
                 description: 'Deepen your ability to engage with the ethical, emotional, psychological, and behavioural dimensions of technology use. Master the 4P Affective Transformation Model (People, Practices, Pedagogy, Platforms).',
                 keyPoints: [
@@ -402,7 +412,7 @@
         // Only "Facilitator Think Tank" earns a Spark; Elevate and Shift and
         // Spark deepen leadership but do not add to the core pathway Sparks.
         const EDVANCE_ARC = {
-            icon: '🎓',
+            icon: ICONS.edvance,
             title: 'Edvance ARC',
             subtitle: 'By Invitation',
             accentColor: '#672D82',
@@ -639,7 +649,7 @@
                                 ? e('span', { className: "px-2.5 py-1 bg-amber-100 text-amber-700 font-bold text-xs rounded-full whitespace-nowrap" }, "In Progress")
                                 : e('span', { className: "px-2.5 py-1 bg-gray-100 text-gray-500 font-bold text-xs rounded-full whitespace-nowrap" }, "Not Started")
                     ),
-                    e('div', { className: "text-4xl text-center my-3" }, milestone.icon),
+                    e(IconImg, { src: milestone.icon, className: "w-20 h-20 object-contain mx-auto my-3" }),
                     e('h4', { className: "font-bold text-gray-900 text-center text-base" }, milestone.title),
                     e('p', { className: "text-xs text-gray-500 text-center font-medium mb-3" }, milestone.subtitle),
                     e('p', { className: "text-xs text-gray-600 leading-relaxed text-center line-clamp-3" }, milestone.description),
@@ -671,7 +681,8 @@
                 style: { background: 'linear-gradient(135deg, #001489 0%, #C8126E 100%)' }
             },
                 e('div', { className: "flex items-center gap-4" },
-                    e('div', { className: "text-5xl" }, EDVANCE_ARC.icon),
+                    e('div', { className: "w-20 h-20 flex-shrink-0 bg-white rounded-full shadow-lg flex items-center justify-center" },
+                        e(IconImg, { src: EDVANCE_ARC.icon, className: "w-14 h-14 object-contain" })),
                     e('div', null,
                         e('div', { className: "inline-block px-3 py-0.5 bg-amber-400 text-black font-bold text-[10px] rounded-full uppercase mb-1" },
                             anyStarted ? "In Progress" : "Special Recognition"
@@ -763,7 +774,8 @@
                         className: "p-8 text-white rounded-t-2xl text-center relative",
                         style: { background: `linear-gradient(135deg, ${milestone.color} 0%, #001489 100%)` }
                     },
-                        e('div', { className: "text-5xl mb-2" }, milestone.icon),
+                        e('div', { className: "w-24 h-24 mx-auto mb-3 bg-white rounded-full shadow-lg flex items-center justify-center" },
+                            e(IconImg, { src: milestone.icon, className: "w-16 h-16 object-contain" })),
                         e('h2', { className: "text-2xl font-bold" }, milestone.title),
                         e('p', { className: "text-white/80 font-semibold" }, milestone.subtitle),
                         e('span', { className: "inline-block mt-3 px-4 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold" }, milestone.duration)
@@ -889,7 +901,9 @@
             };
             return e('div', { className: `suggestion-card bg-gray-50 rounded-xl p-5 ${typeStyles[type] || 'border-l-4 border-gray-300'}` },
                 e('div', { className: "flex items-start gap-3 mb-2" },
-                    e('span', { className: "text-2xl" }, icon),
+                    (typeof icon === 'string' && icon.startsWith('imgs/'))
+                        ? e(IconImg, { src: icon, className: "w-8 h-8 object-contain flex-shrink-0" })
+                        : e('span', { className: "text-2xl" }, icon),
                     e('h4', { className: "font-bold text-gray-800" }, title)
                 ),
                 description ? e('p', { className: "text-sm text-gray-600 mb-2 whitespace-pre-line" }, description) : null,
@@ -1434,9 +1448,7 @@
             useEffect(() => {
                 (async () => {
                     try {
-                        const testAnchor = new Date();
-testAnchor.setDate(testAnchor.getDate() - 2);
-const todayISO = toISODateString(testAnchor);
+                        const todayISO = toISODateString(new Date());
                         const [sessionRes, courseRes, milestoneCourseRes] = await Promise.all([
                             supabaseClient.from('sessions').select('*').eq('session_delivery_mode', 'Virtual').gte('session_date', todayISO).order('session_date', { ascending: true }),
                             supabaseClient.from('courses').select('*'),
@@ -1619,7 +1631,7 @@ const todayISO = toISODateString(testAnchor);
 
                 if (!hasAdoption) {
                     items.push({
-                        icon: '🧭', title: 'Start Your Journey: ICT Adoption Strategy',
+                        icon: ICONS.adoption, title: 'Start Your Journey: ICT Adoption Strategy',
                         description: 'This 12-week, self-paced online course is the starting line for any educator looking to reimagine their approach to technology. Whether you are validating what you already know, picking up new skills, or shifting your mindset, the course offers a broad perspective on the digital landscape and the vision of the Transformation Agenda.\n\nRegardless of your current tech skill level, this foundational step helps you confidently integrate ICT to transform your classroom. By completing the course, you will earn your first Spark—igniting your ongoing pathway as a Transformation Agent.',
                         type: 'action', ctas: [getAvailabilityCTA('adoption', milestoneCourseSessions)].filter(Boolean)
                     });
@@ -1638,13 +1650,13 @@ const todayISO = toISODateString(testAnchor);
 
                     if (dovetailCount === 0) {
                         items.push({
-                            icon: '🧰', title: 'Build Practical Skills: Dovetail Essentials',
+                            icon: ICONS.dovetail, title: 'Build Practical Skills: Dovetail Essentials',
                             description: 'Choose from 10 focused micro-learning sessions (90-120 min each) to build practical digital skills. Complete 5 or more to earn a bonus Spark! Sessions run regularly across districts.',
                             type: 'action', sessions: upcomingDovetailSessions, ctas: [dovetailInfoCta]
                         });
                    } else if (!hasDovetailSpark) {
                         items.push({
-                            icon: '🧰', title: `Keep Going: ${dovetailCount}/10 Dovetail Essentials Done`,
+                            icon: ICONS.dovetail, title: `Keep Going: ${dovetailCount}/10 Dovetail Essentials Done`,
                             description: `You've completed ${dovetailCount} session${dovetailCount > 1 ? 's' : ''}. ${5 - dovetailCount > 0 ? `Complete ${5 - dovetailCount} more to earn your bonus Spark, or try these remaining sessions:` : 'Try these remaining sessions:'}`,
                             remainingList: remainingDovetails.slice(0, 3),
                             remainingMore: Math.max(0, remainingDovetails.length - 3),
@@ -1652,7 +1664,7 @@ const todayISO = toISODateString(testAnchor);
                         });
                     } else {
                         items.push({
-                            icon: '🧰', title: `Dovetail Essentials Spark Earned! (${dovetailCount}/10 Complete)`,
+                            icon: ICONS.dovetail, title: `Dovetail Essentials Spark Earned! (${dovetailCount}/10 Complete)`,
                             description: `Great progress! You've earned your Dovetail Spark for completing at least half of the pathway. ${remainingDovetails.length > 0 ? 'Continue strengthening your skills with the remaining sessions:' : 'All 10 sessions complete!'}`,
                             remainingList: remainingDovetails.length > 0 ? remainingDovetails.slice(0, 3) : undefined,
                             remainingMore: remainingDovetails.length > 0 ? Math.max(0, remainingDovetails.length - 3) : undefined,
@@ -1687,7 +1699,7 @@ const todayISO = toISODateString(testAnchor);
 
                 if (pathwayStatus.hasAdoption && !hasDigitalSkills) {
                     items.push({
-                        icon: '📖', title: 'Next: Digital Skills Course',
+                        icon: ICONS.digitalskills, title: 'Next: Digital Skills Course',
                         description: 'This four-week hybrid course helps educators shift from simply using technology to understanding how students learn with it. By adopting a learner-centred perspective, participants gain the digital wisdom needed to transform technical skills ("what" and "how") into thoughtful pedagogical decisions ("when" and "why").\n\nAs the next step in your learning pathway, this district-hosted course builds directly on your completed milestones. Because cohorts are offered by invitation only each term, join the waitlist today to signal your interest for the upcoming session.',
                         type: 'invitation', ctas: [getAvailabilityCTA('digitalskills', milestoneCourseSessions)].filter(Boolean)
                     });
@@ -1695,7 +1707,7 @@ const todayISO = toISODateString(testAnchor);
 
                 if (hasDigitalSkills && !hasCyberEffect) {
                     items.push({
-                        icon: '🌐', title: 'Next: Cyber Effect Ambassador Course',
+                        icon: ICONS.cybereffect, title: 'Next: Cyber Effect Ambassador Course',
                         description: 'Deepen your impact by exploring the ethical, emotional, and behavioural dimensions of technology use. By mastering the 4P Affective Transformation Model—People, Practices, Pedagogy, and Platforms—you will gain the tools to embed cyber wellness, psychological safety, and human-centred design into your educational environment.\n\nAs the next step in your learning pathway, this course empowers you to champion a positive, reflective digital culture across your community.',
                         type: 'invitation', ctas: [getAvailabilityCTA('cybereffect', milestoneCourseSessions)].filter(Boolean)
                     });
@@ -1703,7 +1715,7 @@ const todayISO = toISODateString(testAnchor);
 
                 if (!pathwayStatus.hasThinkTank && totalSessions >= 15 && (hasDigitalSkills || hasCyberEffect || pathwayStatus.hasAdoption)) {
                     items.push({
-                        icon: '💡', title: 'Start the Edvance ARC',
+                        icon: ICONS.edvance, title: 'Start the Edvance ARC',
                         description: `Your strong PD engagement (${totalSessions} sessions) puts you on the path to being considered for the Facilitator Think Tank — the entry point to the Edvance ARC.\n\nThe Edvance ARC is a face-to-face leadership pathway for educators ready to guide digital growth. Through immersive workshops, it equips you with the vision and practical tools to lead sustainable transformation across your school community.`,
                         type: 'invitation', ctas: [{ label: 'Contact your eAdvisory Team', url: 'https://wcedeportal.co.za/meet-the-team', style: 'secondary' }]
                     });
