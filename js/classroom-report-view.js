@@ -124,23 +124,6 @@ export function classroomReportHtml({ analysis, header, lang }) {
       </div>
     </div>`;
 
-  // ----- Summary strip: headline levels at a glance, before any detail ----
-  const summaryPill = (label, value, color) => `
-    <div class="flex-1 min-w-[120px] flex items-center gap-2.5 px-3 py-2 rounded-lg border bg-white" style="border-color:${color}45;">
-      <span class="w-2 h-2 rounded-full shrink-0" style="background-color:${color};"></span>
-      <span class="min-w-0">
-        <span class="text-[8.5px] font-black uppercase tracking-wider text-slate-400 block">${label}</span>
-        <span class="text-[12.5px] font-black truncate block" style="color:${color};">${esc(value)}</span>
-      </span>
-    </div>`;
-
-  const summaryStrip = `
-    <div class="flex flex-wrap gap-2.5">
-      ${summaryPill(L('4P Level', '4P-vlak'), afr ? A.overallLevelAfr : A.overallLevel, A.color)}
-      ${summaryPill('SAMR', afr ? G.levelAfr : G.level, G.color)}
-      ${summaryPill('TPACK', afr ? H.levelAfr : H.level, H.color)}
-    </div>`;
-
   // ----- Meta block --------------------------------------------------
   const metaCell = (label, value, extra = '') => `
     <div><span class="text-[9px] font-black text-slate-400 block uppercase">${label}</span>
@@ -242,7 +225,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
         <div class="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0 mt-0.5 sm:mt-0" style="background-color:${G.color};"><i class="fa-solid fa-arrow-right text-[11px]"></i></div>
         <div class="flex-1">
           <span class="text-[10px] font-black uppercase tracking-wider text-slate-500 block">${L('OBSERVED SAMR STAGE IN THIS LESSON:', 'WAARGENOME SAMR-FASE IN HIERDIE LES:')}</span>
-          <p class="text-[12.5px] font-bold text-slate-900 leading-snug">${esc(afr ? G.ladderStepSummaryAfr : G.ladderStepSummary)}</p>
+          <p class="text-[12.5px] font-medium text-slate-900 leading-snug">${esc(afr ? G.ladderStepSummaryAfr : G.ladderStepSummary)}</p>
         </div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">${samrStages}</div>
@@ -288,7 +271,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
       <div class="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 text-[13px]">
         <div>
           <span class="text-[9.5px] font-black uppercase tracking-wider text-[#001489] block">${L('TPACK Synthesis:', 'TPACK Sintese:')}</span>
-          <p class="text-[12px] text-slate-800 font-bold leading-relaxed mt-0.5">${esc(afr ? H.tpackSynthesisAfr : H.tpackSynthesis)}</p>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed mt-0.5">${esc(afr ? H.tpackSynthesisAfr : H.tpackSynthesis)}</p>
         </div>
         <div class="pt-2 border-t border-slate-100">
           <span class="text-[9.5px] font-black uppercase tracking-wider text-[#007DBA] block">${L('Core Developmental Focus for Next Lesson:', 'Kernontwikkelingsfokus vir Volgende Les:')}</span>
@@ -354,7 +337,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
             </div>
             <div class="pt-1">
               <span class="text-[9px] font-black uppercase text-[#001489] block">${L('SUGGESTED NEXT STEP:', 'VOORGESTELDE VOLGENDE STAP:')}</span>
-              <p class="text-slate-800 font-semibold leading-relaxed">${esc(afr ? o.practicalNextStepAfr : o.practicalNextStep)}</p>
+              <p class="text-slate-800 font-medium leading-relaxed">${esc(afr ? o.practicalNextStepAfr : o.practicalNextStep)}</p>
             </div>
           </div>
         </div>
@@ -385,7 +368,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
           <span class="w-5 h-5 rounded-full bg-[#001489] text-white text-[11px] font-bold flex items-center justify-center">${i + 1}</span>
           <span class="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">${esc(afr ? o.lensAfr : o.lens)}</span>
         </div>
-        <p class="text-[12px] font-semibold text-slate-800 leading-relaxed">"${esc(afr ? o.promptAfr : o.prompt)}"</p>
+        <p class="text-[12px] font-medium text-slate-800 leading-relaxed">"${esc(afr ? o.promptAfr : o.prompt)}"</p>
       </div>`
   ).join('');
 
@@ -435,7 +418,7 @@ export function classroomReportHtml({ analysis, header, lang }) {
         </div>
         <div class="bg-blue-50/60 border border-blue-200 p-3.5 rounded-xl md:col-span-3 space-y-1.5">
           <span class="text-[9.5px] font-black uppercase text-[#001489] tracking-wider block">${L('Suggested Focus &amp; Evidence for Next Visit', 'Voorgestelde Waarneembare Fokus vir Volgende Besoek')}</span>
-          <p class="text-[12px] text-slate-800 font-semibold leading-relaxed">${esc(afr ? Q.followUpEvidenceAfr : Q.followUpEvidence)}</p>
+          <p class="text-[12px] text-slate-800 font-medium leading-relaxed">${esc(afr ? Q.followUpEvidenceAfr : Q.followUpEvidence)}</p>
         </div>
       </div>
     </div>`;
@@ -461,7 +444,6 @@ export function classroomReportHtml({ analysis, header, lang }) {
   return `
     <div id="printable-report" class="bg-white border border-slate-300 rounded-xl p-5 sm:p-7 shadow-sm text-slate-800 space-y-6 print:border-none print:shadow-none print:p-0 print:m-0 report-print-root">
       ${titleBlock}
-      ${summaryStrip}
       ${metaBlock}
       ${section1}
       ${section2}
