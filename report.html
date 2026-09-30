@@ -295,7 +295,7 @@
                   <span class="text-[12px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md text-white shadow-sm" style="background-color:${archetype.color};">LEVEL ${archetype.levelNum}</span>
                   <h2 class="text-xl sm:text-2xl font-black tracking-tight text-[#001489]">${archetype.name.toUpperCase()}</h2>
                 </div>
-                <p class="text-[13px] sm:text-[15px] font-semibold text-slate-700 leading-snug">${escapeHtml(archetype.tagline)}</p>
+                <p class="text-[13px] sm:text-[15px] font-medium text-slate-700 leading-snug">${escapeHtml(archetype.tagline)}</p>
               </div>
               <div class="flex md:flex-col items-center md:items-end justify-between border-t md:border-t-0 md:border-l border-slate-200/80 pt-3 md:pt-0 md:pl-5 shrink-0">
                 <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Composite Score</span>
@@ -369,7 +369,7 @@
                   <div class="flex items-center gap-1.5 mb-2 pb-1.5 border-b" style="border-color:${archetype.color}25;">
                     <span class="text-[9.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded text-white shadow-sm" style="background-color:${archetype.color};">Affective Reading</span>
                   </div>
-                  <p class="text-[12px] font-black leading-relaxed text-[#001489]">${escapeHtml(m.affectiveReading)}</p>
+                  <p class="text-[12px] font-medium leading-relaxed text-[#001489]">${escapeHtml(m.affectiveReading)}</p>
                 </div>
                 <div class="mt-3 pt-2 border-t border-slate-200/50 text-[10px] font-black uppercase text-slate-500">Cultural mindset summary</div>
               </div>
@@ -601,23 +601,6 @@
       // informed by the linked classroom observations, but the detailed
       // classroom analysis lives in its own report (see toggles below).
       // ------------------------------------------------------------
-      function summaryStripHtml(scores, archetype, classroomsCount) {
-        const pill = (label, value, color) => `
-          <div class="flex-1 min-w-[140px] flex items-center gap-2.5 px-3 py-2 rounded-lg border bg-white" style="border-color:${color}45;">
-            <span class="w-2 h-2 rounded-full shrink-0" style="background-color:${color};"></span>
-            <span class="min-w-0">
-              <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block">${label}</span>
-              <span class="text-[13px] font-black truncate block" style="color:${color};">${escapeHtml(value)}</span>
-            </span>
-          </div>`;
-        return `
-          <div class="flex flex-wrap gap-2.5 pt-1">
-            ${pill('Archetype Level', `Level ${archetype.levelNum}: ${archetype.name}`, archetype.color)}
-            ${pill('Composite Score', `${scores.scoreAverage.toFixed(2)} / 4.00`, archetype.color)}
-            ${pill('Classrooms Observed', String(classroomsCount), archetype.color)}
-          </div>`;
-      }
-
       function walkthroughReportHtml({ walkthrough, classrooms, school, advisor: reportAdvisor }) {
         const scores = calculateScores(walkthrough, classrooms);
         scores._classrooms = classrooms; // carried through for buildAffectiveContext()
@@ -636,7 +619,6 @@
         return `
           <div id="printable-report" class="bg-white border border-slate-200 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-sm report-print-root">
             ${reportBrandingHeaderHtml(archetype, dateValue)}
-            ${summaryStripHtml(scores, archetype, classrooms.length)}
             ${section1Html({ scores, archetype, school, district, advisorName, dateValue })}
             ${section2Html(archetype)}
             ${section3Html(archetype)}
