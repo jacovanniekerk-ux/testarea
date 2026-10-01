@@ -15,7 +15,21 @@
     <div class="site-banner-wrap no-print">
       <img src="imgs/4P_header.png" alt="Western Cape Government eLearning 4P Affective Transformation Banner" class="site-banner" />
     </div>
-    <div id="app-header"></div>
+    <header class="app-header-sticky bg-[#001489] text-white py-3 px-6 shadow-sm">
+      <div class="max-w-5xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="4p.html" class="text-white/80 hover:text-white transition text-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Dashboard</span>
+          </a>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-user-large text-lg"></i>
+            <span id="user-name" class="font-medium"></span>
+          </div>
+        </div>
+        <span id="user-district" class="font-medium text-sm"></span>
+      </div>
+    </header>
 
     <main class="max-w-5xl mx-auto p-4 md:p-6 pb-24">
       <h1 class="text-[var(--fs-heading-lg)] font-bold text-slate-800 mb-1">Culture Walkthrough</h1>
@@ -40,7 +54,16 @@
       </div>
 
      <!-- School Details Cards (Single Row Banner) -->
-      <div id="school-info-cards" class="hidden mb-4 bg-white border border-slate-200 rounded-xl p-3 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div id="school-info-cards" class="hidden mb-4 bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+        <div class="flex items-center justify-between mb-2 px-0.5">
+          <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Current Technology at School</span>
+          <button id="edit-school-tech-btn" type="button"
+            class="no-print inline-flex items-center gap-1.5 text-[10px] font-bold text-[#001489] bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-md transition">
+            <i class="fa-solid fa-pen"></i>
+            <span>Edit</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <div id="card-wrap-computer-labs" class="flex items-center justify-between p-2 rounded-lg transition-all">
           <div class="min-w-0 pr-2">
             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Computer Labs</span>
@@ -71,6 +94,7 @@
             <span id="card-connectivity" class="block text-xs font-bold truncate"></span>
           </div>
           <i id="icon-connectivity" class="fa-solid text-sm shrink-0"></i>
+        </div>
         </div>
       </div>
 
@@ -147,7 +171,7 @@
       import { createClassroomReport } from './js/classroom-report.js';
       import { submitCultureWalkthrough, fetchCultureWalkthroughById, fetchClassroomObservationsForWalkthrough } from './js/culture-walkthroughs.js';
       import { showReportReadyModal, reportHref } from './js/report-modal.js';
-      import { mountAppHeader } from './js/app-header.js';
+      import { openSchoolTechEditModal } from './js/school-tech-edit.js';
 
       // If opened as culture-walkthrough.html?id=<uuid> (from Past Reports),
       // we're resuming an existing draft rather than starting fresh.
@@ -158,6 +182,8 @@
         throw new Error('No advisor session — redirecting to login.');
       }
 
+      document.getElementById('user-name').textContent = advisor.full_name;
+      document.getElementById('user-district').textContent = advisor.district;
 
       const schoolSelect = document.getElementById('school-select');
       const visitDateInput = document.getElementById('visit-date');
@@ -180,6 +206,7 @@
 
       // School Info Cards Elements
       const schoolInfoCards = document.getElementById('school-info-cards');
+      const editSchoolTechBtn = document.getElementById('edit-school-tech-btn');
       const cardsConfig = [
         { key: 'computer_labs', wrap: document.getElementById('card-wrap-computer-labs'), text: document.getElementById('card-computer-labs'), icon: document.getElementById('icon-computer-labs') },
         { key: 'smart_classrooms', wrap: document.getElementById('card-wrap-smart-classrooms'), text: document.getElementById('card-smart-classrooms'), icon: document.getElementById('icon-smart-classrooms') },
@@ -202,16 +229,6 @@
       const classroomReports = {}; // tabId -> createClassroomReport() instance
       const classroomPanelEls = {}; // tabId -> its mounted panel element
       let walkthroughLocked = false; // true once submitted — blocks removal
-
-      // Shared nav bar. confirmLeave warns before navigating away via the
-      // bar's own links while a walkthrough is in progress and not yet
-      // submitted — it doesn't affect Save Draft/Submit, only the nav links.
-      mountAppHeader(document.getElementById('app-header'), {
-        active: 'walkthrough',
-        advisor,
-        maxWidth: 'max-w-5xl',
-        confirmLeave: () => !!currentWalkthrough && !walkthroughLocked,
-      });
       let activeSection = 'macro'; // 'macro' | 'classrooms' — which section the toggle is showing
 
       // Updates school info cards logic for present vs null/empty values
@@ -244,6 +261,21 @@
 
         schoolInfoCards.classList.remove('hidden');
       }
+
+      editSchoolTechBtn.addEventListener('click', () => {
+        if (!currentSchoolCemis || !loadedSchoolsMap.has(String(currentSchoolCemis))) return;
+
+        openSchoolTechEditModal({
+          school: loadedSchoolsMap.get(String(currentSchoolCemis)),
+          advisor,
+          onSaved: (updatedSchool) => {
+            // Refresh the cached row and the on-screen cards immediately —
+            // no need to re-fetch the whole school list for a 4-field edit.
+            loadedSchoolsMap.set(String(updatedSchool.cemis_number), updatedSchool);
+            updateSchoolInfoCards(updatedSchool.cemis_number);
+          },
+        });
+      });
 
       // Shows exactly one of the two sections (Macro-Level Walkthrough vs
       // Classroom Observations) and styles the toggle buttons to match.

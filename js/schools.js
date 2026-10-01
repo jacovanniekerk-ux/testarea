@@ -112,3 +112,48 @@ export async function fetchSchoolsForAdvisor(advisor) {
   }
   return fetchSchoolsForDistrict(advisor.district);
 }
+
+// The 4 technology/infrastructure fields an advisor is allowed to
+// correct. Kept in one place since both the edit modal (to know which
+// fields to render) and this function (to validate what it's sent)
+// need the exact same list.
+export const EDITABLE_TECHNOLOGY_FIELDS = ['computer_labs', 'smart_classrooms', 'learner_devices', 'connectivity'];
+
+/**
+ * Permanently updates a school's technology/infrastructure fields and
+ * records an audit entry for each field that actually changed — see
+ * sql/school_technology_edits_setup.sql. Goes through the
+ * `update_school_technology` Postgres function (one atomic call)
+ * rather than a plain `.update()`, so the schools row and its audit
+ * trail can never drift apart, the same reasoning as
+ * submitCultureWalkthrough() in culture-walkthroughs.js.
+ *
+ * @param {object} params
+ * @param {string} params.cemisNumber
+ * @param {Partial<Record<'computer_labs'|'smart_classrooms'|'learner_devices'|'connectivity', string>>} params.changes
+ *   Only include fields that changed — this becomes exactly what's
+ *   written to the edit log (a field submitted with its unchanged
+ *   value is a no-op; the function won't log it, see the SQL file).
+ * @param {string|null} params.advisorId
+ * @param {string} params.advisorName - denormalized into the log so
+ *   history still reads correctly if the advisor is later removed.
+ * @returns {Promise<{data: object|null, error: object|null}>}
+ */
+export async function updateSchoolTechnology({ cemisNumber, changes, advisorId, advisorName }) {
+  if (!cemisNumber) {
+    return { data: null, error: { message: 'updateSchoolTechnology: cemisNumber is required' } };
+  }
+  const entries = Object.entries(changes || {}).filter(([key]) => EDITABLE_TECHNOLOGY_FIELDS.includes(key));
+  if (entries.length === 0) {
+    return { data: null, error: { message: 'updateSchoolTechnology: no editable changes supplied' } };
+  }
+
+  const { data, error } = await supabaseClient.rpc('update_school_technology', {
+    p_school_cemis: cemisNumber,
+    p_changes: Object.fromEntries(entries),
+    p_advisor_id: advisorId || null,
+    p_advisor_name: advisorName || null,
+  });
+
+  return { data, error };
+}
