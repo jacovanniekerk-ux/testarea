@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Generator</title>
+    <!-- Import html2pdf library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- html2pdf's bundle keeps html2canvas internal to itself, so it's
+         not available as a global. Since downloadPDF() calls
+         html2canvas() directly (to avoid html2pdf's own unit-handling
+         bug), we need to load the standalone version too. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- html2pdf's bundle keeps jsPDF internal to itself too, same
+         reason as html2canvas above -- load the standalone version so
+         downloadPDF() can call it directly. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Century Gothic', 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #error-message {
+            display: none;
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #f87171;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #workspace {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* ============================================================
+           PREVIEW (what the user actually sees)
+           Width/height are set explicitly in JS (see sizePreview()) as
+           plain pixels rather than via aspect-ratio + container query
+           units. That combination turned out to be unreliable across
+           mobile browsers -- the box's height wasn't always resolving
+           before the cqw-based font sizes were computed, which is why
+           the certificate was rendering wider than its visible box and
+           getting clipped. Plain JS-computed pixels sidestep that
+           entirely and behave identically everywhere.
+           ============================================================ */
+        #certificate-preview {
+            position: relative;
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        /* ============================================================
+           EXPORT CLONE (never shown, used only by html2pdf)
+           Fixed at true 794x1123 A4 pixel size so the PDF capture is
+           always full-resolution and never affected by however the
+           preview happens to be sized on a given device.
+
+           IMPORTANT: this is wrapped in #export-wrapper below, which is
+           collapsed to 0x0 with overflow:hidden. Positioning this
+           element itself with left:-9999px (the previous approach) put
+           it outside the small offscreen window html2canvas clones for
+           capture, which is why the PDF came out blank -- html2canvas
+           was rendering real pixels, just of an area where the
+           certificate wasn't. Collapsing the WRAPPER instead keeps the
+           certificate at a normal, capturable position while still
+           being invisible on screen.
+           ============================================================ */
+        #export-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+
+        #certificate-export {
+            position: relative;
+            width: 794px;
+            height: 1123px;
+            background-color: white;
+            overflow: hidden;
+            /* deliberately no box-shadow: a shadow is painted outside
+               the element's own box and isn't clipped by overflow, so
+               html2canvas would capture a canvas a few px taller/wider
+               than one A4 page -- that's the #1 cause of the blank
+               second page. Simplest fix is to just never put a shadow
+               on the element that gets captured. */
+        }
+
+        .cert-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            z-index: 1;
+        }
+
+        .cert-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .text-overlay {
+            position: absolute;
+            color: #1a237e;
+            font-family: 'Century Gothic', 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            white-space: nowrap;
+        }
+
+        /* Coordinates as % (unchanged) so both the 794px export clone
+           and the responsive preview line up with the background art
+           at any size. */
+        .cert-name  { top: 41.5%; left: 0; width: 100%; text-align: center; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .cert-session { top: 59.5%; left: 0; width: 100%; text-align: center; font-weight: bold; }
+        .cert-unit  { top: 65.5%; left: 32.5%; font-weight: 600; }
+        .cert-date  { top: 70.7%; left: 32.5%; font-weight: 600; }
+
+        /* Export clone: original fixed px sizes, tuned against the
+           actual 794x1123 artwork. */
+        #certificate-export .cert-name  { font-size: 34px; }
+        #certificate-export .cert-session { font-size: 24px; }
+        #certificate-export .cert-unit  { font-size: 26px; }
+        #certificate-export .cert-date  { font-size: 26px; }
+
+        /* Preview clone: these px values are placeholders only. The
+           real sizes are set inline by sizePreview() in JS, scaled
+           proportionally to whatever pixel width the preview ends up
+           at (width / 794 = scale factor, same ratio used for the box
+           itself). Kept here just so there's no flash of unstyled/
+           oversized text before JS runs. */
+        #certificate-preview .cert-name  { font-size: 17px; }
+        #certificate-preview .cert-session { font-size: 12px; }
+        #certificate-preview .cert-unit  { font-size: 13px; }
+        #certificate-preview .cert-date  { font-size: 13px; }
+
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover { background-color: #1d4ed8; }
+        button:disabled { background-color: #93c5fd; cursor: default; }
+    </style>
+</head>
+<body>
+
+    <div id="error-message">
+        <h2>Invalid Link</h2>
+        <p>We couldn't generate your certificate. It looks like the link you clicked is missing important information (name, unit, session, or date). Please contact the session organizer for a valid link.</p>
+    </div>
+
+    <div id="workspace">
+
+        <!-- Visible, responsive thumbnail -->
+        <div id="certificate-preview">
+            <img class="cert-bg" src="certificate.jpg" alt="Certificate Background">
+            <div class="cert-content">
+                <div class="text-overlay cert-name" data-field="name"></div>
+                <div class="text-overlay cert-session" data-field="session"></div>
+                <div class="text-overlay cert-unit" data-field="unit"></div>
+                <div class="text-overlay cert-date" data-field="date"></div>
+            </div>
+        </div>
+
+        <!-- Hidden, full-resolution clone used only for PDF export.
+             Wrapped so it collapses to 0x0 on screen without pushing
+             the certificate itself off to a coordinate that falls
+             outside html2canvas's capture window. -->
+        <div id="export-wrapper">
+            <div id="certificate-export">
+                <img class="cert-bg" src="certificate.jpg" alt="Certificate Background">
+                <div class="cert-content">
+                    <div class="text-overlay cert-name" data-field="name"></div>
+                    <div class="text-overlay cert-session" data-field="session"></div>
+                    <div class="text-overlay cert-unit" data-field="unit"></div>
+                    <div class="text-overlay cert-date" data-field="date"></div>
+                </div>
+            </div>
+        </div>
+
+        <button id="download-btn" onclick="downloadPDF()">Download Certificate as PDF</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const participantName = urlParams.get('name');
+        const hostingUnit = urlParams.get('unit');
+        const sessionName = urlParams.get('session');
+        const sessionDate = urlParams.get('date');
+
+        // ============================================================
+        // CERTIFICATE VARIANTS
+        // Most sessions use the default certificate.jpg background and
+        // show all four fields (name, session, unit, date). Some
+        // sessions use a different background image and/or hide the
+        // session-name field (because the session/course name is
+        // already baked into that background artwork). Add new
+        // variants here by giving them a background filename and,
+        // optionally, a fixed list of exact session names that should
+        // use it.
+        // ============================================================
+        const DOVETAIL_ESSENTIALS_SESSIONS = [
+            'ePedagogy: Building a Digital Lesson',
+            'Integrating digital resources from the ePortal',
+            'Google Fundamentals 1: Account and Google Chrome',
+            'Office Online Fundamentals',
+            'Improved Presentation Skills',
+            'Ease of Access with QR Codes and Bit.ly links',
+            'Teaching with Videos',
+            'Orientation to Google Forms',
+            'AI In Education: Work Smarter, not Harder',
+            'Introduction to Cyber Wellness Education'
+        ];
+
+        function getCertificateVariant(session) {
+            if (session === 'Digital Skills Course') {
+                return { background: 'digitalskills.jpg', showSession: false };
+            }
+            if (DOVETAIL_ESSENTIALS_SESSIONS.includes(session)) {
+                return { background: 'dovetail.jpg', showSession: true };
+            }
+            return { background: 'certificate.jpg', showSession: true };
+        }
+
+        // The certificate art is a true 794x1123 A4 canvas. Every
+        // preview dimension is this ratio times a scale factor, so the
+        // preview always matches the export clone's proportions exactly,
+        // on any screen.
+        const BASE_WIDTH = 794;
+        const BASE_HEIGHT = 1123;
+        const FONT_SIZES = { name: 34, session: 24, unit: 26, date: 26 };
+
+        function sizePreview() {
+            const preview = document.getElementById('certificate-preview');
+            const maxWidth = Math.min(window.innerWidth * 0.9, 400);
+            const scale = maxWidth / BASE_WIDTH;
+
+            preview.style.width = `${maxWidth}px`;
+            preview.style.height = `${BASE_HEIGHT * scale}px`;
+
+            for (const [field, basePx] of Object.entries(FONT_SIZES)) {
+                preview.querySelectorAll(`[data-field="${field}"]`).forEach(el => {
+                    el.style.fontSize = `${basePx * scale}px`;
+                });
+            }
+        }
+
+        if (!participantName || !hostingUnit || !sessionName || !sessionDate) {
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('workspace').style.display = 'none';
+        } else {
+            document.getElementById('workspace').style.display = 'flex';
+
+            // Pick the right background image + field visibility for
+            // this session, then apply it to both the visible preview
+            // and the hidden export clone so they always match.
+            const variant = getCertificateVariant(sessionName);
+
+            document.querySelectorAll('.cert-bg').forEach(img => {
+                img.src = variant.background;
+            });
+
+            if (!variant.showSession) {
+                document.querySelectorAll('[data-field="session"]').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+
+            // Populate both the preview and the hidden export clone at once
+            const data = { name: participantName, session: sessionName, unit: hostingUnit, date: sessionDate };
+            for (const [field, value] of Object.entries(data)) {
+                if (field === 'session' && !variant.showSession) continue;
+                document.querySelectorAll(`[data-field="${field}"]`).forEach(el => el.innerText = value);
+            }
+
+            sizePreview();
+            window.addEventListener('resize', sizePreview);
+        }
+
+        async function downloadPDF() {
+            const element = document.getElementById('certificate-export');
+            const btn = document.getElementById('download-btn');
+
+            btn.disabled = true;
+            btn.innerText = 'Generating PDF...';
+
+            try {
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    scrollY: 0,
+                    width: 794,
+                    height: 1123
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+                const JsPDFCtor = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+                const pdf = new JsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+                // Force exact A4 dimensions (210x297mm) instead of
+                // computing them from the canvas's pixel size -- this
+                // guarantees the image fills the page exactly, with zero
+                // rounding drift, which is what caused the blank page.
+                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                pdf.save(`${participantName.replace(/ /g, '_')}_Certificate.pdf`);
+            } catch (err) {
+                console.error('PDF generation failed:', err);
+                alert('PDF generation failed: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Download Certificate as PDF';
+            }
+        }
+    </script>
+</body>
+</html>

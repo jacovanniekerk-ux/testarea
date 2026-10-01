@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Register for a Session</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wcg: {
+                            blue: '#001489',
+                            green2: '#8FAD15',
+                            grey: '#968C83',
+                            red: '#BA0C2F',
+                            yellow: '#FFC600',
+                            green: '#8FAD15',
+                            darkText: '#333333',
+                            lightBg: '#F3F4F6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Century Gothic', 'Didact Gothic', 'Segoe UI', 'sans-serif'],
+                        accent: ['Gotham', 'Montserrat', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="preregister.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&family=Montserrat:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="portal-nav.js" defer></script>
+</head>
+
+<body class="bg-gray-50 text-wcg-darkText font-sans">
+
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect } = React;
+        const e = React.createElement;
+
+        // ---------------------------------------------------------------
+        // Supabase configuration (sessions / courses are not personal data;
+        // the registration itself is written by preregister.js)
+        // ---------------------------------------------------------------
+        const SUPABASE_URL = 'https://cftpufjzwpmhgzdcgpjb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_b1H_5DJYLQSrr83T_dvz6A_2UAqOVg4';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ---------------------------------------------------------------
+        // Icons
+        // ---------------------------------------------------------------
+        const svgIcon = (size, children, extra = {}) => e('svg', Object.assign({ xmlns: "http://www.w3.org/2000/svg", width: String(size), height: String(size), viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, extra), ...children);
+        const Icons = {
+            Calendar: () => svgIcon(16, [e('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2", ry: "2" }), e('line', { x1: "16", y1: "2", x2: "16", y2: "6" }), e('line', { x1: "8", y1: "2", x2: "8", y2: "6" }), e('line', { x1: "3", y1: "10", x2: "21", y2: "10" })]),
+            Clock: () => svgIcon(16, [e('circle', { cx: "12", cy: "12", r: "10" }), e('polyline', { points: "12 6 12 12 16 14" })]),
+            Loader: () => svgIcon(28, [e('path', { d: "M21 12a9 9 0 1 1-6.219-8.56" })], { className: "spin" }),
+            AlertTriangle: () => svgIcon(24, [e('path', { d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" }), e('line', { x1: "12", y1: "9", x2: "12", y2: "13" }), e('line', { x1: "12", y1: "17", x2: "12.01", y2: "17" })]),
+            CalendarX: () => svgIcon(28, [e('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2", ry: "2" }), e('line', { x1: "16", y1: "2", x2: "16", y2: "6" }), e('line', { x1: "8", y1: "2", x2: "8", y2: "6" }), e('line', { x1: "3", y1: "10", x2: "21", y2: "10" }), e('line', { x1: "10", y1: "14", x2: "14", y2: "18" }), e('line', { x1: "14", y1: "14", x2: "10", y2: "18" })]),
+            CalendarPlus: () => svgIcon(14, [e('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2", ry: "2" }), e('line', { x1: "16", y1: "2", x2: "16", y2: "6" }), e('line', { x1: "8", y1: "2", x2: "8", y2: "6" }), e('line', { x1: "3", y1: "10", x2: "21", y2: "10" }), e('line', { x1: "12", y1: "14", x2: "12", y2: "20" }), e('line', { x1: "9", y1: "17", x2: "15", y2: "17" })]),
+            CalendarCheck: () => svgIcon(14, [e('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2", ry: "2" }), e('line', { x1: "16", y1: "2", x2: "16", y2: "6" }), e('line', { x1: "8", y1: "2", x2: "8", y2: "6" }), e('line', { x1: "3", y1: "10", x2: "21", y2: "10" }), e('polyline', { points: "9 16 11 18 15 14" })]),
+            Check: () => svgIcon(30, [e('path', { d: "M20 6 9 17l-5-5" })], { strokeWidth: "3" })
+        };
+
+        // ---------------------------------------------------------------
+        // Date / time helpers (same logic used across the other pages)
+        // ---------------------------------------------------------------
+        const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const SAST_OFFSET_MS = 2 * 60 * 60 * 1000; // Africa/Johannesburg is a fixed UTC+2, no DST
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const parseDate = (dateStr) => {
+            if (!dateStr) return new Date(8640000000000000);
+            const d = new Date(`${dateStr}T00:00:00`);
+            return isNaN(d.getTime()) ? new Date(8640000000000000) : d;
+        };
+
+        const getJoburgParts = (timestampMs) => {
+            const shifted = new Date(timestampMs + SAST_OFFSET_MS);
+            return {
+                year: shifted.getUTCFullYear(),
+                month: shifted.getUTCMonth() + 1,
+                day: shifted.getUTCDate(),
+                hours: shifted.getUTCHours(),
+                minutes: shifted.getUTCMinutes(),
+                seconds: shifted.getUTCSeconds()
+            };
+        };
+
+        const toEpoch = (dateStr, timeStr) => {
+            if (!dateStr || !timeStr) return null;
+            const ts = new Date(`${dateStr}T${timeStr}+02:00`).getTime();
+            return isNaN(ts) ? null : ts;
+        };
+
+        const formatDateDisplay = (dateObj) => {
+            if (!dateObj || isNaN(dateObj.getTime())) return 'Date TBC';
+            return `${WEEKDAY_NAMES[dateObj.getDay()]}, ${dateObj.getDate()} ${MONTH_NAMES[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+        };
+
+        // ---------------------------------------------------------------
+        // Add-to-calendar link builders (same as sessions.html)
+        // ---------------------------------------------------------------
+        const buildGoogleCalendarLink = ({ startParts, endParts, name, description, joinLink }) => {
+            const fmt = (p) => `${p.year}${pad2(p.month)}${pad2(p.day)}T${pad2(p.hours)}${pad2(p.minutes)}${pad2(p.seconds)}`;
+            const text = `\u{1F4BB} eTPD Webinar: ${name}`;
+            const details = `${description || ''}\n\n\u{1F517} Join Link: \n${joinLink || ''}\n\n\u2139\uFE0F For more info: https://bit.ly/m/wcedtpd`;
+            return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(text)}&dates=${fmt(startParts)}/${fmt(endParts)}&details=${encodeURIComponent(details)}&location=Virtual%20Session`;
+        };
+
+        const buildOutlookLink = ({ startParts, endParts, name, joinLink }) => {
+            const iso = (p) => `${p.year}-${pad2(p.month)}-${pad2(p.day)}T${pad2(p.hours)}:${pad2(p.minutes)}:${pad2(p.seconds)}`;
+            const body = `Join Link: ${joinLink || ''}`;
+            return `https://outlook.office.com/calendar/0/action/compose?allday=false&body=${encodeURIComponent(body)}&enddt=${encodeURIComponent(iso(endParts))}&location=Virtual%20Session&path=/calendar/action/compose&rru=addevent&startdt=${encodeURIComponent(iso(startParts))}&subject=${encodeURIComponent(name)}`;
+        };
+
+        // ---------------------------------------------------------------
+        // Reads ?idkey=xxxx (key name is matched case-insensitively)
+        // ---------------------------------------------------------------
+        function readIdKeyFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                for (const [k, v] of params.entries()) {
+                    if (k.toLowerCase() === 'idkey') return (v || '').trim();
+                }
+            } catch (err) { /* ignore */ }
+            return '';
+        }
+
+        // ---------------------------------------------------------------
+        // Loads the one session named in the link.
+        // Returns { status, session } where status is one of:
+        //   'ok' | 'not_found' | 'not_open' | 'past'
+        // ---------------------------------------------------------------
+        async function fetchSession(idKey) {
+            const { data: rows, error } = await supabaseClient
+                .from('sessions')
+                .select('id_key, session_title, session_date, session_start_time, session_link, session_delivery_mode, hosting_unit')
+                .eq('id_key', idKey)
+                .limit(1);
+            if (error) throw error;
+            const s = rows && rows[0];
+            if (!s || !s.session_title) return { status: 'not_found' };
+            if (s.session_delivery_mode !== 'Virtual') return { status: 'not_open' };
+
+            const { data: courseRows, error: courseErr } = await supabaseClient
+                .from('courses')
+                .select('course_name, developmental_level, programme_duration, session_desciption, session_outcomes')
+                .eq('course_name', s.session_title)
+                .limit(1);
+            if (courseErr) throw courseErr;
+            const course = (courseRows && courseRows[0]) || {};
+
+            const durationMin = Number(course.programme_duration) || 0;
+            const startEpoch = toEpoch(s.session_date, s.session_start_time);
+            const endEpoch = startEpoch !== null ? startEpoch + durationMin * 60000 : null;
+            const startParts = startEpoch !== null ? getJoburgParts(startEpoch) : null;
+            const endParts = endEpoch !== null ? getJoburgParts(endEpoch) : null;
+
+            const timeDisplay = (startParts && endParts)
+                ? `${pad2(startParts.hours)}:${pad2(startParts.minutes)}${durationMin ? ` - ${pad2(endParts.hours)}:${pad2(endParts.minutes)}` : ''}`
+                : '';
+
+            const session = {
+                idKey: String(s.id_key),
+                name: s.session_title,
+                dateISO: s.session_date || '',
+                time: timeDisplay,
+                district: s.hosting_unit || '',
+                level: course.developmental_level || '',
+                description: course.session_desciption || '',
+                outcomes: course.session_outcomes || '',
+                googleCal: (startParts && endParts)
+                    ? buildGoogleCalendarLink({ startParts, endParts, name: s.session_title, description: course.session_desciption, joinLink: s.session_link })
+                    : null,
+                outlookCal: (startParts && endParts)
+                    ? buildOutlookLink({ startParts, endParts, name: s.session_title, joinLink: s.session_link })
+                    : null
+            };
+
+            // Already taken place?
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const day = parseDate(session.dateISO);
+            const hasEnd = endEpoch !== null && startEpoch !== null && endEpoch > startEpoch;
+            if (day < today || (day.getTime() === today.getTime() && hasEnd && Date.now() > endEpoch)) {
+                return { status: 'past', session };
+            }
+            return { status: 'ok', session };
+        }
+
+        // ---------------------------------------------------------------
+        // UI pieces
+        // ---------------------------------------------------------------
+        const Badge = ({ children, type = 'default' }) => {
+            let colorClass = 'bg-gray-100 text-gray-700 border-gray-200';
+            const level = (children || '').toString().toLowerCase();
+            if (type === 'level') {
+                if (level.includes('foundation')) colorClass = 'bg-wcg-green text-white border-wcg-green';
+                else if (level.includes('better')) colorClass = 'bg-wcg-red text-white border-wcg-red';
+                else if (level.includes('i can')) colorClass = 'bg-wcg-yellow text-gray-900 border-wcg-yellow';
+                else if (level.includes('summit')) colorClass = 'bg-wcg-blue text-white border-wcg-blue';
+            } else if (type === 'district') {
+                colorClass = 'bg-white text-wcg-blue border-wcg-blue/30';
+            }
+            return e('span', { className: `px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wide border ${colorClass} shadow-sm` }, children);
+        };
+
+        const formatOutcomes = (text) => {
+            if (!text) return null;
+            const items = text.split(/\n|⮚|>/).filter(item => item.trim().length > 0);
+            if (items.length <= 1) return e('p', { className: "text-gray-600 text-sm mt-2" }, text);
+            return e('ul', { className: "mt-3 space-y-2" },
+                items.map((item, idx) => e('li', { key: idx, className: "text-gray-600 text-sm flex items-start" },
+                    e('span', { className: "mr-2 mt-1.5 w-1.5 h-1.5 bg-wcg-blue rounded-full flex-shrink-0" }),
+                    e('span', null, item.trim())
+                ))
+            );
+        };
+
+        function SessionDetails({ session }) {
+            return e('div', { className: "bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-gray-200 overflow-hidden" },
+                e('div', { className: "bg-gray-50 border-b border-gray-100 p-4 flex justify-between items-center gap-3" },
+                    e('div', { className: "flex flex-col" },
+                        e('div', { className: "flex items-center gap-2 text-wcg-blue font-bold font-accent" },
+                            e(Icons.Calendar), e('span', null, formatDateDisplay(parseDate(session.dateISO)))
+                        ),
+                        session.time ? e('div', { className: "flex items-center gap-2 text-gray-600 text-sm mt-1" }, e(Icons.Clock), e('span', null, session.time)) : null
+                    ),
+                    session.district ? e(Badge, { type: "district" }, session.district) : null
+                ),
+                e('div', { className: "p-5" },
+                    session.level ? e('div', { className: "mb-3" }, e(Badge, { type: "level" }, session.level)) : null,
+                    e('h2', { className: "text-lg sm:text-xl font-bold font-accent text-gray-900 leading-tight" }, session.name),
+                    session.description ? e('p', { className: "text-gray-600 text-sm leading-relaxed mt-3" }, session.description) : null,
+                    session.outcomes ? e('div', { className: "mt-4 pt-4 border-t border-gray-100" },
+                        e('h3', { className: "text-xs font-bold text-gray-500 uppercase tracking-wider" }, "Learning Outcomes"),
+                        formatOutcomes(session.outcomes)
+                    ) : null
+                )
+            );
+        }
+
+        function MessageCard({ icon, tone = 'gray', title, text, children }) {
+            const tones = { gray: 'bg-gray-100 text-gray-400', red: 'bg-red-50 text-wcg-red' };
+            return e('div', { className: "text-center py-14 px-4 fade-in" },
+                e('div', { className: `mx-auto mb-4 h-12 w-12 rounded-full flex items-center justify-center ${tones[tone]}` }, icon),
+                e('h2', { className: "font-bold text-gray-800 text-lg mb-1" }, title),
+                e('p', { className: "text-sm text-gray-500 mb-5 max-w-sm mx-auto" }, text),
+                children
+            );
+        }
+
+        const primaryBtn = "inline-flex items-center justify-center gap-2 bg-wcg-blue text-white font-bold text-sm px-5 py-3 rounded-lg hover:bg-blue-800 transition-colors";
+        const secondaryBtn = "inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-300 text-gray-700 font-bold text-sm px-5 py-3 rounded-lg hover:border-wcg-blue hover:bg-blue-50 transition-colors";
+        const calBtn = "inline-flex items-center gap-1.5 bg-white border border-gray-200 hover:border-wcg-blue hover:bg-blue-50 text-gray-700 font-bold py-2 px-3.5 rounded-lg transition-all text-xs";
+
+        function SuccessPanel({ session, result }) {
+            const myListHref = `my-preregistrations.html?email=${encodeURIComponent(result.email || '')}`;
+            return e('div', { className: "bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center fade-in" },
+                e('div', { className: "mx-auto mb-4 h-14 w-14 rounded-full bg-wcg-green text-white flex items-center justify-center" }, e(Icons.Check)),
+                e('h2', { className: "text-xl font-bold font-accent text-gray-900 mb-1" },
+                    result.alreadyRegistered ? "You're already pre-registered" : "You're pre-registered!"),
+                e('p', { className: "text-sm text-gray-600" },
+                    e('strong', null, session.name)),
+                e('p', { className: "text-xs text-gray-500 mt-1" },
+                    formatDateDisplay(parseDate(session.dateISO)), session.time ? ` · ${session.time}` : ''),
+                e('p', { className: "text-xs text-gray-400 mt-3" }, `Registered as ${result.name} (${result.email})`),
+
+                (session.googleCal || session.outlookCal) ? e('div', { className: "mt-5 flex flex-wrap items-center justify-center gap-2" },
+                    e('span', { className: "text-[11px] font-bold uppercase tracking-wide text-gray-400 mr-1" }, "Add to calendar"),
+                    session.googleCal ? e('a', { href: session.googleCal, target: "_blank", rel: "noreferrer", className: calBtn },
+                        e('span', { className: "text-wcg-blue" }, e(Icons.CalendarPlus)), "Google") : null,
+                    session.outlookCal ? e('a', { href: session.outlookCal, target: "_blank", rel: "noreferrer", className: calBtn },
+                        e('span', { className: "text-blue-400" }, e(Icons.CalendarCheck)), "Outlook") : null
+                ) : null,
+
+                e('div', { className: "mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3 justify-center" },
+                    e('a', { href: myListHref, className: primaryBtn }, "View my pre-registrations"),
+                    e('a', { href: "sessions.html", className: secondaryBtn }, "Browse upcoming sessions")
+                )
+            );
+        }
+
+        function App() {
+            const [menuOpen, setMenuOpen] = useState(false);
+            const [state, setState] = useState({ phase: 'loading' }); // loading | no_id | not_found | not_open | past | error | ready
+            const [result, setResult] = useState(null); // set by preregister:done
+
+            useEffect(() => {
+                const idKey = readIdKeyFromUrl();
+                if (!idKey) { setState({ phase: 'no_id' }); return; }
+                let cancelled = false;
+                (async () => {
+                    try {
+                        const res = await fetchSession(idKey);
+                        if (cancelled) return;
+                        setState(res.status === 'ok' ? { phase: 'ready', session: res.session } : { phase: res.status, session: res.session });
+                    } catch (err) {
+                        console.error('Error loading session:', err);
+                        if (!cancelled) setState({ phase: 'error' });
+                    }
+                })();
+                return () => { cancelled = true; };
+            }, []);
+
+            // preregister.js announces a successful (or already-existing) registration.
+            useEffect(() => {
+                const handler = (ev) => {
+                    const d = ev.detail || {};
+                    if (state.session && String(d.idKey) === String(state.session.idKey)) setResult(d);
+                };
+                window.addEventListener('preregister:done', handler);
+                return () => window.removeEventListener('preregister:done', handler);
+            }, [state.session]);
+
+            const menuLink = (href, label) => e('a', { href, className: "block px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-wcg-blue transition-colors" }, label);
+
+            const renderBody = () => {
+                switch (state.phase) {
+                    case 'loading':
+                        return e('div', { className: "flex flex-col items-center justify-center py-16 text-gray-400" }, e(Icons.Loader), e('p', { className: "mt-3 text-sm" }, "Loading session…"));
+                    case 'no_id':
+                        return e(MessageCard, { icon: e(Icons.CalendarX), title: "No session selected", text: "This page needs a session link to work. Browse the upcoming sessions to find one to pre-register for." },
+                            e('a', { href: "sessions.html", className: primaryBtn }, "Browse Upcoming Sessions"));
+                    case 'not_found':
+                        return e(MessageCard, { icon: e(Icons.CalendarX), title: "Session not found", text: "We couldn't find a session for this link. It may have been copied incorrectly or the session may have been removed." },
+                            e('a', { href: "sessions.html", className: primaryBtn }, "Browse Upcoming Sessions"));
+                    case 'not_open':
+                        return e(MessageCard, { icon: e(Icons.CalendarX), title: "Pre-registration isn't available", text: "Pre-registration is only available for virtual sessions." },
+                            e('a', { href: "sessions.html", className: primaryBtn }, "Browse Upcoming Sessions"));
+                    case 'past':
+                        return e(MessageCard, { icon: e(Icons.CalendarX), title: "This session has already taken place", text: state.session ? `“${state.session.name}” is no longer open for pre-registration.` : "This session is no longer open for pre-registration." },
+                            e('a', { href: "sessions.html", className: primaryBtn }, "Browse Upcoming Sessions"));
+                    case 'error':
+                        return e(MessageCard, { icon: e(Icons.AlertTriangle), tone: "red", title: "Couldn't load the session", text: "Something went wrong while loading this session. Please try again." },
+                            e('button', { onClick: () => window.location.reload(), className: primaryBtn }, "Try Again"));
+                    case 'ready':
+                        return result
+                            ? e(SuccessPanel, { session: state.session, result })
+                            : e('div', { className: "fade-in space-y-5" },
+                                e(SessionDetails, { session: state.session }),
+                                e('button', {
+                                    type: "button",
+                                    onClick: () => window.PreRegisterWidget.trigger({ idKey: state.session.idKey, title: state.session.name, forceConfirm: true }),
+                                    className: "w-full bg-wcg-blue hover:bg-blue-800 text-white font-bold font-accent py-3.5 px-4 rounded-lg transition-all text-base shadow-sm"
+                                }, "Pre-Register"),
+                                e('p', { className: "text-xs text-gray-400 text-center" }, "You'll be asked to confirm your name, email and school.")
+                            );
+                    default:
+                        return null;
+                }
+            };
+
+            return e('div', { className: "min-h-screen pb-12 font-sans bg-gray-50" },
+                null,
+
+                // Shared widget: profile bar, confirm / temporary-profile modals, toast.
+                e(window.PreRegisterWidget.Provider, { hideNoProfileBanner: true }),
+
+                e('main', { className: "max-w-xl mx-auto px-4 sm:px-6 pt-6" },
+                    e('h1', { className: "text-xl sm:text-2xl font-bold font-accent text-gray-900 mb-4" }, "Pre-Register for a Session"),
+                    renderBody()
+                )
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+    </script>
+</body>
+
+</html>

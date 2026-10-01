@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Registrations — Admin</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wcg: {
+                            blue: '#001489',
+                            bright: '#007DBA',
+                            green2: '#8FAD15',
+                            grey: '#968C83',
+                            red: '#BA0C2F',
+                            yellow: '#FFC600',
+                            green: '#8FAD15',
+                            darkText: '#333333',
+                            lightBg: '#F3F4F6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Century Gothic', 'Didact Gothic', 'Segoe UI', 'sans-serif'],
+                        accent: ['Gotham', 'Montserrat', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&family=Montserrat:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        table th, table td {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-wcg-darkText font-sans">
+
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect, useMemo } = React;
+        const e = React.createElement;
+
+        // ---------------------------------------------------------------
+        // Supabase configuration
+        // ---------------------------------------------------------------
+        const SUPABASE_URL = 'https://cftpufjzwpmhgzdcgpjb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_b1H_5DJYLQSrr83T_dvz6A_2UAqOVg4';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const UNKNOWN_DISTRICT = 'Unknown / Other';
+
+        // ---------------------------------------------------------------
+        // Embed detection: true when the page is running inside an iframe
+        // (e.g. Looker Studio). Append ?embed=1 to force embedded mode, or
+        // ?embed=0 to force the full header, which is handy for testing.
+        // If the browser blocks access to window.top (cross-origin iframe),
+        // that itself means we are embedded.
+        // ---------------------------------------------------------------
+        const isEmbedded = (() => {
+            try {
+                const flag = new URLSearchParams(window.location.search).get('embed');
+                if (flag === '1') return true;
+                if (flag === '0') return false;
+                return window.self !== window.top;
+            } catch (err) {
+                return true;
+            }
+        })();
+
+        // ---------------------------------------------------------------
+        // Icons
+        // ---------------------------------------------------------------
+        const Icons = {
+            Search: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, e('circle', { cx: "11", cy: "11", r: "8" }), e('path', { d: "m21 21-4.3-4.3" })),
+            Copy: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, e('rect', { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2" }), e('path', { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" })),
+            Download: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }), e('polyline', { points: "7 10 12 15 17 10" }), e('line', { x1: "12", x2: "12", y1: "15", y2: "3" })),
+            X: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "M18 6 6 18" }), e('path', { d: "m6 6 12 12" })),
+            ChevronUp: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "m18 15-6-6-6 6" })),
+            ChevronDown: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "m6 9 6 6 6-6" })),
+            ChevronsUpDown: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "opacity-40" }, e('path', { d: "m7 15 5 5 5-5" }), e('path', { d: "m7 9 5-5 5 5" })),
+            Loader: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "spin" }, e('path', { d: "M21 12a9 9 0 1 1-6.219-8.56" })),
+            AlertTriangle: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" }), e('line', { x1: "12", x2: "12", y1: "9", y2: "13" }), e('line', { x1: "12", x2: "12.01", y1: "17", y2: "17" })),
+            Check: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "M20 6 9 17l-5-5" })),
+            RefreshCw: () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, e('path', { d: "M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" }), e('path', { d: "M3 3v5h5" }), e('path', { d: "M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" }), e('path', { d: "M16 16h5v5" }))
+        };
+
+        // ---------------------------------------------------------------
+        // Date / time helpers (same logic used across the other pages)
+        // ---------------------------------------------------------------
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const parseDate = (dateStr) => {
+            if (!dateStr) return new Date(8640000000000000);
+            const d = new Date(`${dateStr}T00:00:00`);
+            return isNaN(d.getTime()) ? new Date(8640000000000000) : d;
+        };
+
+        const SAST_OFFSET_MS = 2 * 60 * 60 * 1000;
+        const getJoburgParts = (timestampMs) => {
+            const shifted = new Date(timestampMs + SAST_OFFSET_MS);
+            return { hours: shifted.getUTCHours(), minutes: shifted.getUTCMinutes() };
+        };
+        const toEpoch = (dateStr, timeStr) => {
+            if (!dateStr || !timeStr) return null;
+            const ts = new Date(`${dateStr}T${timeStr}+02:00`).getTime();
+            return isNaN(ts) ? null : ts;
+        };
+
+        const formatDateDisplay = (dateObj) => {
+            if (!dateObj || isNaN(dateObj.getTime())) return 'TBC';
+            return dateObj.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+
+        const formatDateTime = (iso) => {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg' });
+        };
+
+        // ---------------------------------------------------------------
+        // Day / week helpers + registration link
+        // ---------------------------------------------------------------
+        const LOW_REG_THRESHOLD = 20;
+        const REGISTER_BASE_URL = 'wcedtpd.pages.dev/preregister?idkey=';
+        const registerLink = (idKey) => `${REGISTER_BASE_URL}${encodeURIComponent(String(idKey ?? '').trim())}`;
+
+        const toISODate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+        // Week runs Monday -> Sunday.
+        const getDayInfo = () => {
+            const now = new Date();
+            const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+            const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+            const short = (d) => d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' });
+            return {
+                todayISO: toISODate(now),
+                tomorrowISO: toISODate(tomorrow),
+                weekStartISO: toISODate(monday),
+                weekEndISO: toISODate(sunday),
+                weekLabel: `${short(monday)} – ${short(sunday)}`
+            };
+        };
+
+        // ---------------------------------------------------------------
+        // Supabase helpers
+        // ---------------------------------------------------------------
+        async function fetchAllRows(table, columns, applyFilters, pageSize = 1000) {
+            let all = [];
+            let from = 0;
+            while (true) {
+                let query = supabaseClient.from(table).select(columns);
+                if (applyFilters) query = applyFilters(query);
+                const { data, error } = await query.range(from, from + pageSize - 1);
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                all = all.concat(data);
+                if (data.length < pageSize) break;
+                from += pageSize;
+            }
+            return all;
+        }
+
+        // Copies both an HTML and a plain-text representation, so pasting into
+        // a rich-text compose box (Outlook/Gmail) keeps custom link text like
+        // "CLICK HERE TO JOIN" as a real clickable hyperlink, while anything
+        // that can't accept rich content still gets a sensible plain-text copy.
+        async function copyRichText(html, plainText) {
+            try {
+                if (navigator.clipboard && window.ClipboardItem) {
+                    const item = new ClipboardItem({
+                        'text/html': new Blob([html], { type: 'text/html' }),
+                        'text/plain': new Blob([plainText], { type: 'text/plain' })
+                    });
+                    await navigator.clipboard.write([item]);
+                    return true;
+                }
+            } catch (err) { console.error('Rich clipboard copy failed, falling back to plain text:', err); }
+            return copyToClipboard(plainText);
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function nl2br(str) {
+            return escapeHtml(str).replace(/\n/g, '<br>');
+        }
+
+        // Builds the reminder email (subject, plain-text body, HTML body) from
+        // a session record plus an optional short personal note from the advisor.
+        function buildReminderEmail(session, personalNote) {
+            const dateDisplay = formatDateDisplay(parseDate(session.dateISO));
+            const subject = `Reminder: ${session.name} – ${dateDisplay}`;
+            const note = (personalNote || '').trim();
+            const TPD_URL = 'https://wcedtpd.pages.dev';
+
+            const plainLines = [
+                'Hi there,',
+                '',
+                ...(note ? [note, ''] : []),
+                "This is a friendly reminder that you're registered for the session below. We'd love for you to join us!",
+                '',
+                `Session: ${session.name}`,
+                `Date: ${dateDisplay}`,
+                `Time: ${session.time}`,
+                '',
+                ...(session.description ? ['About this session:', session.description, ''] : []),
+                ...(session.outline ? ["What you'll gain:", session.outline, ''] : []),
+                ...(session.joinLink ? [`Click here to join: ${session.joinLink}`, ''] : []),
+                "Every session is a step forward in your professional growth journey — thank you for continuing to invest in your development and in the learners you serve. We look forward to seeing you there!",
+                '',
+                `Looking for more ways to grow? Visit ${TPD_URL} to explore other professional development opportunities.`,
+                '',
+                'Warm regards,',
+                'The WCED eLearning Team'
+            ];
+            const plainTextBody = plainLines.join('\n');
+
+            // Paragraph spacing/link styling is set inline (not via a <style>
+            // block) because most mail clients strip <style> tags on paste —
+            // inline styles are what actually survive. The join link uses
+            // plain bold/underlined colored text rather than a background-
+            // color "button" because several rich-text paste targets strip
+            // background-color but keep an inherited light text color,
+            // which silently turns it into invisible white-on-white text.
+            const P = 'margin:0 0 16px 0;';
+            const LABEL = 'color:#001489;font-weight:bold;';
+            const LINK = 'color:#C8126E;font-weight:bold;text-decoration:underline;';
+
+            const htmlBody = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;line-height:1.7;">
+<p style="${P}">Hi there,</p>
+${note ? `<p style="${P}">${nl2br(note)}</p>` : ''}
+<p style="${P}">This is a friendly reminder that you're registered for the session below. We'd love for you to join us!</p>
+<p style="${P}"><span style="${LABEL}">Session:</span> ${escapeHtml(session.name)}<br><span style="${LABEL}">Date:</span> ${escapeHtml(dateDisplay)}<br><span style="${LABEL}">Time:</span> ${escapeHtml(session.time)}</p>
+${session.description ? `<p style="${P}"><span style="${LABEL}">About this session:</span><br>${nl2br(session.description)}</p>` : ''}
+${session.outline ? `<p style="${P}"><span style="${LABEL}">What you'll gain:</span><br>${nl2br(session.outline)}</p>` : ''}
+${session.joinLink ? `<p style="${P}"><a href="${escapeHtml(session.joinLink)}" style="${LINK}font-size:15px;">CLICK HERE TO JOIN</a></p>` : ''}
+<p style="${P}">Every session is a step forward in your professional growth journey — thank you for continuing to invest in your development and in the learners you serve. We look forward to seeing you there!</p>
+<p style="${P}">Looking for more ways to grow? Visit <a href="${TPD_URL}" style="${LINK}">wcedtpd.pages.dev</a> to explore other professional development opportunities.</p>
+<p style="margin:0;">Warm regards,<br>The WCED eLearning Team</p>
+</div>`;
+
+            return { subject, plainTextBody, htmlBody };
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                }
+            } catch (err) { console.error('Clipboard API failed, falling back:', err); }
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (err) {
+                console.error('Clipboard fallback failed:', err);
+                return false;
+            }
+        }
+
+        function downloadCSV(filename, rows, headers) {
+            const esc = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+            const lines = [headers.map(h => esc(h.label)).join(',')]
+                .concat(rows.map(row => headers.map(h => esc(row[h.key])).join(',')));
+            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ---------------------------------------------------------------
+        // Loads sessions + registrations + a school -> district lookup,
+        // then combines them into one array per session.
+        //
+        // Scope: this tool is about *pre-registration*, not attendance — so
+        // it only ever looks at 'Virtual' sessions (the only ones the
+        // Pre-Register widget appears on), from 21 days ago through to
+        // whatever's upcoming. It does not touch attendance_staging at all.
+        //
+        // session_pre_registrations is no longer readable directly with the
+        // publishable key (RLS blocks it) — the admin-registrations Edge
+        // Function returns it instead, gated by the shared passphrase.
+        // ---------------------------------------------------------------
+        async function loadAdminData(passphrase) {
+            const lookback = new Date();
+            lookback.setDate(lookback.getDate() - 21);
+            const lookbackISO = `${lookback.getFullYear()}-${pad2(lookback.getMonth() + 1)}-${pad2(lookback.getDate())}`;
+
+            const [preregResult, sessionRows, courseRows, schoolRows] = await Promise.all([
+                supabaseClient.functions.invoke('admin-registrations', { body: { passphrase } }),
+                fetchAllRows('sessions', 'id_key, session_title, session_date, session_start_time, session_delivery_mode, hosting_unit, session_link',
+                    q => q.eq('session_delivery_mode', 'Virtual').gte('session_date', lookbackISO)),
+                fetchAllRows('courses', 'course_name, developmental_level, programme_duration, session_desciption, session_outcomes'),
+                fetchAllRows('schools', 'School_Name, Education_District')
+            ]);
+            if (preregResult.error) throw preregResult.error;
+            const preregRows = preregResult.data || [];
+
+            // Real districts are derived from the schools table itself — never
+            // hardcoded, since exact names/casing live in the data.
+            const districts = Array.from(new Set(schoolRows.map(r => r.Education_District).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+
+            const schoolDistrictMap = new Map();
+            schoolRows.forEach(r => { if (r.School_Name) schoolDistrictMap.set(r.School_Name, r.Education_District); });
+
+            const registrationsByIdKey = new Map();
+            preregRows.forEach(r => {
+                const key = String(r.id_key ?? '').trim();
+                if (!key) return;
+                const district = schoolDistrictMap.get(r.school);
+                const bucket = (district && districts.includes(district)) ? district : UNKNOWN_DISTRICT;
+                const enriched = { name: r.name, email: r.email, school: r.school, createdAt: r.created_at, district: bucket };
+                if (!registrationsByIdKey.has(key)) registrationsByIdKey.set(key, []);
+                registrationsByIdKey.get(key).push(enriched);
+            });
+
+            const coursesByName = new Map();
+            courseRows.forEach(c => { if (c.course_name) coursesByName.set(c.course_name, c); });
+
+            const allBuckets = districts.concat(UNKNOWN_DISTRICT);
+
+            const sessions = sessionRows
+                .map(s => {
+                    const course = coursesByName.get(s.session_title) || {};
+                    const durationMin = Number(course.programme_duration) || 0;
+                    const startEpoch = toEpoch(s.session_date, s.session_start_time);
+                    const endEpoch = startEpoch !== null ? startEpoch + durationMin * 60000 : null;
+                    const startParts = startEpoch !== null ? getJoburgParts(startEpoch) : null;
+                    const endParts = endEpoch !== null ? getJoburgParts(endEpoch) : null;
+                    const timeDisplay = (startParts && endParts)
+                        ? `${pad2(startParts.hours)}:${pad2(startParts.minutes)} - ${pad2(endParts.hours)}:${pad2(endParts.minutes)}`
+                        : (startParts ? `${pad2(startParts.hours)}:${pad2(startParts.minutes)}` : '—');
+
+                    const regs = (registrationsByIdKey.get(String(s.id_key ?? '').trim()) || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                    const districtCounts = {};
+                    allBuckets.forEach(d => { districtCounts[d] = 0; });
+                    regs.forEach(r => { districtCounts[r.district] = (districtCounts[r.district] || 0) + 1; });
+
+                    return {
+                        idKey: s.id_key,
+                        name: s.session_title || 'Untitled Session',
+                        dateISO: s.session_date || '',
+                        time: timeDisplay,
+                        level: course.developmental_level || '',
+                        mode: s.session_delivery_mode || '—',
+                        hostingUnit: s.hosting_unit || '',
+                        description: course.session_desciption || '',
+                        outline: course.session_outcomes || '',
+                        joinLink: s.session_link || '',
+                        totalRegistered: regs.length,
+                        districtCounts,
+                        registrants: regs
+                    };
+                })
+                .filter(s => s.name !== 'Untitled Session');
+
+            return { sessions, districts, debug: { preregRowCount: preregRows.length, sessionRowCount: sessionRows.length } };
+        }
+
+        // ---------------------------------------------------------------
+        // UI pieces
+        // ---------------------------------------------------------------
+        const Badge = ({ children, type = 'default' }) => {
+            let colorClass = 'bg-gray-100 text-gray-700 border-gray-200';
+            const level = (children || '').toString().toLowerCase();
+            if (type === 'level') {
+                if (level.includes('foundation')) colorClass = 'bg-wcg-green text-white border-wcg-green';
+                else if (level.includes('better')) colorClass = 'bg-wcg-red text-white border-wcg-red';
+                else if (level.includes('i can')) colorClass = 'bg-wcg-yellow text-gray-900 border-wcg-yellow';
+                else if (level.includes('summit')) colorClass = 'bg-wcg-blue text-white border-wcg-blue';
+            }
+            return e('span', { className: `px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border ${colorClass} shadow-sm` }, children || '—');
+        };
+
+        function StatCard({ label, value, sub, variant = 'default' }) {
+            const isWeek = variant === 'week';
+            return e('div', { className: `rounded-xl border border-t-4 shadow-sm p-4 ${isWeek ? 'bg-wcg-blue border-wcg-blue border-t-wcg-bright' : 'bg-white border-gray-200 border-t-wcg-bright'}` },
+                e('p', { className: `text-[11px] font-bold uppercase tracking-wide mb-1 ${isWeek ? 'text-blue-200' : 'text-gray-400'}` }, label),
+                e('p', { className: `text-2xl font-bold ${isWeek ? 'text-white' : 'text-wcg-blue'}` }, value),
+                sub ? e('p', { className: `text-xs mt-0.5 ${isWeek ? 'text-blue-100' : 'text-gray-500'}` }, sub) : null
+            );
+        }
+
+        function SortHeader({ label, sortKey, sort, onSort }) {
+            const active = sort.key === sortKey;
+            return e('th', {
+                className: "px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500 cursor-pointer hover:text-wcg-bright select-none",
+                onClick: () => onSort(sortKey)
+            },
+                e('span', { className: "inline-flex items-center gap-1" },
+                    label,
+                    active ? (sort.dir === 'asc' ? e(Icons.ChevronUp) : e(Icons.ChevronDown)) : e(Icons.ChevronsUpDown)
+                )
+            );
+        }
+
+        function Toast({ toast }) {
+            if (!toast) return null;
+            const isError = toast.kind === 'error';
+            return e('div', {
+                className: `fixed bottom-6 left-1/2 -translate-x-1/2 z-[10001] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2 max-w-[90vw] ${isError ? 'bg-wcg-red text-white' : 'bg-wcg-green text-white'}`
+            }, isError ? e(Icons.AlertTriangle) : e(Icons.Check), e('span', null, toast.text));
+        }
+
+        function SessionDetailModal({ session, onClose, showToast }) {
+            const [search, setSearch] = useState('');
+            const [tab, setTab] = useState('registrants');
+            const [personalNote, setPersonalNote] = useState('');
+
+            const filtered = session.registrants.filter(r => {
+                if (!search.trim()) return true;
+                const q = search.toLowerCase();
+                return (r.name || '').toLowerCase().includes(q) || (r.email || '').toLowerCase().includes(q) || (r.school || '').toLowerCase().includes(q);
+            });
+
+            const handleCopyEmails = async () => {
+                const emails = Array.from(new Set(session.registrants.map(r => r.email).filter(Boolean)));
+                const ok = await copyToClipboard(emails.join(', '));
+                showToast(ok ? 'success' : 'error', ok ? `Copied ${emails.length} email address${emails.length === 1 ? '' : 'es'} to clipboard.` : 'Could not copy to clipboard.');
+            };
+
+            const handleDownloadCSV = () => {
+                downloadCSV(
+                    `${session.name.replace(/[^a-z0-9]+/gi, '-')}-registrants.csv`,
+                    session.registrants,
+                    [
+                        { key: 'name', label: 'Name' },
+                        { key: 'email', label: 'Email' },
+                        { key: 'school', label: 'School' },
+                        { key: 'district', label: 'District' },
+                        { key: 'createdAt', label: 'Registered At' }
+                    ]
+                );
+            };
+
+            const email = buildReminderEmail(session, personalNote);
+
+            const handleCopyEmailBody = async () => {
+                const ok = await copyRichText(email.htmlBody, email.plainTextBody);
+                showToast(ok ? 'success' : 'error', ok ? "Copied the email body — paste it straight into your mail client." : 'Could not copy to clipboard.');
+            };
+
+            const handleCopySubject = async () => {
+                const ok = await copyToClipboard(email.subject);
+                showToast(ok ? 'success' : 'error', ok ? 'Copied subject line.' : 'Could not copy to clipboard.');
+            };
+
+            return e('div', { className: "fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-[10000]", onClick: onClose },
+                e('div', { className: "bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col", onClick: (ev) => ev.stopPropagation() },
+                    e('div', { className: "p-5 sm:p-6 border-b border-gray-100 flex items-start justify-between gap-3" },
+                        e('div', null,
+                            e('h3', { className: "text-lg font-bold text-gray-900" }, session.name),
+                            e('div', { className: "mt-1.5 flex items-center gap-1.5" },
+                                e('span', { className: "text-[11px] font-bold uppercase tracking-wide text-gray-400" }, "ID Key"),
+                                e('code', { className: "text-sm font-mono font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-800" }, session.idKey),
+                                e('button', {
+                                    onClick: () => copyToClipboard(registerLink(session.idKey)).then(ok => showToast(ok ? 'success' : 'error', ok ? 'Copied registration link.' : 'Could not copy.')),
+                                    title: "Copy registration link",
+                                    className: "text-gray-400 hover:text-wcg-blue"
+                                }, e(Icons.Copy))
+                            ),
+                            e('p', { className: "text-xs text-gray-500 mt-1.5" },
+                                formatDateDisplay(parseDate(session.dateISO)), ' · ', session.time, ' · ', session.mode,
+                                session.hostingUnit ? ` · Hosted by ${session.hostingUnit}` : ''
+                            )
+                        ),
+                        e('button', { onClick: onClose, className: "text-gray-400 hover:text-gray-600 flex-shrink-0" }, e(Icons.X))
+                    ),
+
+                    e('div', { className: "px-5 sm:px-6 pt-3 flex items-center gap-1 border-b border-gray-100" },
+                        e('button', {
+                            onClick: () => setTab('registrants'),
+                            className: `px-3 py-2 text-sm font-bold border-b-2 -mb-px transition-colors ${tab === 'registrants' ? 'border-wcg-bright text-wcg-bright' : 'border-transparent text-gray-400 hover:text-gray-600'}`
+                        }, `Registrants (${session.totalRegistered})`),
+                        e('button', {
+                            onClick: () => setTab('email'),
+                            className: `px-3 py-2 text-sm font-bold border-b-2 -mb-px transition-colors ${tab === 'email' ? 'border-wcg-bright text-wcg-bright' : 'border-transparent text-gray-400 hover:text-gray-600'}`
+                        }, "Reminder Email")
+                    ),
+
+                    tab === 'registrants' ? e(React.Fragment, null,
+                        e('div', { className: "p-5 sm:p-6 pb-3 flex flex-wrap items-center gap-2" },
+                            e('button', {
+                                onClick: handleCopyEmails,
+                                className: "inline-flex items-center gap-2 bg-wcg-blue hover:bg-wcg-bright text-white font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                            }, e(Icons.Copy), `Copy All Emails (${session.totalRegistered})`),
+                            e('button', {
+                                onClick: handleDownloadCSV,
+                                className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                            }, e(Icons.Download), "Download CSV"),
+                            e('div', { className: "relative flex-1 min-w-[160px]" },
+                                e('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400" }, e(Icons.Search)),
+                                e('input', {
+                                    type: "text", placeholder: "Filter registrants...", value: search,
+                                    onChange: (ev) => setSearch(ev.target.value),
+                                    className: "w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-bright text-sm transition-all"
+                                })
+                            )
+                        ),
+                        e('div', { className: "overflow-auto flex-1 px-5 sm:px-6 pb-6" },
+                            session.registrants.length === 0
+                                ? e('p', { className: "text-sm text-gray-500 py-8 text-center" }, "No one has pre-registered for this session yet.")
+                                : e('table', { className: "w-full text-sm" },
+                                    e('thead', null,
+                                        e('tr', { className: "border-b border-gray-200" },
+                                            e('th', { className: "px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "Name"),
+                                            e('th', { className: "px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "Email"),
+                                            e('th', { className: "px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "School"),
+                                            e('th', { className: "px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "District"),
+                                            e('th', { className: "px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "Registered At")
+                                        )
+                                    ),
+                                    e('tbody', null,
+                                        filtered.map((r, idx) => e('tr', { key: idx, className: "border-b border-gray-50 hover:bg-gray-50" },
+                                            e('td', { className: "px-3 py-2.5 font-semibold text-gray-800" }, r.name || '—'),
+                                            e('td', { className: "px-3 py-2.5 text-gray-600" }, r.email || '—'),
+                                            e('td', { className: "px-3 py-2.5 text-gray-600" }, r.school || '—'),
+                                            e('td', { className: "px-3 py-2.5 text-gray-600" }, r.district),
+                                            e('td', { className: "px-3 py-2.5 text-gray-500" }, formatDateTime(r.createdAt))
+                                        ))
+                                    )
+                                )
+                        )
+                    ) : e('div', { className: "overflow-auto flex-1 p-5 sm:p-6" },
+                        e('p', { className: "text-xs text-gray-500 mb-3" },
+                            "This pulls in the session's details automatically. Add an optional personal note below, then copy the email body straight into your mail client — the join link stays clickable when pasted into Outlook or Gmail."
+                        ),
+                        e('label', { className: "block text-xs font-bold uppercase tracking-wide text-gray-400 mb-1" }, "Personal note (optional)"),
+                        e('textarea', {
+                            value: personalNote,
+                            onChange: (ev) => setPersonalNote(ev.target.value),
+                            placeholder: "e.g. Looking forward to seeing your school represented at this one!",
+                            rows: 2,
+                            className: "w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-bright text-sm mb-4 resize-none"
+                        }),
+                        e('div', { className: "flex flex-wrap items-center gap-2 mb-4" },
+                            e('button', {
+                                onClick: handleCopyEmailBody,
+                                className: "inline-flex items-center gap-2 bg-wcg-blue hover:bg-wcg-bright text-white font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                            }, e(Icons.Copy), "Copy Email Body"),
+                            e('button', {
+                                onClick: handleCopySubject,
+                                className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                            }, e(Icons.Copy), "Copy Subject"),
+                            e('button', {
+                                onClick: handleCopyEmails,
+                                className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-sm px-3.5 py-2 rounded-lg transition-colors"
+                            }, e(Icons.Copy), `Copy Recipient Emails (${session.totalRegistered})`)
+                        ),
+                        e('p', { className: "text-xs font-bold uppercase tracking-wide text-gray-400 mb-1" }, `Subject: ${email.subject}`),
+                        e('div', { className: "border border-gray-200 rounded-xl p-4 bg-gray-50" },
+                            e('div', { dangerouslySetInnerHTML: { __html: email.htmlBody } })
+                        )
+                    )
+                )
+            );
+        }
+
+        // ---------------------------------------------------------------
+        // Diagnostics (collapsible quick-glance activity panel)
+        // Counts are by the date someone REGISTERED (created_at, SAST),
+        // not by session date, and use every loaded session (last 21 days
+        // + upcoming), ignoring the table filters.
+        // ---------------------------------------------------------------
+        const sastDateISO = (iso) => {
+            if (!iso) return '';
+            const ms = new Date(iso).getTime();
+            if (isNaN(ms)) return '';
+            const t = new Date(ms + SAST_OFFSET_MS);
+            return `${t.getUTCFullYear()}-${pad2(t.getUTCMonth() + 1)}-${pad2(t.getUTCDate())}`;
+        };
+        const addDaysISO = (iso, n) => { const d = parseDate(iso); d.setDate(d.getDate() + n); return toISODate(d); };
+
+        function DiagCard({ title, sub, children }) {
+            return e('div', { className: "bg-white rounded-xl border border-gray-200 border-t-4 border-t-wcg-bright shadow-sm p-4" },
+                e('p', { className: "text-[11px] font-bold uppercase tracking-wide text-gray-400" }, title),
+                sub ? e('p', { className: "text-[11px] text-gray-400" }, sub) : null,
+                children
+            );
+        }
+
+        function DistrictBars({ regs }) {
+            if (regs.length === 0) return e('p', { className: "text-xs text-gray-400 mt-3" }, "No new pre-registrations in this period.");
+            const counts = {};
+            regs.forEach(r => { counts[r.district] = (counts[r.district] || 0) + 1; });
+            const rows = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+            const max = rows[0][1];
+            return e('ul', { className: "mt-3 space-y-1.5" }, rows.map(([name, count]) =>
+                e('li', { key: name, className: "text-xs" },
+                    e('div', { className: "flex justify-between text-gray-600 mb-0.5" }, e('span', null, name), e('span', { className: "font-bold text-gray-800" }, count)),
+                    e('div', { className: "h-1.5 rounded bg-gray-100" }, e('div', { className: "h-1.5 rounded bg-wcg-bright", style: { width: `${(count / max) * 100}%` } }))
+                )
+            ));
+        }
+
+        function MiniStat({ label, value, note, tone }) {
+            const toneClass = tone === 'up' ? 'text-wcg-green' : (tone === 'down' ? 'text-wcg-red' : 'text-wcg-blue');
+            return e('div', { className: "rounded-lg bg-gray-50 border border-gray-100 p-3" },
+                e('p', { className: "text-[10px] font-bold uppercase tracking-wide text-gray-400" }, label),
+                e('p', { className: `text-xl font-bold ${toneClass}` }, value),
+                note ? e('p', { className: "text-[11px] text-gray-500" }, note) : null
+            );
+        }
+
+        function DiagnosticsPanel({ sessions, dayInfo }) {
+            const [open, setOpen] = useState(false);
+
+            const d = useMemo(() => {
+                const all = [];
+                sessions.forEach(s => s.registrants.forEach(r => all.push({
+                    ...r, sessionName: s.name, sessionIdKey: s.idKey,
+                    createdISO: sastDateISO(r.createdAt), createdMs: new Date(r.createdAt).getTime()
+                })));
+                const inRange = (r, a, b) => r.createdISO && r.createdISO >= a && r.createdISO <= b;
+
+                const today = all.filter(r => r.createdISO === dayInfo.todayISO);
+                const week = all.filter(r => inRange(r, dayInfo.weekStartISO, dayInfo.weekEndISO));
+
+                // Last week, up to the same weekday, for a fair comparison.
+                const dow = (new Date().getDay() + 6) % 7;
+                const prevStart = addDaysISO(dayInfo.weekStartISO, -7);
+                const lastWeekToDate = all.filter(r => inRange(r, prevStart, addDaysISO(prevStart, dow)));
+
+                const last24h = all.filter(r => !isNaN(r.createdMs) && r.createdMs >= Date.now() - 86400000).length;
+                const uniqueWeek = new Set(week.map(r => (r.email || '').trim().toLowerCase()).filter(Boolean)).size;
+                const unknown = all.filter(r => r.district === UNKNOWN_DISTRICT).length;
+
+                const bySession = {};
+                week.forEach(r => {
+                    const k = r.sessionIdKey;
+                    bySession[k] = bySession[k] || { idKey: k, name: r.sessionName, count: 0 };
+                    bySession[k].count += 1;
+                });
+                const topSessions = Object.values(bySession)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 3)
+                    .map(x => ({ ...x, session: sessions.find(s => s.idKey === x.idKey) }));
+
+                const recent = all.filter(r => !isNaN(r.createdMs)).sort((a, b) => b.createdMs - a.createdMs).slice(0, 5);
+
+                const daily = [];
+                for (let i = 6; i >= 0; i--) {
+                    const iso = addDaysISO(dayInfo.todayISO, -i);
+                    daily.push({ iso, count: all.filter(r => r.createdISO === iso).length });
+                }
+
+                const needsAttention = sessions
+                    .filter(s => s.dateISO >= dayInfo.todayISO && s.dateISO <= addDaysISO(dayInfo.todayISO, 7) && s.totalRegistered < LOW_REG_THRESHOLD)
+                    .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.totalRegistered - b.totalRegistered);
+
+                return { total: all.length, today, week, lastWeekToDate, last24h, uniqueWeek, unknown, topSessions, recent, daily, needsAttention };
+            }, [sessions, dayInfo.todayISO, dayInfo.weekStartISO, dayInfo.weekEndISO]);
+
+            const weekDiff = d.week.length - d.lastWeekToDate.length;
+            const maxDaily = Math.max(1, ...d.daily.map(x => x.count));
+            const unknownPct = d.total ? Math.round((d.unknown / d.total) * 100) : 0;
+
+            return e('div', { className: "mt-8" },
+                e('button', {
+                    onClick: () => setOpen(v => !v),
+                    className: "w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 border-l-4 border-l-wcg-bright shadow-sm px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                },
+                    e('span', null,
+                        e('span', { className: "block text-sm font-bold text-wcg-blue" }, "Diagnostics"),
+                        e('span', { className: "block text-xs text-gray-500" }, "Quick glance at recent pre-registration activity")
+                    ),
+                    e('span', { className: "text-gray-400" }, open ? e(Icons.ChevronUp) : e(Icons.ChevronDown))
+                ),
+
+                open ? e('div', { className: "mt-3 fade-in space-y-3" },
+                    e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-3" },
+                        e(DiagCard, { title: "New pre-registrations today", sub: "By district of the person registering" },
+                            e('p', { className: "text-3xl font-bold text-wcg-blue mt-1" }, d.today.length),
+                            e(DistrictBars, { regs: d.today })
+                        ),
+                        e(DiagCard, { title: "New pre-registrations this week", sub: dayInfo.weekLabel },
+                            e('p', { className: "text-3xl font-bold text-wcg-blue mt-1" }, d.week.length),
+                            e(DistrictBars, { regs: d.week })
+                        )
+                    ),
+
+                    e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-3" },
+                        e(DiagCard, { title: "Top 3 sessions this week", sub: "By new pre-registrations received this week" },
+                            d.topSessions.length === 0
+                                ? e('p', { className: "text-xs text-gray-400 mt-3" }, "No new pre-registrations this week yet.")
+                                : e('ol', { className: "mt-3 space-y-2" }, d.topSessions.map((t, i) =>
+                                    e('li', { key: t.idKey, className: "flex items-start gap-3" },
+                                        e('span', { className: "flex-shrink-0 h-6 w-6 rounded-full bg-wcg-blue text-white text-xs font-bold flex items-center justify-center" }, i + 1),
+                                        e('div', { className: "min-w-0" },
+                                            e('p', { className: "text-sm font-semibold text-gray-800 truncate" }, t.name),
+                                            e('p', { className: "text-xs text-gray-500" },
+                                                `${t.count} new this week`,
+                                                t.session ? ` · ${t.session.totalRegistered} total · ${formatDateDisplay(parseDate(t.session.dateISO))}` : ''
+                                            )
+                                        )
+                                    )
+                                ))
+                        ),
+                        e(DiagCard, { title: "5 most recent pre-registrations" },
+                            d.recent.length === 0
+                                ? e('p', { className: "text-xs text-gray-400 mt-3" }, "No pre-registrations found.")
+                                : e('ul', { className: "mt-3 divide-y divide-gray-100" }, d.recent.map((r, i) =>
+                                    e('li', { key: i, className: "py-2 first:pt-0 last:pb-0" },
+                                        e('div', { className: "flex justify-between gap-2" },
+                                            e('span', { className: "text-sm font-semibold text-gray-800 truncate" }, r.name || '—'),
+                                            e('span', { className: "text-[11px] text-gray-400 flex-shrink-0" }, formatDateTime(r.createdAt))
+                                        ),
+                                        e('p', { className: "text-xs text-gray-500 truncate" }, `${r.school || '—'} · ${r.district}`),
+                                        e('p', { className: "text-xs text-wcg-bright truncate" }, r.sessionName)
+                                    )
+                                ))
+                        )
+                    ),
+
+                    e('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-3" },
+                        e(DiagCard, { title: "At a glance" },
+                            e('div', { className: "grid grid-cols-2 gap-2 mt-3" },
+                                e(MiniStat, { label: "Last 24 hours", value: d.last24h, note: "new pre-registrations" }),
+                                e(MiniStat, { label: "People this week", value: d.uniqueWeek, note: "unique email addresses" }),
+                                e(MiniStat, {
+                                    label: "vs last week", value: `${weekDiff > 0 ? '+' : ''}${weekDiff}`,
+                                    note: `${d.lastWeekToDate.length} at this point last week`,
+                                    tone: weekDiff > 0 ? 'up' : (weekDiff < 0 ? 'down' : null)
+                                }),
+                                e(MiniStat, { label: "Unknown district", value: `${unknownPct}%`, note: `${d.unknown} of ${d.total} — school not matched`, tone: unknownPct >= 10 ? 'down' : null })
+                            )
+                        ),
+                        e(DiagCard, { title: "Last 7 days", sub: "New pre-registrations per day" },
+                            e('div', { className: "mt-3 flex items-end justify-between gap-1.5 h-28" }, d.daily.map(x =>
+                                e('div', { key: x.iso, className: "flex-1 flex flex-col items-center justify-end h-full" },
+                                    e('span', { className: "text-[10px] font-bold text-gray-600 mb-0.5" }, x.count),
+                                    e('div', { className: `w-full rounded-t ${x.iso === dayInfo.todayISO ? 'bg-wcg-blue' : 'bg-wcg-bright/60'}`, style: { height: `${Math.max(3, (x.count / maxDaily) * 72)}px` } }),
+                                    e('span', { className: "text-[10px] text-gray-400 mt-1" }, parseDate(x.iso).toLocaleDateString('en-ZA', { weekday: 'short' }))
+                                )
+                            ))
+                        ),
+                        e(DiagCard, { title: "Needs attention", sub: `Next 7 days, fewer than ${LOW_REG_THRESHOLD} registered` },
+                            d.needsAttention.length === 0
+                                ? e('p', { className: "text-xs text-gray-400 mt-3" }, "Nothing flagged — all sessions in the next 7 days are at or above the threshold.")
+                                : e('ul', { className: "mt-3 space-y-2 max-h-40 overflow-auto" }, d.needsAttention.map(x =>
+                                    e('li', { key: x.idKey, className: "flex justify-between gap-2 text-xs" },
+                                        e('span', { className: "min-w-0" },
+                                            e('span', { className: "block font-semibold text-gray-800 truncate" }, x.name),
+                                            e('span', { className: "block text-gray-500" }, formatDateDisplay(parseDate(x.dateISO)))
+                                        ),
+                                        e('span', { className: "font-bold text-wcg-red flex-shrink-0" }, x.totalRegistered)
+                                    )
+                                ))
+                        )
+                    ),
+
+                    e('p', { className: "text-[11px] text-gray-400" }, "Counts use the date people registered (SAST) across all loaded sessions — last 21 days plus upcoming — and ignore the filters above.")
+                ) : null
+            );
+        }
+
+        function PassphraseGate({ onSubmit, error, loading }) {
+            const [value, setValue] = useState('');
+            const handleSubmit = (ev) => {
+                ev.preventDefault();
+                if (!value.trim() || loading) return;
+                onSubmit(value.trim());
+            };
+            return e('div', { className: "min-h-screen flex items-center justify-center bg-gray-50 px-4" },
+                e('div', { className: "max-w-sm w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8" },
+                    e('h2', { className: "text-lg font-bold text-gray-900 mb-1" }, "Admin Access"),
+                    e('p', { className: "text-sm text-gray-500 mb-4" }, "Enter the shared admin passphrase to view session registrations."),
+                    e('form', { onSubmit: handleSubmit },
+                        e('input', {
+                            type: "password", value, autoFocus: true, placeholder: "Passphrase",
+                            onChange: (ev) => setValue(ev.target.value),
+                            className: `w-full px-3.5 py-2.5 rounded-lg border-2 focus:outline-none text-sm mb-2 transition-colors ${error ? 'border-wcg-red' : 'border-gray-200 focus:border-wcg-bright'}`
+                        }),
+                        error ? e('p', { className: "text-xs text-wcg-red font-medium mb-3" }, error) : e('div', { className: "mb-3" }),
+                        e('button', {
+                            type: "submit", disabled: loading,
+                            className: "w-full bg-wcg-blue hover:bg-wcg-bright text-white font-bold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60"
+                        }, loading ? "Checking…" : "Continue")
+                    )
+                )
+            );
+        }
+
+        function App() {
+            const [sessions, setSessions] = useState([]);
+            const [districts, setDistricts] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [refreshKey, setRefreshKey] = useState(0);
+            const [lastUpdated, setLastUpdated] = useState(null);
+
+            const [authenticated, setAuthenticated] = useState(false);
+            const [passphrase, setPassphrase] = useState('');
+            const [authError, setAuthError] = useState(null);
+            const [authenticating, setAuthenticating] = useState(false);
+
+            const [searchTerm, setSearchTerm] = useState('');
+            const [levelFilter, setLevelFilter] = useState('All');
+            const [districtFilter, setDistrictFilter] = useState('All');
+            const [showPast, setShowPast] = useState(false);
+            const [showDistrictBreakdown, setShowDistrictBreakdown] = useState(false);
+            const [sort, setSort] = useState({ key: 'date', dir: 'asc' });
+
+            const [selectedSession, setSelectedSession] = useState(null);
+            const [toast, setToast] = useState(null);
+            const showToast = (kind, text) => { setToast({ kind, text }); setTimeout(() => setToast(null), 3500); };
+
+            const handleAuthSubmit = async (value) => {
+                setAuthenticating(true);
+                setAuthError(null);
+                try {
+                    const { error: invokeError } = await supabaseClient.functions.invoke('admin-registrations', { body: { passphrase: value } });
+                    if (invokeError) throw invokeError;
+                    setPassphrase(value);
+                    setAuthenticated(true);
+                } catch (err) {
+                    console.error('Admin auth failed:', err);
+                    setAuthError('Incorrect passphrase. Please try again.');
+                } finally {
+                    setAuthenticating(false);
+                }
+            };
+
+            useEffect(() => {
+                if (!authenticated) return;
+                let cancelled = false;
+                (async () => {
+                    setLoading(true);
+                    setError(null);
+                    try {
+                        const result = await loadAdminData(passphrase);
+                        if (!cancelled) {
+                            setSessions(result.sessions);
+                            setDistricts(result.districts);
+                            setLastUpdated(new Date());
+                        }
+                    } catch (err) {
+                        console.error('Error loading admin data:', err);
+                        if (!cancelled) setError('Could not load session data. Please try refreshing.');
+                    } finally {
+                        if (!cancelled) setLoading(false);
+                    }
+                })();
+                return () => { cancelled = true; };
+            }, [authenticated, refreshKey]);
+
+            const levelOptions = useMemo(() => Array.from(new Set(sessions.map(s => s.level).filter(Boolean))).sort(), [sessions]);
+            const hostingDistrictOptions = useMemo(() => Array.from(new Set(sessions.map(s => s.hostingUnit).filter(Boolean))).sort(), [sessions]);
+
+            const filteredSessions = useMemo(() => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return sessions.filter(s => {
+                    if (!showPast && parseDate(s.dateISO) < today) return false;
+                    if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                    if (levelFilter !== 'All' && s.level !== levelFilter) return false;
+                    if (districtFilter !== 'All' && s.hostingUnit !== districtFilter) return false;
+                    return true;
+                });
+            }, [sessions, searchTerm, levelFilter, districtFilter, showPast]);
+
+            const getSortValue = (s, key) => {
+                if (key === 'idKey') return String(s.idKey || '').toLowerCase();
+                if (key === 'name') return s.name.toLowerCase();
+                if (key === 'date') return parseDate(s.dateISO).getTime();
+                if (key === 'total') return s.totalRegistered;
+                if (key === 'hostingUnit') return (s.hostingUnit || '').toLowerCase();
+                return s.districtCounts[key] || 0;
+            };
+
+            const sortedSessions = useMemo(() => {
+                const copy = [...filteredSessions];
+                copy.sort((a, b) => {
+                    const av = getSortValue(a, sort.key), bv = getSortValue(b, sort.key);
+                    if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+                    if (av > bv) return sort.dir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                return copy;
+            }, [filteredSessions, sort]);
+
+            const handleSort = (key) => {
+                setSort(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
+            };
+
+            const clearFilters = () => {
+                setSearchTerm(''); setLevelFilter('All'); setDistrictFilter('All');
+            };
+
+            const totalRegistrations = filteredSessions.reduce((sum, s) => sum + s.totalRegistered, 0);
+            const uniqueRegistrants = useMemo(() => {
+                const emails = new Set();
+                filteredSessions.forEach(s => s.registrants.forEach(r => { if (r.email) emails.add(r.email.trim().toLowerCase()); }));
+                return emails.size;
+            }, [filteredSessions]);
+            const districtTotals = useMemo(() => {
+                const totals = {};
+                districts.concat(UNKNOWN_DISTRICT).forEach(d => { totals[d] = 0; });
+                filteredSessions.forEach(s => districts.concat(UNKNOWN_DISTRICT).forEach(d => { totals[d] += s.districtCounts[d] || 0; }));
+                return totals;
+            }, [filteredSessions, districts]);
+            const dayInfo = getDayInfo();
+
+            // Pre-registrations for sessions happening in the current week (Mon–Sun).
+            // Respects the search / hosting district / level filters, but is not
+            // affected by the "show past sessions" toggle.
+            const thisWeek = useMemo(() => {
+                const list = sessions.filter(s => {
+                    if (!s.dateISO || s.dateISO < dayInfo.weekStartISO || s.dateISO > dayInfo.weekEndISO) return false;
+                    if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                    if (levelFilter !== 'All' && s.level !== levelFilter) return false;
+                    if (districtFilter !== 'All' && s.hostingUnit !== districtFilter) return false;
+                    return true;
+                });
+                return { sessionCount: list.length, registrations: list.reduce((sum, s) => sum + s.totalRegistered, 0) };
+            }, [sessions, searchTerm, levelFilter, districtFilter, dayInfo.weekStartISO, dayInfo.weekEndISO]);
+
+            // Row highlighting: today (strong blue), tomorrow (lighter blue),
+            // low registration (< 20, upcoming/current sessions only) in light red.
+            const getRowStyle = (s) => {
+                const isToday = s.dateISO === dayInfo.todayISO;
+                const isTomorrow = s.dateISO === dayInfo.tomorrowISO;
+                const isPast = !s.dateISO || s.dateISO < dayInfo.todayISO;
+                const isLow = !isPast && s.totalRegistered < LOW_REG_THRESHOLD;
+                let bg = 'hover:bg-blue-50/50';
+                if (isLow) bg = 'bg-red-50 hover:bg-red-100';
+                else if (isToday) bg = 'bg-wcg-bright/20 hover:bg-wcg-bright/30';
+                else if (isTomorrow) bg = 'bg-wcg-bright/10 hover:bg-wcg-bright/20';
+                return {
+                    row: `border-b border-gray-100 cursor-pointer transition-colors ${bg}`,
+                    edge: isToday ? 'border-l-wcg-bright' : (isTomorrow ? 'border-l-wcg-bright/40' : 'border-l-transparent'),
+                    dateTint: isLow ? (isToday ? 'bg-wcg-bright/25' : (isTomorrow ? 'bg-wcg-bright/15' : '')) : '',
+                    isToday, isTomorrow, isLow
+                };
+            };
+
+            if (!authenticated) {
+                return e(PassphraseGate, { onSubmit: handleAuthSubmit, error: authError, loading: authenticating });
+            }
+
+            if (loading) {
+                return e('div', { className: "min-h-screen flex flex-col items-center justify-center text-gray-400" }, e(Icons.Loader), e('p', { className: "mt-3 text-sm" }, "Loading session data…"));
+            }
+
+            return e('div', { className: "min-h-screen pb-16 font-sans bg-gray-50" },
+                isEmbedded ? e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 flex items-center justify-end gap-2" },
+                    lastUpdated ? e('span', { className: "text-xs text-gray-400" }, `Updated ${lastUpdated.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}`) : null,
+                    e('button', {
+                        onClick: () => setRefreshKey(k => k + 1),
+                        className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                    }, e(Icons.RefreshCw), "Refresh")
+                ) : e('header', { className: "bg-white border-b border-gray-200 border-t-4 border-t-wcg-blue sticky top-0 z-30 shadow-sm" },
+                    e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4" },
+                        e('div', { className: "flex items-center justify-between gap-3 flex-wrap" },
+                            e('div', { className: "flex items-center gap-3" },
+                                e('img', { src: "header.png", alt: "WCG Logo", className: "h-9 md:h-12 w-auto object-contain" }),
+                                e('div', null,
+                                    e('h1', { className: "text-base md:text-lg font-bold font-accent text-wcg-blue" }, "Session Registrations"),
+                                    e('p', { className: "text-xs text-gray-500" }, "Virtual sessions · last 21 days + upcoming · pre-registration counts")
+                                )
+                            ),
+                            e('div', { className: "flex items-center gap-2" },
+                                lastUpdated ? e('span', { className: "text-xs text-gray-400 hidden sm:inline" }, `Updated ${lastUpdated.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}`) : null,
+                                e('button', {
+                                    onClick: () => setRefreshKey(k => k + 1),
+                                    className: "inline-flex items-center gap-2 border-2 border-gray-300 hover:border-wcg-blue text-gray-700 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                                }, e(Icons.RefreshCw), "Refresh"),
+                                e('a', { href: "sessions.html", className: "text-xs font-semibold text-wcg-blue underline underline-offset-2 hover:text-wcg-bright" }, "Upcoming Sessions ↗")
+                            )
+                        )
+                    )
+                ),
+
+                e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" },
+                    error ? e('div', { className: "mt-6 text-center py-10" },
+                        e('div', { className: "mx-auto mb-3 h-10 w-10 rounded-full bg-red-50 text-wcg-red flex items-center justify-center" }, e(Icons.AlertTriangle)),
+                        e('p', { className: "text-sm text-gray-600 mb-3" }, error),
+                        e('button', { onClick: () => setRefreshKey(k => k + 1), className: "bg-wcg-blue text-white font-bold text-sm px-4 py-2 rounded-lg" }, "Try Again")
+                    ) : e(React.Fragment, null,
+
+                        // --- Summary cards ---
+                        e('div', { className: "mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3" },
+                            e(StatCard, { label: "Sessions Shown", value: filteredSessions.length }),
+                            e(StatCard, { label: "Total Registrations", value: totalRegistrations }),
+                            e(StatCard, { label: "Unique Registrants", value: uniqueRegistrants }),
+                            e(StatCard, { label: "This Week", value: thisWeek.registrations, sub: `${thisWeek.sessionCount} session${thisWeek.sessionCount === 1 ? '' : 's'} · ${dayInfo.weekLabel}`, variant: 'week' })
+                        ),
+
+                        // --- Filters ---
+                        e('div', { className: "mt-5 bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-wrap items-center gap-2" },
+                            e('select', {
+                                value: districtFilter, onChange: (ev) => setDistrictFilter(ev.target.value),
+                                className: "border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-wcg-bright"
+                            }, e('option', { value: "All" }, "All Hosting Districts"), hostingDistrictOptions.map(d => e('option', { key: d, value: d }, d))),
+                            e('select', {
+                                value: levelFilter, onChange: (ev) => setLevelFilter(ev.target.value),
+                                className: "border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-wcg-bright"
+                            }, e('option', { value: "All" }, "All Levels"), levelOptions.map(l => e('option', { key: l, value: l }, l))),
+                            e('button', { onClick: clearFilters, className: "text-xs font-semibold text-gray-500 hover:text-wcg-bright underline underline-offset-2" }, "Clear"),
+                            e('div', { className: "relative w-full sm:w-72 sm:ml-auto" },
+                                e('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400" }, e(Icons.Search)),
+                                e('input', {
+                                    type: "text", placeholder: "Search session name...", value: searchTerm,
+                                    onChange: (ev) => setSearchTerm(ev.target.value),
+                                    className: "w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-wcg-bright text-sm transition-all"
+                                })
+                            )
+                        ),
+
+                        // --- Toggles: past sessions (left) / district breakdown (right) ---
+                        e('div', { className: "mt-3 flex items-center justify-between flex-wrap gap-2" },
+                            e('button', {
+                                onClick: () => setShowPast(v => !v),
+                                className: "inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-wcg-blue"
+                            }, showPast ? e(Icons.ChevronUp) : e(Icons.ChevronDown), showPast ? "Hide sessions older than today" : "Show sessions from the last 21 days too"),
+                            e('div', { className: "flex items-center gap-3 text-[11px] text-gray-500 font-semibold flex-wrap" },
+                                e('span', { className: "inline-flex items-center gap-1.5" }, e('span', { className: "inline-block w-3 h-3 rounded-sm bg-wcg-bright/30 border-l-4 border-wcg-bright" }), "Today"),
+                                e('span', { className: "inline-flex items-center gap-1.5" }, e('span', { className: "inline-block w-3 h-3 rounded-sm bg-wcg-bright/10 border-l-4 border-wcg-bright/40" }), "Tomorrow"),
+                                e('span', { className: "inline-flex items-center gap-1.5" }, e('span', { className: "inline-block w-3 h-3 rounded-sm bg-red-100 border border-red-200" }), `Fewer than ${LOW_REG_THRESHOLD} registered`)
+                            ),
+                            e('button', {
+                                onClick: () => setShowDistrictBreakdown(v => !v),
+                                className: "inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-wcg-blue"
+                            }, showDistrictBreakdown ? e(Icons.ChevronUp) : e(Icons.ChevronDown), showDistrictBreakdown ? "Hide district breakdown" : "Show district breakdown")
+                        ),
+
+                        // --- Sessions table ---
+                        e('div', { className: "mt-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto" },
+                            sortedSessions.length === 0
+                                ? e('p', { className: "text-sm text-gray-500 py-10 text-center" }, "No sessions match these filters.")
+                                : e('table', { className: "w-full text-sm" },
+                                    e('thead', { className: "bg-wcg-blue/5" },
+                                        e('tr', { className: "border-b border-gray-200" },
+                                            e(SortHeader, { label: "ID Key", sortKey: "idKey", sort, onSort: handleSort }),
+                                            e(SortHeader, { label: "Session", sortKey: "name", sort, onSort: handleSort }),
+                                            e(SortHeader, { label: "Date", sortKey: "date", sort, onSort: handleSort }),
+                                            e('th', { className: "px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "Time"),
+                                            e('th', { className: "px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "Level"),
+                                            e(SortHeader, { label: "Hosted By", sortKey: "hostingUnit", sort, onSort: handleSort }),
+                                            e(SortHeader, { label: "Total", sortKey: "total", sort, onSort: handleSort }),
+                                            showDistrictBreakdown ? districts.map(d => e(SortHeader, { key: d, label: d, sortKey: d, sort, onSort: handleSort })) : null,
+                                            showDistrictBreakdown ? e(SortHeader, { label: UNKNOWN_DISTRICT, sortKey: UNKNOWN_DISTRICT, sort, onSort: handleSort }) : null,
+                                            e('th', { className: "px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-gray-500" }, "")
+                                        )
+                                    ),
+                                    e('tbody', null,
+                                        sortedSessions.map(s => e('tr', {
+                                            key: s.idKey,
+                                            className: getRowStyle(s).row,
+                                            onClick: () => setSelectedSession(s)
+                                        },
+                                            e('td', { className: `px-3 py-3 border-l-4 ${getRowStyle(s).edge}` },
+                                                e('div', { className: "inline-flex items-center gap-1.5" },
+                                                    e('code', { className: "text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-700" }, s.idKey),
+                                                    e('button', {
+                                                        onClick: (ev) => {
+                                                            ev.stopPropagation();
+                                                            copyToClipboard(registerLink(s.idKey)).then(ok => showToast(ok ? 'success' : 'error', ok ? 'Copied registration link.' : 'Could not copy.'));
+                                                        },
+                                                        title: "Copy registration link",
+                                                        className: "text-gray-400 hover:text-wcg-blue"
+                                                    }, e(Icons.Copy))
+                                                )
+                                            ),
+                                            e('td', { className: "px-3 py-3 font-semibold text-gray-800" }, s.name),
+                                            e('td', { className: `px-3 py-3 text-gray-600 ${getRowStyle(s).dateTint}` },
+                                                e('span', { className: "inline-flex items-center gap-2" },
+                                                    formatDateDisplay(parseDate(s.dateISO)),
+                                                    getRowStyle(s).isToday ? e('span', { className: "px-1.5 py-0.5 rounded bg-wcg-blue text-white text-[10px] font-bold uppercase tracking-wide" }, "Today") : null,
+                                                    getRowStyle(s).isTomorrow ? e('span', { className: "px-1.5 py-0.5 rounded bg-wcg-bright/20 text-wcg-blue text-[10px] font-bold uppercase tracking-wide" }, "Tomorrow") : null
+                                                )
+                                            ),
+                                            e('td', { className: "px-3 py-3 text-gray-600" }, s.time),
+                                            e('td', { className: "px-3 py-3" }, s.level ? e(Badge, { type: "level" }, s.level) : '—'),
+                                            e('td', { className: "px-3 py-3 text-gray-600" }, s.hostingUnit || '—'),
+                                            e('td', { className: `px-3 py-3 font-bold ${getRowStyle(s).isLow ? 'text-wcg-red' : 'text-gray-900'}` }, s.totalRegistered),
+                                            showDistrictBreakdown ? districts.map(d => e('td', { key: d, className: "px-3 py-3 text-gray-500 text-center" }, s.districtCounts[d] || 0)) : null,
+                                            showDistrictBreakdown ? e('td', { className: "px-3 py-3 text-gray-500 text-center" }, s.districtCounts[UNKNOWN_DISTRICT] || 0) : null,
+                                            e('td', { className: "px-3 py-3" },
+                                                e('button', {
+                                                    onClick: (ev) => { ev.stopPropagation(); setSelectedSession(s); },
+                                                    className: "text-xs font-bold text-wcg-blue hover:underline"
+                                                }, "View →")
+                                            )
+                                        ))
+                                    )
+                                )
+                        ),
+
+                        // --- Diagnostics ---
+                        e(DiagnosticsPanel, { sessions, dayInfo })
+                    )
+                ),
+
+                selectedSession ? e(SessionDetailModal, { session: selectedSession, onClose: () => setSelectedSession(null), showToast }) : null,
+                e(Toast, { toast })
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WCED eTPD Portal</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="portal-nav.js"></script>
+<style>
+:root{--blue:#001489;--green:#8FAD15;--pink:#C8126E;--bright:#007DBA;--yellow:#FFC600;--red:#BA0C2F;--ink:#1f2937;--mute:#6b7280;--line:#e5e7eb;--bg:#f3f4f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Century Gothic','Didact Gothic','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{font-size:16px;color:var(--blue);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.card h2 a{font-size:12px;font-weight:700;color:var(--bright)}
+.card h2 a:hover{text-decoration:underline}
+.grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media(min-width:900px){.grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}.wrap{padding-top:24px}}
+.hero{background:linear-gradient(135deg,#001489 0%,#0a2fb8 60%,#007DBA 100%);color:#fff;border-radius:20px;padding:22px;display:grid;gap:18px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(143,173,21,.25)}
+.hero>*{position:relative;z-index:1}
+.hero h1{font-size:clamp(22px,4vw,30px);line-height:1.15}
+.hero p{opacity:.85;font-size:14px;margin-top:6px}
+.hero .who{display:flex;gap:14px;align-items:center}
+.hero .who img{width:64px;height:64px;border-radius:14px;flex-shrink:0}
+@media(min-width:900px){.hero{grid-template-columns:1.2fr 1fr;align-items:center;padding:28px}}
+.next{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:14px}
+.next small{text-transform:uppercase;letter-spacing:.06em;font-size:11px;font-weight:700;opacity:.8}
+.next b{display:block;font-size:16px;margin:4px 0 2px}
+.next span{font-size:13px;opacity:.9}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:999px;border:0;font-weight:700;font-size:14px;background:var(--blue);color:#fff;transition:transform .15s,filter .15s}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.btn.light{background:#fff;color:var(--blue)}
+.btn.sm{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn:focus-visible,a:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--bright);outline-offset:2px}
+.signin{background:#fff;color:var(--ink);border-radius:16px;padding:18px}
+.signin h2{font-size:17px;color:var(--blue);margin-bottom:4px}
+.signin p{color:var(--mute);margin:0 0 12px;font-size:13px;opacity:1}
+.seg{display:flex;background:#f3f4f6;border-radius:10px;padding:3px;margin-bottom:10px}
+.seg button{flex:1;border:0;background:none;padding:8px;border-radius:8px;font-size:13px;font-weight:700;color:var(--mute)}
+.seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.signin input[type=text],.mail input{width:100%;padding:11px 12px;border:2px solid var(--line);border-radius:10px;font:inherit;font-size:15px}
+.signin input[type=text]:focus,.mail input:focus{border-color:var(--bright);outline:0}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#4b5563;margin:12px 0;cursor:pointer}
+.chk input{margin-top:2px;width:18px;height:18px;flex-shrink:0}
+.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px}
+.signin .btn{width:100%}
+.signin .alt{display:block;text-align:center;font-size:12px;color:var(--bright);margin-top:10px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;border-top:4px solid var(--c,var(--blue))}
+.stat b{display:block;font-size:28px;line-height:1;color:var(--c,var(--blue))}
+.stat span{display:block;font-size:13px;font-weight:700;margin-top:6px}
+.stat small{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #f1f5f9}
+.row:first-of-type{border-top:0;padding-top:0}
+.db{width:48px;flex-shrink:0;text-align:center;border-radius:10px;background:#eef1ff;color:var(--blue);padding:6px 0;line-height:1.1}
+.db b{display:block;font-size:18px}.db span{font-size:11px;font-weight:700;text-transform:uppercase}
+.row.today .db{background:var(--red);color:#fff}
+.rb{flex:1;min-width:0}
+.rb b{display:block;font-size:14px;line-height:1.3}
+.rb small{font-size:12px;color:var(--mute)}
+.chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:0 6px 4px 0;vertical-align:middle}
+.chip.today{background:var(--red);color:#fff}.chip.week{background:var(--blue);color:#fff}
+.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+.links a{font-size:12px;font-weight:700;color:var(--bright)}.links a:hover{text-decoration:underline}
+.empty{text-align:center;color:var(--mute);font-size:14px;padding:14px 0}
+.empty .btn{margin-top:10px}
+.mail{display:flex;gap:8px;margin-bottom:6px}
+.sk{height:48px;border-radius:10px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200% 100%;animation:sh 1.3s infinite;margin-bottom:10px}
+@keyframes sh{to{background-position:-200% 0}}
+.ms{display:flex;gap:12px;align-items:center;padding:9px 0}
+.ms img{width:38px;height:38px;border-radius:10px;flex-shrink:0;padding:4px;background:var(--bg-c,#f3f4f6)}
+.ms.todo img{filter:grayscale(1);opacity:.45}
+.ms .t{flex:1;min-width:0;font-size:14px;font-weight:700}
+.ms .t small{display:block;font-weight:400;font-size:12px;color:var(--mute)}
+.ms .st{font-size:18px;color:var(--green);font-weight:700}
+.bar{height:6px;border-radius:99px;background:#e5e7eb;margin-top:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--c,var(--green))}
+.hint{background:#fdf2f8;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+.hint a{font-weight:700;color:var(--pink)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.acts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:700px){.acts{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1000px){.acts{grid-template-columns:repeat(6,1fr)}}
+.act{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.act:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08);border-color:var(--c)}
+.act i{width:38px;height:38px;border-radius:10px;background:var(--c);color:var(--tc,#fff);display:flex;align-items:center;justify-content:center}
+.act svg{width:20px;height:20px}
+.act b{font-size:14px}.act small{font-size:12px;color:var(--mute);line-height:1.3}
+dialog{border:0;border-radius:18px;padding:20px;width:min(440px,92vw);max-height:85vh;margin:auto;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{color:var(--blue);font-size:17px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+dialog h2 button{border:0;background:#f1f5f9;border-radius:50%;width:30px;height:30px;font-size:18px;color:var(--mute)}
+dialog .opt{display:block;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;font-weight:700;font-size:14px}
+dialog .opt:hover{border-color:var(--bright);background:#f8fafc}
+footer{text-align:center;font-size:12px;color:#888;padding:8px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section id="hero"></section>
+  <section id="stats" class="stats" hidden></section>
+  <div class="grid">
+    <div class="col"><section id="upnext" class="card" hidden></section><section id="open" class="card"><div class="sk"></div><div class="sk"></div><div class="sk"></div></section></div>
+    <div class="col"><section id="path" class="card" hidden></section><section id="recent" class="card" hidden></section></div>
+  </div>
+  <section class="acts" id="actions"></section>
+  <footer>&copy; Western Cape Education Department</footer>
+</main>
+<dialog id="dlg" aria-labelledby="dlgT"><h2><span id="dlgT"></span><button aria-label="Close" onclick="dlg.close()">&times;</button></h2><div id="dlgB"></div></dialog>
+
+<script>
+const SB = supabase.createClient('https://cftpufjzwpmhgzdcgpjb.supabase.co','sb_publishable_b1H_5DJYLQSrr83T_dvz6A_2UAqOVg4',{auth:{persistSession:false,autoRefreshToken:false}});
+const $=s=>document.querySelector(s), pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ---- Same pathway definitions as profile.html (keep in sync) ---- */
+const DOVETAIL=['ePedagogy: Building a Digital Lesson','Integrating digital resources from the ePortal','Google Fundamentals 1: Account and Google Chrome','Office Online Fundamentals','Improved Presentation Skills','Ease of Access with QR Codes and Bit.ly links','Teaching with Videos','Orientation to Google Forms','AI In Education: Work Smarter, not Harder','Introduction to Cyber Wellness Education'];
+const MS=[
+ {id:'adoption',t:'ICT Adoption Strategy',icon:'imgs/icons/adoption.png',c:'#00A1A3',s:'Adoption Strategy'},
+ {id:'dovetail',t:'Dovetail Essentials',icon:'imgs/icons/dovetail.png',c:'#8FAD15'},
+ {id:'digital',t:'Digital Skills Course',icon:'imgs/icons/digital.png',c:'#007DBA',s:'Digital Skills Course'},
+ {id:'cyber',t:'Cyber Effect Ambassador',icon:'imgs/icons/cyber.png',c:'#C8126E',s:'Cyber Effect Ambassador Initiation Course'}];
+
+/* ---- Time helpers (South Africa is a fixed UTC+2) ---- */
+const sast=()=>new Date(Date.now()+7200000);
+const todayISO=()=>sast().toISOString().slice(0,10);
+const toEpoch=(d,t)=>{if(!d||!t)return null;const x=new Date(`${d}T${t}+02:00`).getTime();return isNaN(x)?null:x};
+const parts=ms=>{const d=new Date(ms+7200000);return{y:d.getUTCFullYear(),mo:d.getUTCMonth()+1,d:d.getUTCDate(),h:d.getUTCHours(),mi:d.getUTCMinutes()}};
+const hhmm=p=>`${pad(p.h)}:${pad(p.mi)}`;
+const daysFromToday=iso=>Math.round((Date.parse(iso)-Date.parse(todayISO()))/864e5);
+const isThisWeek=n=>n>0&&n<7-((sast().getUTCDay()+6)%7); // Mon-Sun week, same rule as my-preregistrations
+function when(m,withTime=true){
+  const n=daysFromToday(m.dateISO), t=withTime&&m.start?' at '+hhmm(parts(m.start)):'';
+  if(n===0)return 'Today'+t; if(n===1)return 'Tomorrow'+t;
+  const d=new Date(m.dateISO+'T00:00:00'); return `${DAY[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}${t}`;}
+const lvlColor=l=>({'laying the foundation':'#8FAD15','i can do it':'#FFC600','i can do it better':'#BA0C2F','the summit':'#001489'}[(l||'').toLowerCase().trim()]||'#9ca3af');
+const lvlChip=l=>l?`<span class="chip" style="background:${lvlColor(l)};color:${/^i can do it$/i.test(l.trim())?'#111':'#fff'}">${esc(l)}</span>`:'';
+
+/* ---- Session model (sessions + courses) ---- */
+function model(s,courses){
+  const c=courses.get(s.session_title)||{}, start=toEpoch(s.session_date,s.session_start_time), dur=Number(c.programme_duration)||60;
+  const end=start!==null?start+dur*6e4:null, sp=start!==null?parts(start):null, ep=end!==null?parts(end):null;
+  const fmt=p=>`${p.y}${pad(p.mo)}${pad(p.d)}T${pad(p.h)}${pad(p.mi)}00`, iso=p=>`${p.y}-${pad(p.mo)}-${pad(p.d)}T${pad(p.h)}:${pad(p.mi)}:00`;
+  const name=s.session_title||'Untitled Session', link=s.session_link||'';
+  return{id:s.id_key,name,dateISO:s.session_date||'',start,end,link,level:c.developmental_level||'',
+    time:sp?(c.programme_duration?`${hhmm(sp)} – ${hhmm(ep)}`:hhmm(sp)):'',
+    gcal:sp?`https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('\u{1F4BB} eTPD Webinar: '+name)}&dates=${fmt(sp)}/${fmt(ep)}&details=${encodeURIComponent((c.session_desciption||'')+'\n\nJoin Link:\n'+link)}&location=Virtual%20Session&ctz=Africa/Johannesburg`:'',
+    ocal:sp?`https://outlook.office.com/calendar/0/action/compose?allday=false&body=${encodeURIComponent('Join Link: '+link)}&enddt=${encodeURIComponent(iso(ep))}&location=Virtual%20Session&path=/calendar/action/compose&rru=addevent&startdt=${encodeURIComponent(iso(sp))}&subject=${encodeURIComponent(name)}`:''};}
+const byWhen=(a,b)=>a.dateISO.localeCompare(b.dateISO)||(a.start||0)-(b.start||0);
+const dateBlock=m=>{const d=new Date(m.dateISO+'T00:00:00');return isNaN(d)?'<div class="db"><b>?</b><span>TBC</span></div>':`<div class="db"><b>${d.getDate()}</b><span>${MON[d.getMonth()]}</span></div>`};
+
+/* ---- State ---- */
+const S={creds:PortalNav.getCreds(),dev:PortalNav.getDeviceProfile(),courses:new Map(),open:null,att:null,tf:null,pre:null,attErr:false,preErr:false,openErr:false,signing:false,err:'',type:'persal',siVal:'',email:''};
+S.email=(S.dev&&S.dev.email)||localStorage.getItem('tpd_portal_email')||'';
+if(S.dev&&!S.dev.persal&&S.dev.idNumber)S.type='id';
+
+/* ---- Data (same tables / edge functions the other pages use) ---- */
+async function loadPublic(){
+  try{
+    const [s,c]=await Promise.all([
+      SB.from('sessions').select('*').eq('session_delivery_mode','Virtual').gte('session_date',todayISO()).order('session_date',{ascending:true}),
+      SB.from('courses').select('*')]);
+    if(s.error||c.error)throw(s.error||c.error);
+    (c.data||[]).forEach(x=>x.course_name&&S.courses.set(x.course_name,x));
+    S.open=(s.data||[]).map(r=>model(r,S.courses)).filter(m=>m.name!=='Untitled Session').sort(byWhen);
+  }catch(err){console.error(err);S.open=[];S.openErr=true}
+  renderOpen();
+}
+async function fetchAtt(type,key){
+  const {data,error}=await SB.from('attendance').select('*').eq(type==='id'?'ID_number':'PERSAL Number',key);
+  if(error)throw error;
+  const seen=new Set();
+  return(data||[]).map(r=>{const[dd,mm,yy]=String(r.Timestamp||'').split(' ')[0].split('/');
+    return{name:(r['Session Name']||'').trim(),ts:r.Timestamp,date:yy?new Date(yy,mm-1,dd):null,level:r['Development Level']||'',first:r['First Name']||'',school:r['School']||'',district:r['District']||''}})
+   .filter(r=>{const k=r.name+'_'+r.ts;if(seen.has(k))return false;seen.add(k);return true})
+   .sort((a,b)=>(b.date||0)-(a.date||0));
+}
+async function fetchTf(type,key){
+  const {data,error}=await SB.from('transformers').select('*').eq(type==='id'?'id_number':'persal',key).limit(1);
+  return error?null:(data&&data[0])||null;
+}
+async function loadPrivate(){
+  try{
+    const [att,tf]=await Promise.all([fetchAtt(S.creds.searchType,S.creds.searchValue),fetchTf(S.creds.searchType,S.creds.searchValue)]);
+    S.att=att;S.tf=tf;
+  }catch(err){console.error(err);S.attErr=true;S.att=[]}
+  renderHero();renderStats();renderPath();renderRecent();
+}
+async function loadPre(){
+  if(!S.creds||!S.email){S.pre=[];return renderUp()}
+  S.pre=null;S.preErr=false;renderUp();
+  try{
+    const {data,error}=await SB.functions.invoke('my-registrations',{body:{email:S.email}});
+    if(error)throw error;
+    const ids=[...new Set((data||[]).map(r=>r.id_key).filter(v=>v!=null).map(String))];
+    if(!ids.length){S.pre=[]}else{
+      const {data:rows,error:e2}=await SB.from('sessions').select('*').in('id_key',ids);
+      if(e2)throw e2;
+      S.pre=(rows||[]).map(r=>model(r,S.courses)).filter(m=>m.name!=='Untitled Session'&&m.dateISO>=todayISO()).sort(byWhen);
+    }
+  }catch(err){console.error(err);S.pre=[];S.preErr=true}
+  renderUp();renderStats();renderHero();renderOpen();
+}
+
+/* ---- Pathway status (mirrors profile.html) ---- */
+function pathway(){
+  const names=new Set((S.att||[]).map(a=>a.name));
+  const dv=DOVETAIL.filter(d=>names.has(d)).length, has=id=>names.has(MS.find(m=>m.id===id).s);
+  const done={adoption:has('adoption'),dovetail:dv>=5,digital:has('digital'),cyber:has('cyber')};
+  const sparks=Object.values(done).filter(Boolean).length;
+  return{dv,done,sparks,total:sparks+(names.has('Facilitator Think Tank')?1:0)};
+}
+
+/* ---- Renderers ---- */
+function renderHero(){
+  const el=$('#hero');
+  if(!S.creds){
+    const dn=S.dev&&S.dev.firstName, pre=S.siVal||(S.dev?(S.type==='id'?S.dev.idNumber:S.dev.persal)||'':'');
+    el.innerHTML=`<div class="hero"><div><h1>Your professional development, all in one place.</h1>
+      <p>Sign in to see your upcoming sessions, pre-registrations, pathway progress and development history at a glance.</p></div>
+      <form class="signin" id="siForm" novalidate><h2>${dn?`Welcome back, ${esc(dn)}`:'Sign in'}</h2><p>Use your PERSAL or ID number, the same details as My Development History.</p>
+      ${S.err?`<div class="err" role="alert">${esc(S.err)}</div>`:''}
+      <div class="seg"><button type="button" data-type="persal" class="${S.type==='persal'?'on':''}">PERSAL number</button><button type="button" data-type="id" class="${S.type==='id'?'on':''}">ID number</button></div>
+      <input type="text" id="siVal" inputmode="numeric" autocomplete="off" maxlength="${S.type==='id'?13:8}" placeholder="${S.type==='id'?'13-digit ID number':'8-digit PERSAL number'}" aria-label="${S.type==='id'?'ID number':'PERSAL number'}" value="${esc(pre)}">
+      <label class="chk"><input type="checkbox" id="siAck" ${S.ack?'checked':''}> I confirm I am accessing my own professional development records for personal verification purposes only.</label>
+      <button class="btn" ${S.signing?'disabled':''}>${S.signing?'Signing in…':'Sign in'}</button>
+      <a class="alt" href="my-preregistrations.html">Just checking a pre-registration? Use your email instead</a></form></div>`;
+    return;
+  }
+  const first=(S.att&&S.att[0])||{};
+  const name=first.first||(S.dev&&S.dev.firstName)||'there', h=sast().getUTCHours();
+  const hello=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  const sub=[first.school,first.district].filter(x=>x&&x!=='N/A').join(' · ');
+  const nx=S.pre&&S.pre[0], pw=pathway();
+  const badge=S.tf?`<img src="imgs/badges/TA${Math.min(5,Math.max(1,pw.total||1))}.png" alt="Transformation Agent badge">`:'';
+  const badgeEl=S.tf&&S.tf.tool_link?`<a href="${esc(S.tf.tool_link)}" target="_blank" rel="noopener" title="Open your Transformation Agent tool">${badge}</a>`:badge;
+  el.innerHTML=`<div class="hero"><div class="who">${badgeEl}<div><h1>${hello}, ${esc(name)}</h1><p>${esc(sub)||'Welcome to your eTPD portal.'}</p></div></div>
+    <div class="next">${nx?`<small>Next up</small><b>${esc(nx.name)}</b><span>${esc(when(nx))}${nx.time?' · '+esc(nx.time):''}</span>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">${nx.link&&daysFromToday(nx.dateISO)===0?`<a class="btn light sm" href="${esc(nx.link)}" target="_blank" rel="noopener">Join session</a>`:''}<a class="btn light sm" href="my-preregistrations.html">My pre-registrations</a></div>`
+      :`<small>Next up</small><b>${S.pre===null?'Checking your pre-registrations…':'Nothing booked yet'}</b><span>${S.pre===null?'':'Find a session that suits you below.'}</span><div style="margin-top:10px"><a class="btn light sm" href="sessions.html">Browse sessions</a></div>`}</div></div>
+    ${S.attErr?`<div class="err" style="margin-top:12px" role="alert">We couldn't load your attendance records just now. <a href="index.html" style="text-decoration:underline">Try again</a></div>`:''}`;
+}
+function renderStats(){
+  const el=$('#stats');if(!S.creds||!S.att){el.hidden=true;return}
+  const pw=pathway(),yr=sast().getUTCFullYear(),thisYr=S.att.filter(a=>a.date&&a.date.getFullYear()===yr).length, nx=S.pre&&S.pre[0];
+  const T=[['#001489',S.att.length,'Sessions attended',`${thisYr} this year`],['#C8126E',`${pw.sparks}/4`,'Pathway Sparks',pw.total>pw.sparks?'+ Think Tank Spark':'Toward Transformation Agent'],
+    ['#007DBA',S.pre?S.pre.length:'…','Pre-registered',nx?`Next: ${when(nx,false)}`:'No upcoming bookings'],['#8FAD15',`${pw.dv}/10`,'Dovetail Essentials',pw.dv>=5?'Spark earned':`${5-pw.dv} more for a Spark`]];
+  el.innerHTML=T.map(([c,v,l,s])=>`<div class="stat" style="--c:${c}"><b>${v}</b><span>${l}</span><small>${esc(s)}</small></div>`).join('');el.hidden=false;
+}
+function sessRow(m,extra){
+  const n=daysFromToday(m.dateISO), chip=n===0?'<span class="chip today">Today</span>':isThisWeek(n)?'<span class="chip week">This week</span>':'';
+  return`<div class="row ${n===0?'today':''}">${dateBlock(m)}<div class="rb">${chip}${lvlChip(m.level)}<b>${esc(m.name)}</b><small>${esc(when(m,false))}${m.time?' · '+esc(m.time):''}</small>${extra||''}</div></div>`;
+}
+function renderUp(){
+  const el=$('#upnext');if(!S.creds){el.hidden=true;return}el.hidden=false;
+  let body;
+  if(!S.email)body=`<p class="empty" style="padding-bottom:8px">Enter the email you pre-register with to see your bookings here.</p><form class="mail" id="mailForm"><input type="email" placeholder="name@example.com" aria-label="Email address" required><button class="btn">Show</button></form>`;
+  else if(S.pre===null)body='<div class="sk"></div><div class="sk"></div>';
+  else if(!S.pre.length)body=`<div class="empty">${S.preErr?'We couldn\'t load your pre-registrations just now.':'You\'re not pre-registered for any upcoming sessions.'}<br><a class="btn" href="sessions.html">Browse upcoming sessions</a></div>`;
+  else body=S.pre.slice(0,4).map(m=>sessRow(m,(m.gcal||m.ocal||m.link)?`<div class="links">${m.gcal?`<a href="${esc(m.gcal)}" target="_blank" rel="noopener">+ Google Calendar</a>`:''}${m.ocal?`<a href="${esc(m.ocal)}" target="_blank" rel="noopener">+ Outlook</a>`:''}${m.link&&daysFromToday(m.dateISO)===0?`<a href="${esc(m.link)}" target="_blank" rel="noopener">Join now</a>`:''}</div>`:'')).join('')
+    +(S.pre.length>4?`<div class="empty"><a href="my-preregistrations.html" style="color:var(--bright);font-weight:700">+ ${S.pre.length-4} more</a></div>`:'');
+  el.innerHTML=`<h2>Coming up for you <a href="my-preregistrations.html">Manage</a></h2>${body}`;
+}
+function renderOpen(){
+  const el=$('#open');if(S.open===null)return;
+  const booked=new Set((S.pre||[]).map(m=>String(m.id))), list=S.open.filter(m=>!booked.has(String(m.id))).slice(0,6);
+  el.innerHTML=`<h2>Open for pre-registration <a href="sessions.html">See all</a></h2>`+(list.length?list.map(m=>sessRow(m,`<div class="links"><a href="preregister.html?idkey=${encodeURIComponent(m.id)}">Pre-register →</a></div>`)).join(''):`<div class="empty">${S.openErr?'We couldn\'t load sessions right now. Please try again shortly.':'No upcoming sessions have been scheduled yet.'}</div>`);
+}
+function renderPath(){
+  const el=$('#path');if(!S.creds||!S.att){el.hidden=true;return}
+  const pw=pathway(),rows=MS.map(m=>{const d=pw.done[m.id],dv=m.id==='dovetail';
+    return`<div class="ms ${d?'':'todo'}" style="--bg-c:${m.c}22"><img src="${m.icon}" alt=""><div class="t">${m.t}<small>${d?'Spark earned':dv?`${pw.dv}/10 sessions`:'Not yet completed'}</small>${dv&&!d?`<div class="bar" style="--c:${m.c}"><i style="width:${pw.dv*10}%"></i></div>`:''}</div><span class="st">${d?'✓':''}</span></div>`}).join('');
+  const r=5-pw.dv, nxt=!pw.done.adoption?['Start with the ICT Adoption Strategy course.','pathway.html','See how →']:!pw.done.dovetail?[`Complete ${r} more Dovetail session${r>1?'s':''} to earn your next Spark.`,'sessions.html','Find sessions →']:!pw.done.digital?['Digital Skills Course is by invitation. Join the waitlist.','pathway.html','View pathway →']:!pw.done.cyber?['Cyber Effect Ambassador is your capstone.','pathway.html','View pathway →']:['You\'ve completed every core milestone. Well done!','profile.html','View history →'];
+  el.hidden=false;el.innerHTML=`<h2>My pathway <a href="pathway.html">Overview</a></h2>${rows}<div class="hint">${nxt[0]} <a href="${nxt[1]}">${nxt[2]}</a></div>`;
+}
+function renderRecent(){
+  const el=$('#recent');if(!S.creds||!S.att){el.hidden=true;return}
+  const f=d=>d?`${pad(d.getDate())} ${MON[d.getMonth()]} ${d.getFullYear()}`:'';
+  el.hidden=false;
+  el.innerHTML=`<h2>Recent activity <a href="profile.html">Full history</a></h2>`+(S.att.length?S.att.slice(0,4).map(a=>`<div class="row"><span class="dot" style="background:${lvlColor(a.level)}"></span><div class="rb"><b>${esc(a.name)}</b><small>${f(a.date)}${a.level?' · '+esc(a.level):''}</small></div></div>`).join(''):`<div class="empty">No attendance recorded yet.<br><a class="btn" href="register.html">Register attendance</a></div>`);
+}
+
+/* ---- Quick actions ---- */
+const IC={
+ reg:'<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+ cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',path:'<path d="M4 22V4M4 4h12l-2 4 2 4H4"/>',
+ mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/>',book:'<path d="M2 4h7a3 3 0 013 3v14a2 2 0 00-2-2H2zM22 4h-7a3 3 0 00-3 3v14a2 2 0 012-2h8z"/>'};
+const ACTS=[['reg','Register attendance','Capture attendance at a session','register.html','#8FAD15','#111'],['list','Browse sessions','Cards view of what\'s on','sessions.html','#001489'],['cal','Calendar','See sessions by month','calendar.html','#007DBA'],
+ ['path','Pathway','Adoption & Transformation','pathway.html','#C8126E'],['mail','District eTeams','Contact your district','index.html#contact','#FFC600','#111'],['book','eLearning initiatives','ePortal & eLearn (Moodle)','index.html#initiatives','#672D82']];
+$('#actions').innerHTML=ACTS.map(([i,t,s,h,c,tc])=>`<a class="act" href="${h}" style="--c:${c};--tc:${tc||'#fff'}"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[i]}</svg></i><b>${t}</b><small>${s}</small></a>`).join('');
+
+/* ---- Pop-ups (same links as the previous landing page) ---- */
+const POP={
+ contact:['Contact District eTeams',[['Head Office','head-office-team'],['Cape Winelands eLearning','cape-winelands-elearning-team'],['Eden Central Karoo eLearning','eden-central-karoo-elearning-team'],['Metro Central eLearning','metro-central-elearning-team'],['Metro East eLearning','metro-east-elearning-team'],['Metro North eLearning','metro-north-elearning-team'],['Metro South eLearning','metro-south-elearning-team'],['Overberg eLearning','overberg-elearning-team'],['West Coast eLearning','west-coast-elearning-team']].map(([n,s])=>[n,'https://wcedeportal.westerncape.gov.za/'+s])],
+ initiatives:['eLearning Initiatives',[['ePortal Content Repository','https://wcedeportal.co.za/'],['WCED eLearn (Moodle LMS)','https://wcedelearn.westerncape.gov.za/']]]};
+const dlg=$('#dlg');
+function route(){
+  const h=location.hash.slice(1);
+  if(POP[h]){$('#dlgT').textContent=POP[h][0];$('#dlgB').innerHTML=POP[h][1].map(([n,u])=>`<a class="opt" href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join('');if(!dlg.open)dlg.showModal()}
+  else if(h==='signin'&&!S.creds){const i=$('#siVal');if(i){i.scrollIntoView({behavior:'smooth',block:'center'});i.focus()}}
+}
+dlg.addEventListener('close',()=>{if(POP[location.hash.slice(1)])history.replaceState(null,'',location.pathname+location.search)});
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+window.addEventListener('hashchange',route);
+
+/* ---- Events ---- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.seg button');if(b){S.type=b.dataset.type;S.siVal='';S.err='';renderHero()}
+});
+document.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(e.target.id==='mailForm'){const v=e.target.querySelector('input').value.trim();if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){S.email=v;localStorage.setItem('tpd_portal_email',v);loadPre()}return}
+  if(e.target.id!=='siForm'||S.signing)return;
+  const val=$('#siVal').value.replace(/\s/g,''), ok=S.type==='id'?/^\d{13}$/.test(val):/^\d{8}$/.test(val), ack=$('#siAck').checked;
+  S.siVal=val;S.ack=ack;
+  if(!ok){S.err=`Please enter a valid ${S.type==='id'?'13-digit ID':'8-digit PERSAL'} number.`;return renderHero()}
+  if(!ack){S.err='Please tick the confirmation box to continue.';return renderHero()}
+  S.signing=true;S.err='';renderHero();
+  try{
+    const recs=await fetchAtt(S.type,val);
+    if(!recs.length){S.err='We couldn\'t find attendance records for that number. Check it and try again, or capture attendance on the Register page first.';S.signing=false;return renderHero()}
+    PortalNav.setCreds(S.type,val);location.href='index.html';
+  }catch(err){console.error(err);S.err='Something went wrong looking up your records. Please try again.';S.signing=false;renderHero()}
+});
+
+/* ---- Go ---- */
+renderHero();renderUp();route();
+(async()=>{
+  const pub=loadPublic();
+  if(S.creds){await Promise.all([pub,loadPrivate()]);await loadPre()}
+})();
+</script>
+</body>
+</html>

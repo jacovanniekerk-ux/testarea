@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adoption & Transformation Pathway - Earn Your Sparks - WCED eLearning</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="preregister.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wcg-green': '#8FAD15', 'wcg-green2': '#8FAD15', 'wcg-yellow': '#FFC600',
+                        'wcg-red': '#BA0C2F', 'wcg-blue': '#001489', 'wcg-purple': '#890C58',
+                        'wcg-pink': '#C8126E', 'wcg-dark': '#1a1a1a', 'wcg-gray': '#666666'
+                    },
+                    fontFamily: { 'sans': ['Century Gothic', 'Arial', 'Helvetica', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.5); }
+    </style>
+    <script src="portal-nav.js" defer></script>
+</head>
+
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect } = React;
+        const e = React.createElement;
+
+        // Same public Supabase project as profile.html
+        const SUPABASE_URL = 'https://cftpufjzwpmhgzdcgpjb.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_b1H_5DJYLQSrr83T_dvz6A_2UAqOVg4';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+        const ICONS = {
+            adoption: 'imgs/icons/adoption.png',
+            dovetail: 'imgs/icons/dovetail.png',
+            digitalskills: 'imgs/icons/digital.png',
+            cybereffect: 'imgs/icons/cyber.png',
+            edvance: 'imgs/icons/edvance.png'
+        };
+        const IconImg = ({ src, className }) => e('img', { src, alt: '', className, loading: 'lazy' });
+
+        const DOVETAIL_SESSIONS = [
+            'ePedagogy: Building a Digital Lesson',
+            'Integrating digital resources from the ePortal',
+            'Google Fundamentals 1: Account and Google Chrome',
+            'Office Online Fundamentals',
+            'Improved Presentation Skills',
+            'Ease of Access with QR Codes and Bit.ly links',
+            'Teaching with Videos',
+            'Orientation to Google Forms',
+            'AI In Education: Work Smarter, not Harder',
+            'Introduction to Cyber Wellness Education'
+        ];
+
+        const MILESTONES = [
+            {
+                id: 'adoption', step: 1, title: 'ICT Adoption Strategy', subtitle: 'The Entry Point',
+                icon: ICONS.adoption, color: '#00A1A3', lightColor: '#E5F6F6', sparkSession: 'Adoption Strategy',
+                duration: '24-hour self-paced course',
+                description: 'A foundational online course providing a broad perspective on the visibility of the digital landscape and the "Transformation Agenda." This journey moves you from digital novice to confident ICT integrator.',
+                keyPoints: [
+                    'Comprehensive 12-week self-paced online course',
+                    'Explore the landscape of ICT integration in education',
+                    'Understand the vision of the Transformation Agenda',
+                    'Build foundational digital literacy and confidence',
+                    'Earn your first Spark toward becoming a Transformation Agent'
+                ],
+                availability: {
+                    type: 'registration',
+                    waitlistUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSeT-sQEVUDnNQ652jxOLogI6DzXV6ZDv9wCPZSa8VXKjNOKFQ/viewform?usp=pp_url&entry.1581432046=ICT+Adoption+Strategy',
+                    activeMessage: 'Registrations are currently open!',
+                    expiredMessage: 'There is no upcoming session scheduled right now. Keep an eye on eTPD communications for the next intake, or join the waitlist below.'
+                },
+                next: 'Begin your transformation journey by exploring the digital landscape and understanding how technology can enhance teaching and learning.'
+            },
+            {
+                id: 'dovetail', step: 2, title: 'Dovetail Essentials', subtitle: 'Customisation & Micro-Learning',
+                icon: ICONS.dovetail, color: '#8FAD15', lightColor: '#F2F6E3', sparkSession: null,
+                duration: '10 focused micro-learning sessions',
+                description: 'A non-linear pathway through targeted 60-120 minute sessions that build practical digital competency (the how). Choose the sessions that match your needs and context across multiple platforms and tools.',
+                dovetailEssentials: [
+                    'ePedagogy: Building a Digital Lesson',
+                    'Integrating digital resources from the ePortal',
+                    'Google Fundamentals 1: Account and Google Chrome',
+                    'Office Online Fundamentals',
+                    'Improved Presentation Skills',
+                    'Ease of Access with QR Codes and Bit.ly links',
+                    'Teaching with Videos',
+                    'Orientation to Google Forms',
+                    'AI In Education: Work Smarter, not Harder',
+                    'Introduction to Cyber Wellness Education'
+                ],
+                sessionsInfoUrl: 'https://jacovanniekerk-ux.github.io/wcedsessions/dovetail-essentials.html',
+                keyPoints: [
+                    'Flexible, non-linear pathway—attend what you need',
+                    'Short, practical sessions (60-120 minutes)',
+                    'Four developmental levels: Laying the Foundation → I Can Do It → I Can Do It Better → The Summit',
+                    'Build practical classroom-ready digital skills',
+                    'Earn your second Spark toward becoming a Transformation Agent'
+                ],
+                next: 'Customize your learning journey by selecting sessions that address your specific needs and developmental level.'
+            },
+            {
+                id: 'digitalskills', step: 3, title: 'Digital Skills Course', subtitle: 'The Experiential Shift',
+                icon: ICONS.digitalskills, color: '#007DBA', lightColor: '#E5F2F8', sparkSession: 'Digital Skills Course',
+                duration: '4-week hybrid immersion',
+                description: 'An experiential hybrid course that shifts your focus from "how to use" to "how to learn." View technology from the learner\'s perspective and develop digital wisdom (the why).',
+                keyPoints: [
+                    'Immersive 4-week hybrid learning experience',
+                    'Shift from teacher-centered to learner-centered perspective',
+                    'Synthesize the "what" and "how" into "when" and "why"',
+                    'Develop digital wisdom through experiential learning',
+                    'Foster pedagogical understanding of technology integration',
+                    'Earn your third Spark and become a School-Level Transformation Agent'
+                ],
+                availability: {
+                    type: 'waitlist_only',
+                    waitlistUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSeT-sQEVUDnNQ652jxOLogI6DzXV6ZDv9wCPZSa8VXKjNOKFQ/viewform?usp=pp_url&entry.1581432046=Digital+Skills+Course',
+                    message: 'These courses are hosted each term in the district and are by invitation only. Join the waitlist to express your interest to join a course when available.'
+                },
+                next: 'Experience transformation by seeing technology through your learners\' eyes and develop the wisdom to make informed pedagogical decisions.'
+            },
+            {
+                id: 'cybereffect', step: 4, title: 'Cyber Effect Ambassador', subtitle: 'Ethical Capstone',
+                icon: ICONS.cybereffect, color: '#C8126E', lightColor: '#FBE7F0', sparkSession: 'Cyber Effect Ambassador Initiation Course',
+                duration: 'Self-paced 4-week course',
+                description: 'Deepen your ability to engage with the ethical, emotional, psychological, and behavioural dimensions of technology use. Master the 4P Affective Transformation Model (People, Practices, Pedagogy, Platforms).',
+                keyPoints: [
+                    'Focus on digital citizenship and cyber wellness',
+                    'Understand human-centered design principles',
+                    'Master the 4P Model: People, Practices, Pedagogy, Platforms',
+                    'Address emotional readiness and psychological safety',
+                    'Promote reflective digital responsibility and ethical technology use',
+                    'Earn your fourth Spark and become a Cluster-Level Transformation Agent'
+                ],
+                availability: {
+                    type: 'registration',
+                    waitlistUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSeT-sQEVUDnNQ652jxOLogI6DzXV6ZDv9wCPZSa8VXKjNOKFQ/viewform?usp=pp_url&entry.1581432046=Cyber+Ambassador',
+                    activeMessage: 'Registrations are currently open!',
+                    expiredMessage: 'There is no upcoming session scheduled right now. Please join the waitlist to be notified of the next intake.'
+                },
+                next: 'Become a champion for ethical, human-centered technology integration and support your school community in building a positive digital culture.'
+            }
+        ];
+
+        const EDVANCE_ARC = {
+            icon: ICONS.edvance,
+            title: 'Edvance ARC',
+            subtitle: 'By Invitation',
+                                    steps: [
+                { id: 'thinktank', name: 'Facilitator Think Tank', label: 'Step 1', spark: true },
+                { id: 'elevate', name: 'Elevate', label: 'Step 2', spark: false },
+                { id: 'shiftspark', name: 'Shift and Spark', label: 'Step 3', spark: false }
+            ],
+            description: 'The Edvance ARC is a dedicated face-to-face developmental pathway for educators ready to lead. Beginning at the Facilitator Think Tank (earning your Spark), this journey nurtures digital wisdom and leadership through immersive workshops. It equips you with the vision and practical tools needed to serve as a Transformation Agent, driving sustainable digital transformation across your school community.'
+        };
+
+        // === SESSION HELPERS (copied from profile.html so all pages stay in sync) ===
+        const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const SAST_OFFSET_MS = 2 * 60 * 60 * 1000; // Africa/Johannesburg is a fixed UTC+2, no DST
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+
+        const getJoburgParts = (timestampMs) => {
+            const shifted = new Date(timestampMs + SAST_OFFSET_MS);
+            return {
+                year: shifted.getUTCFullYear(),
+                month: shifted.getUTCMonth() + 1,
+                day: shifted.getUTCDate(),
+                hours: shifted.getUTCHours(),
+                minutes: shifted.getUTCMinutes(),
+                seconds: shifted.getUTCSeconds(),
+                weekdayIdx: shifted.getUTCDay()
+            };
+        };
+
+        const toEpoch = (dateStr, timeStr) => {
+            if (!dateStr || !timeStr) return null;
+            const ts = new Date(`${dateStr}T${timeStr}+02:00`).getTime();
+            return isNaN(ts) ? null : ts;
+        };
+
+        const buildGoogleCalendarLink = ({ startParts, endParts, name, description, joinLink }) => {
+            const fmt = (p) => `${p.year}${pad2(p.month)}${pad2(p.day)}T${pad2(p.hours)}${pad2(p.minutes)}${pad2(p.seconds)}`;
+            const text = `\u{1F4BB} eTPD Webinar: ${name}`;
+            const details = `${description || ''}\n\n\u{1F517} Join Link: \n${joinLink || ''}\n\n\u2139\uFE0F For more info: https://bit.ly/m/wcedtpd`;
+            return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(text)}&dates=${fmt(startParts)}/${fmt(endParts)}&details=${encodeURIComponent(details)}&location=MS%20Teams&ctz=Africa/Johannesburg`;
+        };
+
+        const buildOutlookLink = ({ startParts, endParts, name, joinLink }) => {
+            const iso = (p) => `${p.year}-${pad2(p.month)}-${pad2(p.day)}T${pad2(p.hours)}:${pad2(p.minutes)}:${pad2(p.seconds)}`;
+            const body = `Join Link: ${joinLink || ''}`;
+            return `https://outlook.office.com/calendar/0/action/compose?allday=false&body=${encodeURIComponent(body)}&enddt=${encodeURIComponent(iso(endParts))}&location=Virtual%20Session&path=/calendar/action/compose&rru=addevent&startdt=${encodeURIComponent(iso(startParts))}&subject=${encodeURIComponent(name)}`;
+        };
+
+        const combineSessionsAndCourses = (sessionRows, courseRows) => {
+            const coursesByName = new Map();
+            (courseRows || []).forEach(c => {
+                if (c.course_name) coursesByName.set(c.course_name, c);
+            });
+
+            return (sessionRows || [])
+                .filter(s => s.session_delivery_mode === 'Virtual')
+                .map(s => {
+                    const course = coursesByName.get(s.session_title) || {};
+                    const durationMin = Number(course.programme_duration) || 0;
+
+                    const startEpoch = toEpoch(s.session_date, s.session_start_time);
+                    const endEpoch = startEpoch !== null ? startEpoch + durationMin * 60000 : null;
+
+                    const startParts = startEpoch !== null ? getJoburgParts(startEpoch) : null;
+                    const endParts = endEpoch !== null ? getJoburgParts(endEpoch) : null;
+
+                    const dateISO = s.session_date || '';
+                    const timeDisplay = (startParts && endParts)
+                        ? `${pad2(startParts.hours)}:${pad2(startParts.minutes)} - ${pad2(endParts.hours)}:${pad2(endParts.minutes)}`
+                        : '';
+
+                    const district = s.hosting_unit || 'Unspecified';
+                    const name = s.session_title || 'Untitled Session';
+
+                    const googleCal = (startParts && endParts)
+                        ? buildGoogleCalendarLink({ startParts, endParts, name, description: course.session_desciption, joinLink: s.session_link })
+                        : '#';
+                    const outlookCal = (startParts && endParts)
+                        ? buildOutlookLink({ startParts, endParts, name, joinLink: s.session_link })
+                        : '#';
+
+                    return {
+                        id: s.id_key,
+                        date: dateISO,
+                        time: timeDisplay,
+                        district,
+                        name,
+                        level: course.developmental_level || '',
+                        description: course.session_desciption || '',
+                        googleCal,
+                        outlookCal,
+                        joinLink: s.session_link || '',
+                        startTimestamp: startEpoch,
+                        endTimestamp: endEpoch
+                    };
+                })
+                .filter(s => s.name !== 'Untitled Session');
+        };
+        function getLevelColor(level) {
+            if (!level) return 'bg-gray-200 text-gray-800';
+            const normalized = level.toLowerCase().trim();
+            if (normalized === 'laying the foundation') return 'bg-wcg-green text-white';
+            if (normalized === 'i can do it') return 'bg-wcg-yellow text-black';
+            if (normalized === 'i can do it better') return 'bg-wcg-red text-white';
+            if (normalized === 'the summit') return 'bg-wcg-blue text-white';
+            return 'bg-gray-200 text-gray-800';
+        }
+
+        // === UTILITIES ===
+        const toISODateString = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        const parseDate = (dateStr) => {
+            if (!dateStr) return null;
+            const d = new Date(`${dateStr}T00:00:00`);
+            return isNaN(d.getTime()) ? null : d;
+        };
+        const formatDate = (d) => d ? `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}` : 'N/A';
+
+        function Menu() {
+            const [isOpen, setIsOpen] = useState(false);
+
+            const MenuIcon = () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+                e('line', { x1: "4", x2: "20", y1: "12", y2: "12" }),
+                e('line', { x1: "4", x2: "20", y1: "6", y2: "6" }),
+                e('line', { x1: "4", x2: "20", y1: "18", y2: "18" })
+            );
+
+            const CloseIcon = () => e('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+                e('line', { x1: "18", x2: "6", y1: "6", y2: "18" }),
+                e('line', { x1: "6", x2: "18", y1: "6", y2: "18" })
+            );
+
+            const linkStyle = "flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-[#004B87] border-b border-gray-100 last:border-b-0 transition-colors font-accent";
+
+            return e('div', { className: "relative z-50 font-sans" },
+                e('button', {
+                    onClick: () => setIsOpen(!isOpen),
+                    className: "p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-[#004B87] transition-colors focus:outline-none focus:ring-2 focus:ring-[#004B87]",
+                    "aria-label": "Toggle menu"
+                },
+                    isOpen ? e(CloseIcon) : e(MenuIcon)
+                ),
+                isOpen ? e('div', { className: "absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden animate-fade-in-up" },
+                    e('div', { className: "py-1" },
+                        e('a', { href: "index.html", className: linkStyle }, "Home"),
+                        e('a', { href: "sessions.html", className: linkStyle }, "Upcoming Sessions"),
+			e('a', { href: "profile.html", className: linkStyle }, "My Developmental History"),
+                        e('a', { href: "pathway.html", className: linkStyle }, "Adoption and Transformation Pathway"),
+                        e('a', { href: "https://wcedeportal.co.za/meet-the-team", className: linkStyle }, "Contact eLearning")
+                    )
+                ) : null
+            );
+        }
+
+        // === MILESTONE CARD (public view: no personal status) ===
+        function MilestoneCard({ milestone, onClick }) {
+            return e('div', {
+                className: "relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between",
+                style: { borderLeft: `6px solid ${milestone.color}`, minHeight: '300px' },
+                onClick
+            },
+                e('div', null,
+                    e('div', { className: "flex justify-between items-start mb-3" },
+                        e('span', {
+                            className: "w-8 h-8 rounded-full text-white font-bold flex items-center justify-center text-sm flex-shrink-0",
+                            style: { background: '#001489' }
+                        }, milestone.step)
+                    ),
+                    e(IconImg, { src: milestone.icon, className: "w-20 h-20 object-contain mx-auto my-3" }),
+                    e('h4', { className: "font-bold text-gray-900 text-center text-base" }, milestone.title),
+                    e('p', { className: "text-xs text-gray-500 text-center font-medium mb-3" }, milestone.subtitle),
+                    e('p', { className: "text-xs text-gray-600 leading-relaxed text-center line-clamp-3" }, milestone.description)
+                ),
+                e('div', { className: "mt-4 pt-3 border-t border-gray-100 text-center" },
+                    e('span', { className: "inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-[11px] font-semibold" }, milestone.duration),
+                    e('div', { className: "mt-2 text-xs font-bold", style: { color: '#007DBA' } }, "View Details & Links →")
+                )
+            );
+        }
+
+        // === EDVANCE ARC CARD ===
+        function FacilitatorARCCard() {
+            return e('div', {
+                className: "text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-center gap-6",
+                style: { background: 'linear-gradient(135deg, #001489 0%, #C8126E 100%)' }
+            },
+                e('div', { className: "flex items-center gap-4" },
+                    e('div', { className: "w-20 h-20 flex-shrink-0 bg-white rounded-full shadow-lg flex items-center justify-center" },
+                        e(IconImg, { src: EDVANCE_ARC.icon, className: "w-14 h-14 object-contain" })),
+                    e('div', null,
+                        e('div', { className: "inline-block px-3 py-0.5 bg-amber-400 text-black font-bold text-[10px] rounded-full uppercase mb-1" }, EDVANCE_ARC.subtitle),
+                        e('h3', { className: "text-xl font-bold" }, EDVANCE_ARC.title),
+                        e('p', { className: "text-xs text-blue-200 max-w-xl" }, EDVANCE_ARC.description)
+                    )
+                ),
+                e('div', { className: "flex items-center gap-3 flex-wrap justify-center" },
+                    EDVANCE_ARC.steps.map(step => e('div', { key: step.id, className: "px-3 py-2 rounded-xl text-center backdrop-blur-sm border bg-white/10 border-white/10" },
+                        e('div', { className: "text-[10px] font-bold text-blue-200" }, step.label),
+                        e('div', { className: "text-xs font-semibold" }, step.name),
+                        step.spark ? e('div', { className: "text-[10px] font-bold mt-0.5 text-blue-200/70" }, '⭐ Awards a Spark') : null
+                    ))
+                )
+            );
+        }
+
+        // === MILESTONE DETAIL MODAL ===
+        function MilestoneModal({ milestone, milestoneCourseSessions, onClose }) {
+            const linkBtn = "inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm text-white transition-colors shadow";
+            const renderAvailability = () => {
+                const avail = milestone.availability;
+                if (!avail) return null;
+                if (avail.type === 'registration') {
+                    if (milestoneCourseSessions === null) {
+                        return e('p', { className: "text-sm text-gray-500" }, "Checking availability…");
+                    }
+                    const upcoming = milestone.sparkSession ? milestoneCourseSessions[milestone.sparkSession] : null;
+                    return e('div', null,
+                        e('h4', { className: "font-semibold text-gray-900 mb-1" }, upcoming ? 'Registration Open' : 'Registration Closed'),
+                        e('p', { className: "text-sm text-gray-700" }, upcoming ? avail.activeMessage : avail.expiredMessage),
+                        upcoming ? e('div', { className: "mt-3" },
+                            e('p', { className: "text-xs text-gray-500 mb-2" }, `Next session: ${formatDate(parseDate(upcoming.session_date))}`),
+                            e('a', { href: `register.html?idkey=${encodeURIComponent(upcoming.id_key)}`, target: "_blank", rel: "noopener noreferrer", className: `${linkBtn} bg-green-600 hover:bg-green-700` }, "Register Now")
+                        ) : e('div', { className: "mt-3" },
+                            e('a', { href: avail.waitlistUrl || '#', target: "_blank", rel: "noopener noreferrer", className: `${linkBtn} bg-wcg-blue hover:bg-blue-800` }, "Join Waitlist")
+                        )
+                    );
+                }
+                if (avail.type === 'waitlist_only') {
+                    return e('div', null,
+                        e('h4', { className: "font-semibold text-gray-900 mb-1" }, "By Invitation Only"),
+                        e('p', { className: "text-sm text-gray-700" }, avail.message),
+                        e('div', { className: "mt-3" },
+                            e('a', { href: avail.waitlistUrl || '#', target: "_blank", rel: "noopener noreferrer", className: `${linkBtn} bg-wcg-blue hover:bg-blue-800` }, "Join Waitlist")
+                        )
+                    );
+                }
+                return null;
+            };
+            const h3 = "text-lg font-bold border-b pb-1 mb-2";
+
+            return e('div', { className: "fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop", onClick: onClose },
+                e('div', { className: "bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative", onClick: ev => ev.stopPropagation() },
+                    e('button', { onClick: onClose, className: "absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 text-xl transition-all z-10" }, "×"),
+                    e('div', { className: "p-8 text-white rounded-t-2xl text-center relative", style: { background: `linear-gradient(135deg, ${milestone.color} 0%, #001489 100%)` } },
+                        e('div', { className: "w-24 h-24 mx-auto mb-3 bg-white rounded-full shadow-lg flex items-center justify-center" },
+                            e(IconImg, { src: milestone.icon, className: "w-16 h-16 object-contain" })),
+                        e('h2', { className: "text-2xl font-bold" }, milestone.title),
+                        e('p', { className: "text-white/80 font-semibold" }, milestone.subtitle),
+                        e('span', { className: "inline-block mt-3 px-4 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold" }, milestone.duration)
+                    ),
+                    e('div', { className: "p-6 space-y-6" },
+                        e('div', null,
+                            e('h3', { className: h3, style: { color: '#001489' } }, "Overview"),
+                            e('p', { className: "text-gray-600 text-sm leading-relaxed" }, milestone.description)
+                        ),
+                        milestone.keyPoints ? e('div', null,
+                            e('h3', { className: h3, style: { color: '#001489' } }, "Key Focus Areas"),
+                            e('ul', { className: "space-y-2" },
+                                milestone.keyPoints.map((point, idx) => e('li', { key: idx, className: "text-sm text-gray-600 bg-gray-50 p-2.5 rounded-lg border-l-4 flex items-start gap-2", style: { borderColor: '#007DBA' } },
+                                    e('span', { className: "text-green-600 font-bold" }, "✓"),
+                                    e('span', null, point)
+                                ))
+                            )
+                        ) : null,
+                        milestone.dovetailEssentials ? e('div', null,
+                            e('h3', { className: h3, style: { color: '#001489' } }, `Session List (${DOVETAIL_SESSIONS.length})`),
+                            e('p', { className: "text-xs italic mb-2", style: { color: milestone.color } }, "These 10 sessions form a curated learning pathway within the broader micro-learning landscape."),
+                            e('div', { className: "space-y-1.5" },
+                                DOVETAIL_SESSIONS.map((session, idx) => e('div', { key: idx, className: "flex items-center gap-2 p-2 rounded-lg border border-gray-200 bg-gray-50" },
+                                    e('span', { className: "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-300 text-gray-600" }, idx + 1),
+                                    e('span', { className: "text-sm text-gray-600" }, session)
+                                ))
+                            ),
+                            milestone.sessionsInfoUrl ? e('div', { className: "mt-3" },
+                                e('a', { href: milestone.sessionsInfoUrl, target: "_blank", rel: "noopener noreferrer", className: linkBtn, style: { background: milestone.color } }, "View Session Details & Schedule")
+                            ) : null
+                        ) : null,
+                        renderAvailability(),
+                        milestone.next ? e('div', null,
+                            e('h3', { className: h3, style: { color: '#001489' } }, "Next Steps"),
+                            e('p', { className: "text-sm text-gray-600" }, milestone.next)
+                        ) : null
+                    )
+                )
+            );
+        }
+
+
+        // === THIS WEEK / NEXT WEEK STRIP ===
+        // Weeks run Monday–Sunday. Only sessions from today onwards are shown.
+        function getWeekWindow() {
+            const today = new Date();
+            const dow = (today.getDay() + 6) % 7; // Mon=0 … Sun=6
+            const endThis = new Date(today); endThis.setDate(today.getDate() + (6 - dow));
+            const endNext = new Date(endThis); endNext.setDate(endThis.getDate() + 7);
+            return { todayISO: toISODateString(today), endThisISO: toISODateString(endThis), endNextISO: toISODateString(endNext) };
+        }
+
+        function SessionCard({ s, todayISO }) {
+            const d = parseDate(s.date);
+            const canPreReg = s.id && window.PreRegisterWidget && window.PreRegisterWidget.trigger;
+            const calBtn = "flex-1 text-center text-xs font-bold py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors";
+            return e('div', { className: "snap-start flex-shrink-0 w-[80%] sm:w-72 lg:w-auto bg-gray-50 rounded-xl p-4 flex flex-col border-l-4 border-wcg-blue" },
+                e('div', { className: "flex items-center gap-3 mb-2" },
+                    e('div', { className: "w-12 h-12 rounded-lg bg-wcg-blue text-white flex flex-col items-center justify-center flex-shrink-0 leading-tight" },
+                        e('span', { className: "text-[10px] font-semibold" }, d ? WEEKDAY_NAMES[d.getDay()] : ''),
+                        e('span', { className: "text-lg font-bold" }, d ? d.getDate() : ''),
+                        e('span', { className: "text-[10px]" }, d ? MONTH_NAMES[d.getMonth()] : '')
+                    ),
+                    e('div', { className: "min-w-0" },
+                        e('p', { className: "text-xs font-bold text-gray-700" }, s.date === todayISO ? 'Today' : '', s.date === todayISO && s.time ? ' · ' : '', s.time),
+                        s.level ? e('span', { className: `inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${getLevelColor(s.level)}` }, s.level) : null
+                    )
+                ),
+                e('h5', { className: "font-bold text-sm text-gray-900 leading-snug" }, s.name),
+                e('p', { className: "text-xs text-gray-500 mt-1" }, s.district),
+                s.description ? e('p', { className: "text-xs text-gray-600 mt-2 line-clamp-2" }, s.description) : null,
+                e('div', { className: "mt-auto pt-3 space-y-2" },
+                    canPreReg ? e('button', {
+                        type: "button",
+                        onClick: () => window.PreRegisterWidget.trigger({ idKey: s.id, title: s.name }),
+                        className: "w-full bg-wcg-blue text-white text-sm font-bold py-2.5 rounded-lg hover:bg-blue-800 transition-colors shadow"
+                    }, "Pre-Register") : null,
+                    e('div', { className: "flex gap-2" },
+                        e('a', { href: s.googleCal, target: "_blank", rel: "noopener noreferrer", className: calBtn, 'aria-label': `Add ${s.name} to Google Calendar` }, "+ Google Cal"),
+                        e('a', { href: s.outlookCal, target: "_blank", rel: "noopener noreferrer", className: calBtn, 'aria-label': `Add ${s.name} to Outlook Calendar` }, "+ Outlook")
+                    )
+                )
+            );
+        }
+
+        function SessionsStrip({ sessions, todayISO, endThisISO }) {
+            const row = "flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 lg:grid lg:grid-cols-4 lg:overflow-visible";
+            const groups = sessions ? [
+                { label: 'This week', items: sessions.filter(s => s.date <= endThisISO) },
+                { label: 'Next week', items: sessions.filter(s => s.date > endThisISO) }
+            ] : [];
+            return e('div', { className: "bg-white rounded-2xl shadow-lg p-4 sm:p-6 mt-6 animate-fade-in-up" },
+                e('div', { className: "flex flex-wrap items-baseline justify-between gap-2 mb-4" },
+                    e('h3', { className: "text-lg font-bold text-wcg-dark" }, "Happening This Week & Next"),
+                    e('a', { href: "sessions.html", className: "text-xs font-bold text-wcg-blue hover:underline" }, "See all upcoming sessions →")
+                ),
+                sessions === null ? e('p', { className: "text-sm text-gray-500" }, "Loading sessions…")
+                : sessions.length === 0 ? e('p', { className: "text-sm text-gray-600" }, "No virtual sessions are scheduled for this week or next. Check back soon or browse all upcoming sessions.")
+                : groups.filter(g => g.items.length > 0).map(g => e('div', { key: g.label, className: "mb-4 last:mb-0" },
+                    e('h4', { className: "text-sm font-bold text-gray-700 mb-2" }, `${g.label} (${g.items.length})`),
+                    e('div', { className: row }, g.items.map(s => e(SessionCard, { key: s.id + s.date, s, todayISO })))
+                ))
+            );
+        }
+
+        // === PAGE ===
+        function PathwayPage() {
+            const [selected, setSelected] = useState(null);
+            // null = still loading; {} = loaded, nothing upcoming
+            const [milestoneCourseSessions, setMilestoneCourseSessions] = useState(null);
+            const [weekSessions, setWeekSessions] = useState(null);
+            const week = getWeekWindow();
+
+            // Virtual sessions from today to the end of next week
+            useEffect(() => {
+                (async () => {
+                    try {
+                        const [sessionRes, courseRes] = await Promise.all([
+                            supabaseClient.from('sessions').select('*').eq('session_delivery_mode', 'Virtual')
+                                .gte('session_date', week.todayISO).lte('session_date', week.endNextISO)
+                                .order('session_date', { ascending: true }).order('session_start_time', { ascending: true }),
+                            supabaseClient.from('courses').select('*')
+                        ]);
+                        if (sessionRes.error) throw sessionRes.error;
+                        if (courseRes.error) throw courseRes.error;
+                        setWeekSessions(combineSessionsAndCourses(sessionRes.data, courseRes.data));
+                    } catch (err) {
+                        console.error('Error fetching this week/next week sessions:', err);
+                        setWeekSessions([]);
+                    }
+                })();
+            }, []);
+
+            // Same rule as profile.html: a registration milestone is "open" when a
+            // session with a matching title exists today or later.
+            useEffect(() => {
+                (async () => {
+                    const names = MILESTONES.filter(m => m.availability && m.availability.type === 'registration' && m.sparkSession).map(m => m.sparkSession);
+                    try {
+                        const { data, error } = await supabaseClient.from('sessions')
+                            .select('id_key, session_title, session_date')
+                            .in('session_title', names)
+                            .gte('session_date', toISODateString(new Date()))
+                            .order('session_date', { ascending: true });
+                        if (error) throw error;
+                        const soonest = {};
+                        (data || []).forEach(row => {
+                            const t = row.session_title && row.session_title.trim();
+                            if (t && !soonest[t]) soonest[t] = row;
+                        });
+                        setMilestoneCourseSessions(soonest);
+                    } catch (err) {
+                        console.error('Error fetching course sessions from Supabase:', err);
+                        setMilestoneCourseSessions({});
+                    }
+                })();
+            }, []);
+
+            return e('div', { className: "min-h-screen bg-gray-50" },
+                window.PreRegisterWidget ? e(window.PreRegisterWidget.Provider, { hideBanner: true }) : null,
+                null,
+                e('div', { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" },
+                    e('div', { className: "bg-white rounded-2xl shadow-lg p-6 animate-fade-in-up" },
+                        e('div', { className: "text-center max-w-3xl mx-auto mb-6" },
+                            e('h1', { className: "text-3xl font-bold text-wcg-blue mb-2" }, "Your Pathway to Transformation"),
+                            e('p', { className: "text-sm text-gray-600 leading-relaxed" }, "Professional development isn’t about collecting tools, it is about building the confidence and pedagogical insight to transform learning. The Adoption and Transformation Pathway is designed around your personal growth, guiding you from foundational digital literacy to practical competence, and ultimately to digital wisdom."),
+e('p', { className: "text-sm text-gray-600 leading-relaxed mt-3" }, "Explore the five key milestones below to discover how you can earn Sparks, expand your practice, and grow as a leader in your school community. Want to see how far you've already come? Use the button below to review your personal engagement history and map out your next step."),
+                            e('a', { href: "profile.html", className: "inline-block mt-4 px-6 py-2.5 rounded-full text-white font-semibold text-sm shadow-md hover:shadow-lg transition-shadow", style: { background: 'linear-gradient(135deg, #001489, #007DBA)' } }, "View My Progress on This Pathway")
+                        ),
+                        e('h4', { className: "text-base font-bold text-gray-800 mb-4" }, "Adoption and Transformation Pathway"),
+                        e('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" },
+                            MILESTONES.map(m => e(MilestoneCard, { key: m.id, milestone: m, onClick: () => setSelected(m) }))
+                        ),
+                        e('div', { className: "mt-6 pt-4 border-t border-dashed border-gray-200" }, e(FacilitatorARCCard))
+                    ),
+                    e(SessionsStrip, { sessions: weekSessions, todayISO: week.todayISO, endThisISO: week.endThisISO })
+                ),
+                selected ? e(MilestoneModal, { milestone: selected, milestoneCourseSessions, onClose: () => setSelected(null) }) : null
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(e(PathwayPage));
+    </script>
+</body>
+
+</html>

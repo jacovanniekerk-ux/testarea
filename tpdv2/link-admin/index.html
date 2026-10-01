@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WCED Link Shortener</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section id="login-view" class="card">
+      <h1>Link Shortener</h1>
+      <p class="muted">WCED Advisor Login</p>
+      <form id="login-form">
+        <label>Email<input id="email" type="email" autocomplete="username" required></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+        <button type="submit">Log in</button>
+        <p id="login-error" class="error" hidden></p>
+      </form>
+    </section>
+
+    <section id="app-view" hidden>
+      <header class="topbar">
+        <div>
+          <h1>Link Shortener</h1>
+          <p id="welcome" class="muted"></p>
+        </div>
+        <button id="logout" class="secondary">Log out</button>
+      </header>
+
+      <section class="card">
+        <h2>Create a link</h2>
+        <form id="link-form">
+          <label>Shortened link
+            <div class="code-input"><span>/r/</span><input id="short-code" maxlength="64" placeholder="Create custom back end" required></div>
+          </label>
+          <label>Full URL
+            <input id="full-url" type="url" placeholder="https://example.com/..." required>
+          </label>
+          <button type="submit">Create link</button>
+          <p id="link-message" class="message" hidden></p>
+        </form>
+
+        <div id="qr-result" class="qr-result" hidden>
+          <div>
+            <h3>QR code</h3>
+            <p class="muted">Scan to open the shortened link.</p>
+            <a id="created-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <div id="qrcode" class="qrcode" aria-label="QR code for the new link"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Existing links</h2>
+            <div class="view-toggle" role="group" aria-label="Filter links">
+              <button id="show-mine" class="toggle active" type="button">My links</button>
+              <button id="show-all" class="toggle" type="button">All links</button>
+            </div>
+          </div>
+          <button id="refresh" class="secondary" type="button">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Short link</th><th>Destination</th><th>Created by</th><th>Created</th><th></th></tr></thead>
+            <tbody id="links-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
