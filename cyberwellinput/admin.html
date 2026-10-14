@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DO's &amp; DON'Ts – Presenter</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--blue:#001489;--lblue:#007DBA;--pink:#C8126E;--yellow:#FFC600;--turq:#00A1A3;--ink:#0F172A;--line:#A9BAC8;--red:#8B0000;--split:50%}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#fff;color:var(--ink);font-family:'Century Gothic','CenturyGothic',AppleGothic,sans-serif;display:flex;flex-direction:column;position:relative}
+.doodles{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+header{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:12px 18px;max-height:300px;overflow:hidden;transition:max-height .45s cubic-bezier(.175,.885,.32,1.275),opacity .3s,padding .45s}
+body.focus header{max-height:0;padding-top:0;padding-bottom:0;opacity:0;pointer-events:none}
+.grp{display:flex;align-items:center;gap:8px;font-size:clamp(.8rem,1.1vw,1rem)}
+.grp label.r{display:flex;align-items:center;gap:4px;background:#fff;border:3px solid var(--blue);color:var(--blue);font-weight:700;padding:5px 10px;border-radius:12px;cursor:pointer;transition:transform .15s}
+.grp label.r:has(input:checked){background:var(--turq);border-color:var(--turq);color:#fff;transform:scale(1.06)}
+.grp input[type=radio]{accent-color:#fff}
+select{font:inherit;padding:7px 10px;border-radius:12px;border:3px solid var(--blue);color:var(--blue);background:#fff;font-weight:700}
+.btn{font:inherit;font-weight:700;border:3px solid var(--blue);border-radius:12px;padding:8px 16px;cursor:pointer;background:#fff;color:var(--blue);transition:transform .15s cubic-bezier(.175,.885,.32,1.275),background .2s,color .2s}
+.btn:hover{transform:scale(1.04)}.btn:active{transform:scale(.9)}.btn:focus-visible,select:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.tabs{display:flex;gap:8px;flex:1;justify-content:center}
+.tabs .btn{font-size:clamp(1rem,1.6vw,1.5rem);padding:8px 26px}
+.tabs .btn.on{background:var(--turq);border-color:var(--turq);color:#fff}
+#hl.on{background:var(--pink);border-color:var(--pink);color:#fff}#del.on{background:var(--red);border-color:var(--red);color:#fff}
+#sp.on{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+#focus{position:fixed;right:16px;bottom:14px;z-index:5;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18);font-size:.85rem;padding:6px 12px}
+body.focus #focus{opacity:.3}body.focus #focus:hover,body.focus #focus:focus-visible{opacity:1}
+#stage{position:relative;z-index:1;flex:1;display:flex;min-height:0;padding:8px 18px 18px}
+.col{display:flex;flex-direction:column;min-width:120px;min-height:0}
+#colDO{flex:0 0 calc(var(--split) - 7px)}#colDONT{flex:1}
+.col h2{margin:0 0 10px;padding:12px 16px;border-radius:12px;font-size:clamp(1.2rem,2vw,2rem);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+#colDO h2{background:var(--blue)}#colDONT h2{background:var(--lblue)}
+.feed{flex:1;overflow-y:auto;padding:4px 8px 20px 2px}
+#divider{flex:0 0 14px;cursor:col-resize;display:flex;justify-content:center;touch-action:none}
+#divider::before{content:'';width:5px;border-radius:5px;background:var(--line);transition:background .2s,width .2s}
+#divider:hover::before,#divider.drag::before{background:var(--yellow);width:8px}
+.card{position:relative;color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:12px;box-shadow:0 5px 12px rgba(15,23,42,.22);font-size:clamp(1rem,1.6vw,1.7rem);line-height:1.35;overflow-wrap:anywhere;transition:background-color 1.5s ease-out}
+#colDO .card{background:var(--blue)}#colDONT .card{background:var(--lblue)}
+.card.hl{background:var(--pink)!important;transition:background-color .4s}
+.card.flash{background:var(--yellow)!important;color:var(--ink);transition:none}
+.tag{position:absolute;top:6px;right:10px;font-size:.6em;opacity:.7}
+body.mode-hl .card{cursor:pointer;outline:3px dashed var(--pink);outline-offset:2px}
+body.mode-del .card{cursor:pointer;outline:3px dashed var(--red);outline-offset:2px}
+.empty{color:#64748b;text-align:center;padding:30px;background:rgba(255,255,255,.85);border-radius:12px}
+@keyframes popIn{0%{opacity:0;transform:scale(.4) translateY(20px);background-color:#FFC600}60%{opacity:1;transform:scale(1.05) translateY(-5px);background-color:#FFC600}100%{transform:scale(1) translateY(0)}}
+.card-pop-enter{animation:popIn .6s cubic-bezier(.175,.885,.32,1.275) forwards}
+.flash-transition{transition:background-color 1.5s ease-out}
+@keyframes popOut{0%{transform:scale(1)}30%{transform:scale(1.08)}100%{transform:scale(0);opacity:0}}
+.card-pop-out{animation:popOut .4s cubic-bezier(.6,-.28,.735,.045) forwards;pointer-events:none}
+@keyframes hlPop{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+.card-hl-pop{animation:hlPop .4s cubic-bezier(.175,.885,.32,1.275)}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important}}
+</style>
+</head>
+<body>
+<svg class="doodles" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="9" aria-hidden="true">
+<path stroke="#00A1A3" d="M70 190c-55-30-40-95 15-90 45 5 40 70-5 68-30-2-30-40-5-42"/>
+<path stroke="#FFC600" d="M150 120c-50 45-60 120-20 190"/>
+<circle cx="1480" cy="80" r="10" stroke="#C8126E"/>
+<path stroke="#FFC600" d="M1400 130l22-34M1500 150l45-30"/>
+<path stroke="#C8126E" d="M1330 70c90-25 190 0 240 60"/>
+<path stroke="#00A1A3" d="M1400 760h150M1370 800h190M1420 840h110"/>
+<path stroke="#001489" d="M60 830h110c20 0 25-45 55-35s15 45-10 35h140"/>
+<path stroke="#A9BAC8" d="M1250 700c-60 0-70 60-20 70"/>
+<path stroke="#FFC600" d="M1120 860c60 10 130-20 170-50"/>
+<circle cx="40" cy="520" r="10" stroke="#C8126E"/>
+</svg>
+<header>
+  <div class="grp"><strong>Set Active Group:</strong>
+    <label class="r"><input type="radio" name="ag" value="1">Group 1</label>
+    <label class="r"><input type="radio" name="ag" value="2">Group 2</label>
+    <label class="r"><input type="radio" name="ag" value="3">Group 3</label></div>
+  <div class="grp"><label for="filter"><strong>Show:</strong></label>
+    <select id="filter"><option value="active">Current Active Group</option><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="all">All Groups</option></select></div>
+  <div class="tabs" id="tabs">
+    <button class="btn on" data-t="topic1">Topic 1</button><button class="btn" data-t="topic2">Topic 2</button><button class="btn" data-t="topic3">Topic 3</button></div>
+  <button class="btn" id="hl">Highlight Mode: OFF</button>
+  <button class="btn" id="del">Delete Mode: OFF</button>
+  <button class="btn" id="sp" title="ON: participants pick their own topic. OFF: your Topic tabs set it for everyone.">Self-paced: OFF</button>
+</header>
+<div id="stage">
+  <div class="col" id="colDO"><h2>DO's</h2><div class="feed" id="f-DO"></div></div>
+  <div id="divider" role="separator" aria-orientation="vertical" aria-label="Resize columns"></div>
+  <div class="col" id="colDONT"><h2>DON'Ts</h2><div class="feed" id="f-DONT"></div></div>
+</div>
+<button class="btn" id="focus" title="Shortcut: H">Hide controls</button>
+<script>
+const SUPABASE_URL='YOUR_SUPABASE_URL', SUPABASE_KEY='YOUR_SUPABASE_ANON_KEY';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let topic='topic1', selfPaced=false, active=1, rows=[], els=new Map(), hlMode=false, delMode=false;
+
+const groupVisible=r=>{const f=$('#filter').value;return f==='all'||r.group_id===(f==='active'?active:+f);};
+const visible=r=>!r.is_deleted&&r.topic_id===topic&&groupVisible(r);
+
+function makeCard(r,isNew){
+  const d=document.createElement('div');d.className='card flash-transition'+(r.is_highlighted?' hl':'');
+  d.textContent=r.content;
+  const tag=document.createElement('span');tag.className='tag';tag.textContent='G'+r.group_id;d.appendChild(tag);
+  if(isNew){d.classList.add('card-pop-enter','flash');
+    d.addEventListener('animationend',()=>d.classList.remove('card-pop-enter'),{once:true});
+    setTimeout(()=>d.classList.remove('flash'),1500);}
+  d.onclick=()=>cardClick(r.id,d);
+  els.set(r.id,d);return d;
+}
+async function cardClick(id,el){
+  const r=rows.find(x=>x.id===id);if(!r)return;
+  if(delMode){
+    el.classList.add('card-pop-out');
+    const {error}=await sb.from('feedback').update({is_deleted:true}).eq('id',id);
+    if(error){console.error(error);el.classList.remove('card-pop-out');}
+  }else if(hlMode){
+    const v=!r.is_highlighted;r.is_highlighted=v;el.classList.toggle('hl',v);el.classList.add('card-hl-pop');
+    setTimeout(()=>el.classList.remove('card-hl-pop'),400);
+    const {error}=await sb.from('feedback').update({is_highlighted:v}).eq('id',id);
+    if(error){console.error(error);r.is_highlighted=!v;el.classList.toggle('hl',!v);}
+  }
+}
+function renderAll(){
+  els.clear();
+  ['DO','DONT'].forEach(t=>{
+    const box=$('#f-'+t);box.innerHTML='';
+    const list=rows.filter(r=>r.type===t&&visible(r));
+    if(!list.length)box.innerHTML='<div class="empty">Waiting for responses…</div>';
+    list.forEach(r=>box.appendChild(makeCard(r,false)));
+  });
+}
+function removeEl(id){const el=els.get(id);if(!el)return;els.delete(id);
+  if(el.classList.contains('card-pop-out')){setTimeout(()=>el.remove(),400);}
+  else{el.classList.add('card-pop-out');setTimeout(()=>el.remove(),400);}}
+
+// Controls
+function paintTabs(){$$('#tabs .btn').forEach(x=>x.classList.toggle('on',x.dataset.t===topic));}
+function paintSP(){$('#sp').classList.toggle('on',selfPaced);$('#sp').textContent='Self-paced: '+(selfPaced?'ON':'OFF');}
+$('#tabs').onclick=async e=>{const b=e.target.closest('.btn');if(!b)return;
+  topic=b.dataset.t;paintTabs();renderAll();
+  if(!selfPaced){const {error}=await sb.from('app_state').update({active_topic:topic}).eq('id',1);if(error)console.error(error);}};
+$('#sp').onclick=async()=>{const {error}=await sb.from('app_state').update({self_paced:!selfPaced}).eq('id',1);
+  if(error)console.error(error);else{selfPaced=!selfPaced;paintSP();}};
+$('#filter').onchange=renderAll;
+function setModes(){
+  $('#hl').classList.toggle('on',hlMode);$('#hl').textContent='Highlight Mode: '+(hlMode?'ON':'OFF');
+  $('#del').classList.toggle('on',delMode);$('#del').textContent='Delete Mode: '+(delMode?'ON':'OFF');
+  document.body.classList.toggle('mode-hl',hlMode);document.body.classList.toggle('mode-del',delMode);
+}
+$('#hl').onclick=()=>{hlMode=!hlMode;if(hlMode)delMode=false;setModes();};
+$('#del').onclick=()=>{delMode=!delMode;if(delMode)hlMode=false;setModes();};
+$$('input[name=ag]').forEach(r=>r.onchange=async()=>{
+  const {error}=await sb.from('app_state').update({active_group:+r.value}).eq('id',1);
+  if(error){console.error(error);syncGroup();}
+});
+function syncGroup(){$$('input[name=ag]').forEach(r=>r.checked=(+r.value===active));}
+
+// Draggable divider
+const div=$('#divider'),stage=$('#stage');
+div.addEventListener('pointerdown',e=>{div.setPointerCapture(e.pointerId);div.classList.add('drag');});
+div.addEventListener('pointermove',e=>{if(!div.classList.contains('drag'))return;
+  const b=stage.getBoundingClientRect();let p=(e.clientX-b.left)/b.width*100;p=Math.max(15,Math.min(85,p));
+  stage.style.setProperty('--split',p+'%');});
+['pointerup','pointercancel'].forEach(ev=>div.addEventListener(ev,()=>div.classList.remove('drag')));
+
+// Data + realtime
+async function init(){
+  const [st,fb]=await Promise.all([
+    sb.from('app_state').select('*').eq('id',1).single(),
+    sb.from('feedback').select('*').eq('is_deleted',false).order('created_at',{ascending:false})]);
+  if(st.data){active=st.data.active_group;selfPaced=st.data.self_paced;topic=st.data.active_topic;syncGroup();paintSP();paintTabs();}
+  if(fb.error)console.error(fb.error);else rows=fb.data;
+  renderAll();
+}
+sb.channel('admin-live')
+ .on('postgres_changes',{event:'*',schema:'public',table:'app_state'},p=>{
+   const n=p.new;active=n.active_group;selfPaced=n.self_paced;syncGroup();paintSP();
+   if(!selfPaced&&n.active_topic!==topic){topic=n.active_topic;paintTabs();renderAll();}
+   else if($('#filter').value==='active')renderAll();})
+ .on('postgres_changes',{event:'*',schema:'public',table:'feedback'},p=>{
+   const r=p.new;
+   if(p.eventType==='INSERT'){rows.unshift(r);
+     if(visible(r)){const box=$('#f-'+r.type);const e=box.querySelector('.empty');if(e)e.remove();box.prepend(makeCard(r,true));}}
+   else if(p.eventType==='UPDATE'){
+     const i=rows.findIndex(x=>x.id===r.id);if(i>-1)rows[i]=r;else rows.unshift(r);
+     if(r.is_deleted)removeEl(r.id);
+     else{const el=els.get(r.id);if(el)el.classList.toggle('hl',!!r.is_highlighted);}
+   }
+ }).subscribe();
+function toggleFocus(){const f=document.body.classList.toggle('focus');$('#focus').textContent=f?'Show controls':'Hide controls';}
+$('#focus').onclick=toggleFocus;
+addEventListener('keydown',e=>{if((e.key==='h'||e.key==='H')&&!/select|input|textarea/i.test(e.target.tagName))toggleFocus();});
+init();
+</script>
+</body>
+</html>
