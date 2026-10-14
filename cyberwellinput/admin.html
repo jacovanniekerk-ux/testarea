@@ -6,7 +6,7 @@
 <title>DO's &amp; DON'Ts – Presenter</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
-:root{--blue:#001489;--lblue:#007DBA;--pink:#C8126E;--yellow:#FFC600;--turq:#00A1A3;--ink:#0F172A;--line:#A9BAC8;--red:#8B0000;--split:50%}
+:root{--blue:#001489;--lblue:#007DBA;--pink:#C8126E;--yellow:#FFC600;--turq:#00A1A3;--ink:#0F172A;--line:#A9BAC8;--red:#8B0000;--split:50%;--fs:1.6rem}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:#fff;color:var(--ink);font-family:'Century Gothic','CenturyGothic',AppleGothic,sans-serif;display:flex;flex-direction:column;position:relative}
@@ -24,6 +24,7 @@ select{font:inherit;padding:7px 10px;border-radius:12px;border:3px solid var(--b
 .tabs .btn{font-size:clamp(1rem,1.6vw,1.5rem);padding:8px 26px}
 .tabs .btn.on{background:var(--turq);border-color:var(--turq);color:#fff}
 #hl.on{background:var(--pink);border-color:var(--pink);color:#fff}#del.on{background:var(--red);border-color:var(--red);color:#fff}
+#fs{width:120px;accent-color:var(--turq)}.grp .btn.sm{padding:3px 10px}
 #sp.on{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
 #focus{position:fixed;right:16px;bottom:14px;z-index:5;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18);font-size:.85rem;padding:6px 12px}
 body.focus #focus{opacity:.3}body.focus #focus:hover,body.focus #focus:focus-visible{opacity:1}
@@ -32,18 +33,18 @@ body.focus #focus{opacity:.3}body.focus #focus:hover,body.focus #focus:focus-vis
 #colDO{flex:0 0 calc(var(--split) - 7px)}#colDONT{flex:1}
 .col h2{margin:0 0 10px;padding:12px 16px;border-radius:12px;font-size:clamp(1.2rem,2vw,2rem);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.18)}
 #colDO h2{background:var(--blue)}#colDONT h2{background:var(--lblue)}
-.feed{flex:1;overflow-y:auto;padding:4px 8px 20px 2px}
+.feed{flex:1;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:18px 16px;padding:14px 10px 24px 6px}
 #divider{flex:0 0 14px;cursor:col-resize;display:flex;justify-content:center;touch-action:none}
 #divider::before{content:'';width:5px;border-radius:5px;background:var(--line);transition:background .2s,width .2s}
 #divider:hover::before,#divider.drag::before{background:var(--yellow);width:8px}
-.card{position:relative;color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:12px;box-shadow:0 5px 12px rgba(15,23,42,.22);font-size:clamp(1rem,1.6vw,1.7rem);line-height:1.35;overflow-wrap:anywhere;transition:background-color 1.5s ease-out}
-#colDO .card{background:var(--blue)}#colDONT .card{background:var(--lblue)}
-.card.hl{background:var(--pink)!important;transition:background-color .4s}
+.card{position:relative;background:var(--bgc);color:var(--fg);flex:1 1 calc(var(--w,100%) - 16px);min-width:min(100%,9em);min-height:calc(var(--mh,0)*1em);rotate:var(--rot,0deg);border-radius:12px;padding:16px 20px;box-shadow:0 6px 14px rgba(15,23,42,.25);font-size:var(--fs);line-height:1.35;overflow-wrap:anywhere;transition:background-color 1.5s ease-out}
+.card::before{content:'';position:absolute;top:-9px;left:50%;width:44px;height:16px;translate:-50% 0;rotate:-2deg;background:rgba(255,255,255,.55);border:1px solid rgba(15,23,42,.1);border-radius:3px}
+.card.hl{background:var(--pink)!important;color:#fff!important;font-size:calc(var(--fs)*1.2);flex-basis:calc(62% - 16px);transition:background-color .4s}
 .card.flash{background:var(--yellow)!important;color:var(--ink);transition:none}
 .tag{position:absolute;top:6px;right:10px;font-size:.6em;opacity:.7}
 body.mode-hl .card{cursor:pointer;outline:3px dashed var(--pink);outline-offset:2px}
 body.mode-del .card{cursor:pointer;outline:3px dashed var(--red);outline-offset:2px}
-.empty{color:#64748b;text-align:center;padding:30px;background:rgba(255,255,255,.85);border-radius:12px}
+.empty{flex:1;color:#64748b;text-align:center;padding:30px;background:rgba(255,255,255,.85);border-radius:12px}
 @keyframes popIn{0%{opacity:0;transform:scale(.4) translateY(20px);background-color:#FFC600}60%{opacity:1;transform:scale(1.05) translateY(-5px);background-color:#FFC600}100%{transform:scale(1) translateY(0)}}
 .card-pop-enter{animation:popIn .6s cubic-bezier(.175,.885,.32,1.275) forwards}
 .flash-transition{transition:background-color 1.5s ease-out}
@@ -74,6 +75,7 @@ body.mode-del .card{cursor:pointer;outline:3px dashed var(--red);outline-offset:
     <label class="r"><input type="radio" name="ag" value="3">Group 3</label></div>
   <div class="grp"><label for="filter"><strong>Show:</strong></label>
     <select id="filter"><option value="active">Current Active Group</option><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="all">All Groups</option></select></div>
+  <div class="grp"><strong>Text size:</strong><button class="btn sm" id="fsm" aria-label="Smaller text">A−</button><input type="range" id="fs" min="0.8" max="3.2" step="0.1" aria-label="Text size"><button class="btn sm" id="fsp" aria-label="Larger text">A+</button></div>
   <div class="tabs" id="tabs">
     <button class="btn on" data-t="topic1">Topic 1</button><button class="btn" data-t="topic2">Topic 2</button><button class="btn" data-t="topic3">Topic 3</button></div>
   <button class="btn" id="hl">Highlight Mode: OFF</button>
@@ -95,9 +97,22 @@ let topic='topic1', selfPaced=false, active=1, rows=[], els=new Map(), hlMode=fa
 const groupVisible=r=>{const f=$('#filter').value;return f==='all'||r.group_id===(f==='active'?active:+f);};
 const visible=r=>!r.is_deleted&&r.topic_id===topic&&groupVisible(r);
 
+// Sticky-note look: tint 50-80% of the brand colour mixed with white (solid, no transparency),
+// plus width / height / tilt, all derived from the card id so every screen shows the same board.
+const BASE={DO:[0,20,137],DONT:[0,125,186]};
+function styleNote(d,r){
+  let h=0;for(const c of r.id)h=(h*31+c.charCodeAt(0))>>>0;
+  const tint=.5+(h%31)/100, w=[100,66,50,40][(h>>>5)%4], mh=[0,4,7][(h>>>9)%3], rot=(((h>>>13)%41)-20)/10;
+  const rgb=BASE[r.type].map(v=>Math.round(v*tint+255*(1-tint)));
+  const L=rgb.map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});
+  const lum=.2126*L[0]+.7152*L[1]+.0722*L[2];
+  const fg=1.05/(lum+.05)>=(lum+.05)/.058?'#fff':'#0F172A';
+  const s=d.style;s.setProperty('--bgc',`rgb(${rgb})`);s.setProperty('--fg',fg);
+  s.setProperty('--w',w+'%');s.setProperty('--mh',mh);s.setProperty('--rot',rot+'deg');
+}
 function makeCard(r,isNew){
   const d=document.createElement('div');d.className='card flash-transition'+(r.is_highlighted?' hl':'');
-  d.textContent=r.content;
+  d.textContent=r.content;styleNote(d,r);
   const tag=document.createElement('span');tag.className='tag';tag.textContent='G'+r.group_id;d.appendChild(tag);
   if(isNew){d.classList.add('card-pop-enter','flash');
     d.addEventListener('animationend',()=>d.classList.remove('card-pop-enter'),{once:true});
@@ -185,6 +200,10 @@ sb.channel('admin-live')
      else{const el=els.get(r.id);if(el)el.classList.toggle('hl',!!r.is_highlighted);}
    }
  }).subscribe();
+let fs=1.6;try{fs=+localStorage.getItem('fs')||1.6}catch(e){}
+function setFs(v){fs=Math.max(.8,Math.min(3.2,Math.round(v*10)/10));document.documentElement.style.setProperty('--fs',fs+'rem');$('#fs').value=fs;try{localStorage.setItem('fs',fs)}catch(e){}}
+$('#fs').oninput=e=>setFs(+e.target.value);$('#fsm').onclick=()=>setFs(fs-.1);$('#fsp').onclick=()=>setFs(fs+.1);setFs(fs);
+addEventListener('keydown',e=>{if(/select|input|textarea/i.test(e.target.tagName))return;if(e.key==='+'||e.key==='=')setFs(fs+.1);if(e.key==='-')setFs(fs-.1);});
 function toggleFocus(){const f=document.body.classList.toggle('focus');$('#focus').textContent=f?'Show controls':'Hide controls';}
 $('#focus').onclick=toggleFocus;
 addEventListener('keydown',e=>{if((e.key==='h'||e.key==='H')&&!/select|input|textarea/i.test(e.target.tagName))toggleFocus();});
