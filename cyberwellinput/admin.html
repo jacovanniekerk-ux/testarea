@@ -20,8 +20,10 @@ body.focus header{max-height:0;padding-top:0;padding-bottom:0;opacity:0;pointer-
 select{font:inherit;padding:7px 10px;border-radius:12px;border:3px solid var(--blue);color:var(--blue);background:#fff;font-weight:700}
 .btn{font:inherit;font-weight:700;border:3px solid var(--blue);border-radius:12px;padding:8px 16px;cursor:pointer;background:#fff;color:var(--blue);transition:transform .15s cubic-bezier(.175,.885,.32,1.275),background .2s,color .2s}
 .btn:hover{transform:scale(1.04)}.btn:active{transform:scale(.9)}.btn:focus-visible,select:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
-.tabs{display:flex;gap:8px;flex:1;justify-content:center}
-.tabs .btn{font-size:clamp(1rem,1.6vw,1.5rem);padding:8px 26px}
+.tabs{display:flex;gap:10px;flex:1 1 100%;justify-content:center}
+.tabs .btn{flex:1;max-width:30em;font-size:clamp(.85rem,1.5vw,1.4rem);line-height:1.2;padding:8px 14px}
+#topicBar{position:relative;z-index:1;text-align:center;font-weight:700;color:var(--blue);font-size:clamp(1.3rem,2.6vw,2.6rem);line-height:1.15;padding:4px 18px 8px}
+#topicBar .k{display:block;font-size:.38em;letter-spacing:.16em;text-transform:uppercase;color:var(--turq)}
 .tabs .btn.on{background:var(--turq);border-color:var(--turq);color:#fff}
 #hl.on{background:var(--pink);border-color:var(--pink);color:#fff}#del.on{background:var(--red);border-color:var(--red);color:#fff}
 #fs{width:120px;accent-color:var(--turq)}.grp .btn.sm{padding:3px 10px}
@@ -77,11 +79,12 @@ body.mode-del .card{cursor:pointer;outline:3px dashed var(--red);outline-offset:
     <select id="filter"><option value="active">Current Active Group</option><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="all">All Groups</option></select></div>
   <div class="grp"><strong>Text size:</strong><button class="btn sm" id="fsm" aria-label="Smaller text">A−</button><input type="range" id="fs" min="0.8" max="3.2" step="0.1" aria-label="Text size"><button class="btn sm" id="fsp" aria-label="Larger text">A+</button></div>
   <div class="tabs" id="tabs">
-    <button class="btn on" data-t="topic1">Topic 1</button><button class="btn" data-t="topic2">Topic 2</button><button class="btn" data-t="topic3">Topic 3</button></div>
+    <button class="btn on" data-t="topic1">Cellphones in schools</button><button class="btn" data-t="topic2">Digital content consumption</button><button class="btn" data-t="topic3">AI in classrooms</button></div>
   <button class="btn" id="hl">Highlight Mode: OFF</button>
   <button class="btn" id="del">Delete Mode: OFF</button>
   <button class="btn" id="sp" title="ON: participants pick their own topic. OFF: your Topic tabs set it for everyone.">Self-paced: OFF</button>
 </header>
+<div id="topicBar"></div>
 <div id="stage">
   <div class="col" id="colDO"><h2>DO's</h2><div class="feed" id="f-DO"></div></div>
   <div id="divider" role="separator" aria-orientation="vertical" aria-label="Resize columns"></div>
@@ -92,6 +95,7 @@ body.mode-del .card{cursor:pointer;outline:3px dashed var(--red);outline-offset:
 const SUPABASE_URL='https://cftpufjzwpmhgzdcgpjb.supabase.co', SUPABASE_KEY='sb_publishable_b1H_5DJYLQSrr83T_dvz6A_2UAqOVg4';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TOPICS={topic1:'Cellphones in schools',topic2:'Digital content consumption',topic3:'AI in classrooms'};
 let topic='topic1', selfPaced=false, active=1, rows=[], els=new Map(), hlMode=false, delMode=false;
 
 const groupVisible=r=>{const f=$('#filter').value;return f==='all'||r.group_id===(f==='active'?active:+f);};
@@ -147,7 +151,8 @@ function removeEl(id){const el=els.get(id);if(!el)return;els.delete(id);
   else{el.classList.add('card-pop-out');setTimeout(()=>el.remove(),400);}}
 
 // Controls
-function paintTabs(){$$('#tabs .btn').forEach(x=>x.classList.toggle('on',x.dataset.t===topic));}
+function paintTabs(){$$('#tabs .btn').forEach(x=>x.classList.toggle('on',x.dataset.t===topic));
+  const b=$('#topicBar');b.innerHTML='<span class="k">Topic '+topic.slice(5)+'</span>';b.append(TOPICS[topic]);}
 function paintSP(){$('#sp').classList.toggle('on',selfPaced);$('#sp').textContent='Self-paced: '+(selfPaced?'ON':'OFF');}
 $('#tabs').onclick=async e=>{const b=e.target.closest('.btn');if(!b)return;
   topic=b.dataset.t;paintTabs();renderAll();
