@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformation Agent Planner</title>
+<link rel="icon" href="../favicon.png">
+<style>
+:root{--blue:#001489;--bright:#007DBA;--pink:#C8126E;--yellow:#FFC600;--ink:#1c2033;--muted:#4a5068;--line:#d5dae8;--bg:#f3f5fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,Helvetica,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+header{background:#fff;border-bottom:4px solid var(--blue);padding:12px 24px}
+header img{display:block;height:auto;width:100%;max-width:520px}
+main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px}
+.card{background:#fff;border:1px solid var(--line);border-top:6px solid var(--yellow);width:100%;max-width:440px;padding:32px 28px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:1.6rem;line-height:1.2;color:var(--blue)}
+p{margin:0;line-height:1.5;color:var(--muted)}
+label{font-weight:700;font-size:.95rem}
+input{width:100%;height:52px;border:2px solid #6b7186;padding:0 14px;font-size:1.15rem;letter-spacing:.05em;border-radius:4px}
+input:focus,button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-color:var(--blue)}
+button{height:52px;border:0;border-radius:4px;background:var(--blue);color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer}
+button:hover{background:var(--bright)}
+button:disabled{opacity:.6;cursor:wait}
+button.secondary{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+button.secondary:hover{background:var(--blue);color:#fff}
+.error{color:var(--pink);font-weight:600;min-height:1.4em}
+.small{font-size:.85rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><img src="../header.png" alt="Western Cape Government for you. eLearning Teacher Professional Development"></header>
+<main>
+  <section class="card" id="login" hidden>
+    <h1>Transformation Agent Planner</h1>
+    <p>Enter your PERSAL number to plan your sessions. You will stay signed in on this device.</p>
+    <form id="form" style="display:flex;flex-direction:column;gap:18px" novalidate>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label for="persal">PERSAL number</label>
+        <input id="persal" inputmode="numeric" autocomplete="off" required>
+      </div>
+      <div class="error" id="error" role="alert"></div>
+      <button type="submit" id="go">Continue</button>
+    </form>
+    <p class="small">Trouble signing in? Contact your District eLearning Advisory team.</p>
+  </section>
+
+  <section class="card" id="app" hidden>
+    <h1 id="welcome">Welcome</h1>
+    <p>You are signed in. Your session planner will appear here.</p>
+    <button type="button" class="secondary" id="signout">Sign out</button>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// CONFIGURATION (the anon key is designed to be public; access is protected by row-level security)
+const SUPABASE_URL = "https://cftpufjzwpmhgzdcgpjb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmdHB1Zmp6d3BtaGd6ZGNncGpiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTMxNzUxNywiZXhwIjoyMTAwODkzNTE3fQ.EpaLeYyTNQycuVGCl9cRBFoLyMYMvHRgYfBffuxqKQg";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, storageKey: "ta-planner-auth" }
+});
+const $ = id => document.getElementById(id);
+
+function show(which) {
+  $("login").hidden = which !== "login";
+  $("app").hidden = which !== "app";
+  if (which === "login") $("persal").focus();
+}
+function showApp() {
+  const name = localStorage.getItem("ta_name");
+  $("welcome").textContent = name ? "Welcome, " + name : "Welcome";
+  show("app");
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const persal = $("persal").value.replace(/\D/g, "");
+  $("error").textContent = "";
+  if (!persal) { $("error").textContent = "Please enter your PERSAL number."; return; }
+
+  $("go").disabled = true;
+  const { data, error } = await sb.functions.invoke("ta-login", { body: { persal } });
+  $("go").disabled = false;
+
+  if (error) {
+    const status = error.context && error.context.status;
+    $("error").textContent = status === 404
+      ? "We cannot find that PERSAL number. Check it and try again, or contact your District eLearning Advisory team."
+      : "Something went wrong. Please try again in a moment.";
+    return;
+  }
+  const { error: sessErr } = await sb.auth.setSession(data.session);
+  if (sessErr) { $("error").textContent = "Something went wrong. Please try again in a moment."; return; }
+  localStorage.setItem("ta_name", data.name || "");
+  showApp();
+});
+
+$("signout").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  localStorage.removeItem("ta_name");
+  $("persal").value = "";
+  show("login");
+});
+
+(async () => {
+  const { data } = await sb.auth.getSession();
+  data.session ? showApp() : show("login");
+})();
+</script>
+</body>
+</html>
