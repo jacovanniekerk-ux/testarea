@@ -43,10 +43,11 @@ dl{margin:0;display:grid;grid-template-columns:80px 1fr;gap:6px 10px}dt{color:va
 .fbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.fbar input{flex:1;min-width:200px}
 .fl{border:2px solid var(--line);background:none;border-radius:99px;padding:6px 14px;font-weight:600;font-size:.78rem}.fl.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .cg{background:var(--card);border-radius:14px;box-shadow:var(--sh);overflow:hidden}
-.rw{display:grid;grid-template-columns:minmax(0,1fr) 130px 70px;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:9px 14px;font-size:.85rem}.rw:hover{background:var(--hover)}.rw.h{font-size:.7rem;font-weight:700;color:var(--muted)}.rw.h:hover{background:none}.rw span:first-child{font-weight:600}
-@media(max-width:600px){.rw{grid-template-columns:minmax(0,1fr) 60px}.rw>:nth-child(2){display:none}}
+.rw{display:grid;grid-template-columns:minmax(0,1fr) 130px 70px 112px;gap:10px;align-items:center;width:100%;border-bottom:1px solid var(--line);padding:4px 14px;font-size:.85rem;min-height:42px}.rw[data-open]{cursor:pointer}.rw:hover{background:var(--hover)}.rw.h{font-size:.7rem;font-weight:700;color:var(--muted);cursor:default}.rw.h:hover{background:none}.nm{background:none;border:0;padding:0;text-align:left;font:inherit;font-weight:600;color:inherit;cursor:pointer}
+.qa{display:flex;gap:4px;justify-content:flex-end}.qi{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--blue)}a.qi:hover{background:var(--blue);color:#fff}.qi.off{color:var(--muted);opacity:.35;cursor:not-allowed}
+@media(max-width:600px){.rw{grid-template-columns:minmax(0,1fr) 56px 112px}.rw>:nth-child(2){display:none}}
 dialog{border:0;border-radius:20px;padding:22px;max-width:520px;width:calc(100% - 32px);background:#fff;color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(0,10,60,.5)}
-.lk{display:block;border:2px solid var(--blue);color:var(--blue);border-radius:12px;padding:9px 14px;font-weight:700;text-decoration:none;margin-top:8px;font-size:.85rem}.lk.off{background:var(--hover);border-color:transparent;color:var(--muted);opacity:.6;cursor:not-allowed}
+.lk{display:flex;align-items:center;gap:10px;border:2px solid var(--blue);color:var(--blue);border-radius:12px;padding:9px 14px;font-weight:700;text-decoration:none;margin-top:8px;font-size:.85rem}.lk.off{background:var(--hover);border-color:transparent;color:var(--muted);opacity:.6;cursor:not-allowed}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--pink);color:#fff;padding:10px 18px;border-radius:12px;font-weight:600;max-width:90%;z-index:9}
 </style>
 </head>
@@ -90,6 +91,12 @@ const KEY_SPARKS = [['Digital Skills Course','digital'],['Facilitator Think Tank
 const DOVETAIL = ['ePedagogy: Building a Digital Lesson','Integrating digital resources from the ePortal','Google Fundamentals 1: Account and Google Chrome','Office Online Fundamentals','Improved Presentation Skills','Ease of Access with QR Codes and Bit.ly links','Teaching with Videos','Orientation to Google Forms','AI In Education: Work Smarter, not Harder','Introduction to Cyber Wellness Education'];
 const DOVETAIL_NEEDED = 5;
 const icon = n => '../imgs/icons/' + n + '.png';
+const SVG = p => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const LINKS = [
+  ['Outline', 'outline_link', SVG('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>')],
+  ['Presentation', 'presentation_link', SVG('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/>')],
+  ['Recording', 'recording_link', SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/>')]];
+const okUrl = u => /^https?:\/\//i.test(u || '');
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: "ta-planner-auth" } });
 const $ = s => document.querySelector(s), pad = n => String(n).padStart(2, '0');
@@ -123,7 +130,7 @@ async function start() {
     sb.from('ta_planned_sessions').select('*').order('session_date'),
     sb.rpc('ta_my_sessions_attended'), sb.rpc('ta_my_school')]);
   for (const r of [co, se, at, ho]) if (r.error) throw r.error;
-  D.courses = co.data.sort((a, b) => lvOf(a) - lvOf(b) || a.course_name.localeCompare(b.course_name));
+  D.courses = co.data.sort((a, b) => a.course_name.localeCompare(b.course_name));
   D.schools = sc; D.names = new Set(sc.map(s => s.School_Name));
   D.sessions = se.data;
   D.attended = (at.data || []).map(x => typeof x === 'string' ? x : Object.values(x)[0]);
@@ -212,13 +219,13 @@ async function setStatus(id, st) {
 function content() {
   $('#fl').innerHTML = [['All', -1], ...LV.slice(0, 4).map((l, i) => [l[0], i])].map(x => `<button class="fl ${cf.lv === x[1] ? 'on' : ''}" data-lv="${x[1]}">${x[0]}</button>`).join(' ');
   const L = D.courses.map((c, i) => [c, i]).filter(x => (cf.lv < 0 || lvOf(x[0]) === cf.lv) && norm(x[0].course_name).includes(cf.q));
-  $('#cg').innerHTML = '<div class="rw h"><span>Session</span><span>Level</span><span>Duration</span></div>' + (L.map(([c, i]) => `<button class="rw" data-open="${i}"><span>${esc(c.course_name)}</span><span><i style="background:${LV[lvOf(c)][1]}"></i>${esc(c.developmental_level || '')}</span><span>${c.programme_duration ? c.programme_duration + ' min' : 'TBC'}</span></button>`).join('') || '<p style="padding:14px">No sessions match.</p>');
+  $('#cg').innerHTML = '<div class="rw h"><span>Session</span><span>Level</span><span>Duration</span><span style="text-align:right">Links</span></div>' + (L.map(([c, i]) => `<div class="rw" data-open="${i}"><button class="nm" data-open="${i}">${esc(c.course_name)}</button><span><i style="background:${LV[lvOf(c)][1]}"></i>${esc(c.developmental_level || '')}</span><span>${c.programme_duration ? c.programme_duration + ' min' : 'TBC'}</span><span class="qa">${LINKS.map(l => okUrl(c[l[1]]) ? `<a class="qi" href="${esc(c[l[1]])}" target="_blank" rel="noopener" title="${l[0]}" aria-label="${l[0]} for ${esc(c.course_name)}">${l[2]}</a>` : `<span class="qi off" role="img" title="${l[0]} not available yet" aria-label="${l[0]} not available">${l[2]}</span>`).join('')}</span></div>`).join('') || '<p style="padding:14px">No sessions match.</p>');
 }
 function openCourse(i) {
-  const c = D.courses[i], ok = u => /^https?:\/\//i.test(u || '');
+  const c = D.courses[i];
   $('#dlg').innerHTML = `<h2 style="margin:0 0 4px">${esc(c.course_name)}</h2><p class="muted" style="margin:0;font-size:.8rem">${esc(c.developmental_level || '')} · ${c.programme_duration ? c.programme_duration + ' minutes' : 'duration to be confirmed'}</p>
 ${c.session_desciption ? `<p style="white-space:pre-line">${esc(c.session_desciption)}</p>` : ''}${c.session_outcomes ? `<h3>Outcomes</h3><p style="white-space:pre-line;margin:0 0 12px">${esc(c.session_outcomes)}</p>` : ''}
-${[['Outline', c.outline_link], ['Presentation', c.presentation_link], ['Recording', c.recording_link]].map(l => ok(l[1]) ? `<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener">${l[0]} ↗</a>` : `<span class="lk off" aria-disabled="true" title="Not available yet">${l[0]}</span>`).join('')}
+${LINKS.map(l => okUrl(c[l[1]]) ? `<a class="lk" href="${esc(c[l[1]])}" target="_blank" rel="noopener">${l[2]}${l[0]} ↗</a>` : `<span class="lk off" aria-disabled="true" title="Not available yet">${l[2]}${l[0]}</span>`).join('')}
 <div class="row" style="margin-top:16px"><button class="primary" data-plan="${i}">Plan this session</button><button class="ghost" data-close="1" style="flex:0 0 auto">Close</button></div>`;
   $('#dlg').showModal();
 }
@@ -227,6 +234,7 @@ $('#legend').innerHTML = LV.slice(0, 4).map(l => `<span><i style="background:${l
 
 document.addEventListener('click', e => {
   const t = e.target, q = s => t.closest(s);
+  if (q('.qa')) return;
   if (q('#spk')) { const p = $('#spp'); p.hidden = !p.hidden; $('#spk').setAttribute('aria-expanded', !p.hidden); return }
   if (q('[data-t]')) return tab(q('[data-t]').dataset.t);
   if (t.dataset.lv !== undefined) { cf.lv = +t.dataset.lv; return content() }
