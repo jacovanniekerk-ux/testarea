@@ -108,10 +108,24 @@ dialog{border:0;border-radius:20px;padding:22px;max-width:520px;width:calc(100% 
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast" role="alert" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script type="module">
-// Same shared modules the 4P tool uses (site-root /js folder). This page lives in /ta/, so they are one level up.
-import { supabaseClient as sb } from '../js/supabase-client.js';
-import { saveSession, getSession, clearSession } from '../js/session.js';
+// CONFIGURATION (anon keys are public by design). Two separate Supabase projects:
+// 1) LOGIN project: where advisors and login_advisor / change_password live (same values as the 4P tool's js/supabase-client.js)
+const LOGIN_URL = "https://nnsxmrbmnymggdapkktl.supabase.co";
+const LOGIN_ANON_KEY = "sb_publishable_Gh8ouV1INceQG9S_2Csi5A_eMYFZKgs";
+// 2) TA project: where transformers, ta_planned_sessions, courses and schools live (same values as the TA planner's index.html)
+const TA_URL = "https://cftpufjzwpmhgzdcgpjb.supabase.co";
+const TA_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmdHB1Zmp6d3BtaGd6ZGNncGpiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTMxNzUxNywiZXhwIjoyMTAwODkzNTE3fQ.EpaLeYyTNQycuVGCl9cRBFoLyMYMvHRgYfBffuxqKQg";
+const SESSION_KEY = "ta_admin_advisor"; // where the signed-in advisor profile is kept in this browser
+
+const opts = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
+const sbLogin = supabase.createClient(LOGIN_URL, LOGIN_ANON_KEY, opts); // sign-in only
+const sb = supabase.createClient(TA_URL, TA_ANON_KEY, opts);            // all TA data
+// No Supabase Auth, same as the 4P tool: "signed in" just means holding the advisor profile.
+const saveSession = a => { try { localStorage.setItem(SESSION_KEY, JSON.stringify(a)) } catch (e) {} };
+const getSession = () => { try { const a = JSON.parse(localStorage.getItem(SESSION_KEY)); return a && a.id ? a : null } catch (e) { return null } };
+const clearSession = () => { try { localStorage.removeItem(SESSION_KEY) } catch (e) {} };
 
 // Head office sees every district (with a district filter). Everyone else is locked to their own district.
 // Adjust if the head-office advisors' district value is spelled differently.
@@ -290,7 +304,7 @@ $('#form').addEventListener('submit', async e => {
   const email = $('#email').value.trim().toLowerCase(), password = $('#pw').value;
   if (!email || !password) { $('#lerr').textContent = 'Please enter both email and password.'; return }
   $('#go').disabled = true;
-  const { data, error } = await sb.rpc('login_advisor', { p_email: email, p_password: password });
+  const { data, error } = await sbLogin.rpc('login_advisor', { p_email: email, p_password: password });
   $('#go').disabled = false;
   const profile = Array.isArray(data) ? data[0] : data;
   if (error || !profile) { $('#lerr').textContent = 'Invalid email or password.'; return }
@@ -305,9 +319,9 @@ $('#cform').addEventListener('submit', async e => {
   if (next !== $('#cp').value) { $('#cerr').textContent = 'Passwords do not match.'; return }
   $('#cgo').disabled = true;
   try {
-    const { error } = await sb.rpc('change_password', { p_email: pendingReset.email, p_current_password: pendingReset.password, p_new_password: next });
+    const { error } = await sbLogin.rpc('change_password', { p_email: pendingReset.email, p_current_password: pendingReset.password, p_new_password: next });
     if (error) { $('#cerr').textContent = error.message || 'Could not change password.'; return }
-    const { data, error: le } = await sb.rpc('login_advisor', { p_email: pendingReset.email, p_password: next });
+    const { data, error: le } = await sbLogin.rpc('login_advisor', { p_email: pendingReset.email, p_password: next });
     const profile = Array.isArray(data) ? data[0] : data;
     if (le || !profile) { logout(); $('#lerr').textContent = 'Password saved, but sign-in failed. Please sign in again.'; return }
     pendingReset = null; $('#np').value = ''; $('#cp').value = '';
