@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformation Agent Sessions – Admin</title>
+<link rel="icon" href="../favicon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#f4f5f9;--card:#fff;--ink:#1c2033;--muted:#6a7088;--line:#e6e8f0;--blue:#001489;--bright:#007DBA;--pink:#C8126E;--yellow:#FFC600;--green:#5E7D0A;--hover:#eef1fa;--sh:0 4px 18px rgba(20,30,90,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,"Segoe UI",Arial,sans-serif;font-size:14px}
+header{background:#fff;padding:6px 20px;border-bottom:4px solid var(--blue)}header img{display:block;width:100%;max-width:340px;height:auto}
+.wrap{max-width:1280px;margin:0 auto;padding:10px 16px 24px}
+.card{background:var(--card);border-radius:14px;box-shadow:var(--sh);padding:14px;margin-bottom:12px}
+h1,h2,h3{margin:0}h2{font-size:1.1rem}h3{font-size:.95rem;margin-bottom:10px}
+button,select,input{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.muted{color:var(--muted)}
+.ghost{background:none;border:2px solid var(--blue);color:var(--blue);border-radius:10px;padding:6px 12px;font-weight:700}.ghost:hover{background:var(--hover)}.ghost:disabled{opacity:.5;cursor:default}
+.primary{background:var(--blue);color:#fff;border:0;border-radius:12px;height:46px;font-weight:700;width:100%}.primary:hover{background:var(--bright)}.primary:disabled{opacity:.6;cursor:wait}
+.login{max-width:420px;margin:32px auto;border-top:6px solid var(--yellow);display:flex;flex-direction:column;gap:14px}.login h1{font-size:1.4rem;color:var(--blue)}.login p{margin:0;color:var(--muted);line-height:1.5}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}@media(max-width:700px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{border-radius:12px;text-align:center;padding:7px 6px;background:color-mix(in srgb,var(--lc,#8a90a8) 13%,#fff)}.tile b{display:block;font-size:1.25rem;line-height:1.2;color:var(--n,var(--ink))}.tile span{font-size:.7rem;color:var(--muted)}
+.tabbar{background:var(--blue);border-radius:14px;padding:5px;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tabbar button{border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:.8rem;background:rgba(255,255,255,.18);color:#fff}.tabbar button.on{background:#fff;color:var(--blue)}
+label{display:block;font-size:.78rem;font-weight:700;margin:0 0 4px}
+select,input[type=date],input[type=search],input[type=text],input[inputmode]{width:100%;height:44px;border:1px solid #b9bed0;border-radius:12px;padding:0 12px;background:#fff}
+.warn{color:var(--pink);font-weight:600;font-size:.8rem}
+.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end}
+.filters .wide{grid-column:span 2}@media(max-width:900px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.filters{grid-template-columns:1fr}.filters .wide{grid-column:auto}}
+.fbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:12px 0 0}
+.fl{border:2px solid var(--line);background:none;border-radius:99px;padding:6px 14px;font-weight:600;font-size:.78rem}.fl.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tw{overflow-x:auto;border-radius:14px;box-shadow:var(--sh);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);font-size:.85rem;vertical-align:middle}
+th{font-size:.7rem;font-weight:700;color:var(--muted);white-space:nowrap;background:#fff;position:sticky;top:0}
+th button{background:none;border:0;padding:0;font:inherit;font-weight:700;color:inherit}th button:hover{color:var(--blue)}
+tbody tr[data-s]{cursor:pointer}tbody tr:hover{background:var(--hover)}td.nw{white-space:nowrap}
+td.num,th.num{text-align:right}
+.lv{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;flex:none}
+.badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:.7rem;font-weight:700;text-transform:capitalize;white-space:nowrap}
+.badge.planned{background:color-mix(in srgb,var(--bright) 14%,#fff);color:var(--blue)}
+.badge.completed{background:color-mix(in srgb,var(--green) 16%,#fff);color:var(--green)}
+.badge.cancelled{background:color-mix(in srgb,var(--pink) 12%,#fff);color:var(--pink)}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:.75rem}.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+dl{margin:0;display:grid;grid-template-columns:100px 1fr;gap:6px 10px}dt{color:var(--muted)}dd{margin:0;font-weight:600}.row{display:flex;gap:8px;margin-top:14px}.row button{flex:1}
+dialog{border:0;border-radius:20px;padding:22px;max-width:520px;width:calc(100% - 32px);background:#fff;color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(0,10,60,.5)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--pink);color:#fff;padding:10px 18px;border-radius:12px;font-weight:600;max-width:90%;z-index:9}
+</style>
+</head>
+<body>
+<header><img src="../header.png" alt="Western Cape Government for you. eLearning Teacher Professional Development"></header>
+<div class="wrap">
+
+<section class="card login" id="login" hidden>
+  <h1>Transformation Agent Sessions: Admin</h1>
+  <p>Sign in with the same email and password you use for the 4P tool.</p>
+  <form id="form" style="display:flex;flex-direction:column;gap:12px" novalidate>
+    <div><label for="email">Email</label><input id="email" type="email" autocomplete="username" required></div>
+    <div><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required></div>
+    <div class="warn" id="lerr" role="alert" style="min-height:1.2em"></div>
+    <button class="primary" id="go" type="submit">Sign in</button>
+  </form>
+</section>
+
+<section class="card login" id="change" hidden>
+  <h1>Set a new password</h1>
+  <p>Your password was reset by an administrator. Please choose a new one to continue.</p>
+  <form id="cform" style="display:flex;flex-direction:column;gap:12px" novalidate>
+    <div><label for="np">New password (at least 10 characters)</label><input id="np" type="password" autocomplete="new-password" minlength="10" required></div>
+    <div><label for="cp">Confirm new password</label><input id="cp" type="password" autocomplete="new-password" minlength="10" required></div>
+    <div class="warn" id="cerr" role="alert" style="min-height:1.2em"></div>
+    <button class="primary" id="cgo" type="submit">Save password</button>
+  </form>
+</section>
+
+<div id="app" hidden>
+  <div class="bar"><div><strong id="who"></strong> <span class="muted" id="scope"></span></div>
+    <div style="display:flex;gap:8px;align-items:center"><button class="ghost" id="refresh">Refresh</button><button class="ghost" id="out">Sign out</button></div></div>
+  <section class="card" id="stats"></section>
+  <div class="tabbar"><button data-t="sessions" class="on">Sessions</button><button data-t="agents">By Transformation Agent</button></div>
+
+  <div id="v-sessions">
+    <section class="card">
+      <div class="filters">
+        <div class="wide"><label for="f-q">Search</label><input type="search" id="f-q" placeholder="Agent, school or session"></div>
+        <div><label for="f-ag">Transformation Agent</label><select id="f-ag"></select></div>
+        <div id="di-wrap"><label for="f-di">District</label><select id="f-di"></select></div>
+        <div><label for="f-lv">Level</label><select id="f-lv"></select></div>
+        <div><label for="f-from">From</label><input type="date" id="f-from"></div>
+        <div><label for="f-to">To</label><input type="date" id="f-to"></div>
+        <div><button class="ghost" id="reset" style="height:44px;width:100%">Clear filters</button></div>
+      </div>
+      <div class="fbar"><span id="stfl"></span><span id="pdfl"></span></div>
+    </section>
+    <div class="bar"><span class="muted" id="count"></span><button class="ghost" id="csv">Download CSV</button></div>
+    <div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table><div id="emp" class="empty" hidden>No sessions match these filters.</div></div>
+    <div style="text-align:center;margin-top:12px"><button class="ghost" id="more" hidden>Show more</button></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div id="v-agents" hidden>
+    <div class="tw"><table><thead><tr><th>Transformation Agent</th><th>Home school</th><th class="num">Planned</th><th class="num">Completed</th><th class="num">Cancelled</th><th>Levels planned</th><th>Next session</th></tr></thead><tbody id="ab"></tbody></table><div id="aemp" class="empty" hidden>No Transformation Agents found.</div></div>
+  </div>
+</div>
+</div>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="alert" hidden></div>
+
+<script type="module">
+// Same shared modules the 4P tool uses (site-root /js folder). This page lives in /ta/, so they are one level up.
+import { supabaseClient as sb } from '../js/supabase-client.js';
+import { saveSession, getSession, clearSession } from '../js/session.js';
+
+// Head office sees every district (with a district filter). Everyone else is locked to their own district.
+// Adjust if the head-office advisors' district value is spelled differently.
+const isHeadOffice = d => /head\s*office/i.test(d || '');
+const PAGE = 50;
+
+const $ = s => document.querySelector(s), pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const t5 = t => String(t).slice(0, 5);
+const mins = t => +t.slice(0, 2) * 60 + +t.slice(3, 5), hm = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+const fmtDate = d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) };
+const toast = m => { const t = $('#toast'); t.textContent = m; t.hidden = false; setTimeout(() => t.hidden = true, 5000) };
+const LV = [['Foundation','#5E7D0A'],['I Can Do It','#FFC600'],['Better','#C8126E'],['Summit','#001489'],['Other','#6a7088']];
+const lvOf = c => { const s = norm(c.developmental_level); return s.includes('foundation') ? 0 : s.includes('can do') ? 1 : s.includes('better') ? 2 : s.includes('summit') ? 3 : 4 };
+const STATUS = ['planned', 'completed', 'cancelled'];
+
+let D = { sessions: [], agents: new Map(), courses: new Map(), schools: new Map(), ho: false, noAgents: false, rec: new Map() };
+let F = { q: '', ag: '', di: '', lv: '', from: '', to: '', st: 'all', pd: 'all' }, sortDir = -1, shown = PAGE, rows = [];
+
+async function fetchAll(q) { let all = [], from = 0; for (;;) { const { data, error } = await q().range(from, from + 999); if (error) throw error; all = all.concat(data); if (data.length < 1000) return all; from += 1000 } }
+
+const agentName = (t, id) => (t && t.full_name && t.full_name.trim()) || 'Agent #' + id;
+const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o };
+let advisor = null;
+
+async function load() {
+  D.ho = isHeadOffice(advisor.district);
+  const [co, sc] = await Promise.all([
+    fetchAll(() => sb.from('courses').select('course_name,developmental_level,programme_duration').order('course_name')),
+    fetchAll(() => sb.from('schools').select('School_Name,Circuit').order('School_Name'))]);
+  D.courses = new Map(co.map(c => [c.course_name, c]));
+  D.schools = new Map(sc.map(x => [x.School_Name, x]));
+
+  // Agents: all of them for head office; otherwise only agents in the advisor's own district.
+  const likeSafe = String(advisor.district || '').trim().replace(/[%_\\]/g, m => '\\' + m);
+  const ag = await fetchAll(() => { const q = sb.from('transformers').select('id,full_name,district,ta_school').order('full_name'); return D.ho ? q : q.ilike('district', likeSafe) });
+  D.rec = new Map(ag.map(t => [t.id, t]));
+  D.agents = new Map(ag.map(t => [t.id, agentName(t, t.id)]));
+  D.noAgents = !D.ho && ag.length === 0;
+
+  let se = [];
+  if (D.ho) se = await fetchAll(() => sb.from('ta_planned_sessions').select('*').order('session_date', { ascending: false }).order('id'));
+  else for (const part of chunk(ag.map(t => t.id), 80)) se = se.concat(await fetchAll(() => sb.from('ta_planned_sessions').select('*').in('transformer_id', part).order('id')));
+  D.sessions = se;
+}
+const C = n => D.courses.get(n) || { course_name: n };
+const district = s => (D.rec.get(s.transformer_id) || {}).district || '';
+const agent = s => D.agents.get(s.transformer_id);
+
+async function start() {
+  await load();
+  $('#who').textContent = 'Welcome, ' + (advisor.full_name || advisor.email);
+  $('#scope').textContent = D.ho ? '· All districts' : '· ' + advisor.district;
+  $('#di-wrap').hidden = !D.ho;
+  $('#login').hidden = true; $('#change').hidden = true;
+  const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`;
+  const ags = [...D.agents].sort((a, b) => a[1].localeCompare(b[1]));
+  $('#f-ag').innerHTML = opt('', 'All agents', F.ag) + ags.map(([id, n]) => opt(String(id), n, F.ag)).join('');
+  const dis = [...new Set([...D.rec.values()].map(t => t.district).filter(Boolean))].sort();
+  $('#f-di').innerHTML = opt('', 'All districts', F.di) + dis.map(d => opt(d, d, F.di)).join('');
+  $('#f-lv').innerHTML = opt('', 'All levels', F.lv) + LV.map((l, i) => opt(String(i), l[0], F.lv)).join('');
+  $('#legend').innerHTML = LV.map(l => `<span><i style="background:${l[1]}"></i>${l[0]}</span>`).join('');
+  $('#app').hidden = false;
+  if (D.noAgents) toast('No Transformation Agents were found for the district \u201c' + advisor.district + '\u201d. Check the district name on your advisor profile.');
+  render(); agents();
+}
+
+function stats() {
+  const n = s => D.sessions.filter(x => x.status === s).length, td = iso(new Date());
+  const up = D.sessions.filter(s => s.status === 'planned' && s.session_date >= td).length;
+  const ag = new Set(D.sessions.map(s => s.transformer_id)).size;
+  const T = [['Total sessions', D.sessions.length, ''], ['Planned', n('planned'), 'var(--bright)'], ['Upcoming', up, 'var(--blue)'], ['Completed', n('completed'), 'var(--green)'], ['Cancelled', n('cancelled'), 'var(--pink)']];
+  $('#stats').innerHTML = `<div class="tiles">${T.map(t => `<div class="tile" ${t[2] ? `style="--lc:${t[2]};--n:${t[2]}"` : ''}><b>${t[1]}</b><span>${t[0]}</span></div>`).join('')}</div><p class="muted" style="margin:10px 0 0;font-size:.78rem">${ag} Transformation Agent${ag === 1 ? '' : 's'} with sessions${D.ho ? '' : ' in ' + esc(advisor.district)}.</p>`;
+}
+
+function filtered() {
+  const td = iso(new Date()), q = norm(F.q);
+  return D.sessions.filter(s => {
+    if (F.st !== 'all' && s.status !== F.st) return false;
+    if (F.pd === 'upcoming' && s.session_date < td) return false;
+    if (F.pd === 'past' && s.session_date >= td) return false;
+    if (F.ag && String(s.transformer_id) !== F.ag) return false;
+    if (F.di && district(s) !== F.di) return false;
+    if (F.lv !== '' && lvOf(C(s.course_name)) !== +F.lv) return false;
+    if (F.from && s.session_date < F.from) return false;
+    if (F.to && s.session_date > F.to) return false;
+    if (q && !norm(agent(s) + ' ' + s.school_name + ' ' + s.course_name).includes(q)) return false;
+    return true;
+  }).sort((a, b) => sortDir * ((a.session_date + t5(a.start_time)).localeCompare(b.session_date + t5(b.start_time)) || a.id - b.id));
+}
+
+function render() {
+  stats();
+  const pill = (k, v, t, cur) => `<button class="fl ${cur === v ? 'on' : ''}" data-${k}="${v}">${t}</button>`;
+  $('#stfl').innerHTML = [['all', 'All statuses'], ...STATUS.map(s => [s, s[0].toUpperCase() + s.slice(1)])].map(x => pill('st', x[0], x[1], F.st)).join(' ');
+  $('#pdfl').innerHTML = [['all', 'Any date'], ['upcoming', 'Upcoming'], ['past', 'Past']].map(x => pill('pd', x[0], x[1], F.pd)).join(' ');
+  rows = filtered();
+  $('#th').innerHTML = `<tr><th><button id="sort" aria-label="Sort by date">Date ${sortDir < 0 ? '▼' : '▲'}</button></th><th>Time</th><th>Transformation Agent</th><th>School</th><th>Session</th><th>Status</th></tr>`;
+  $('#tb').innerHTML = rows.slice(0, shown).map(s => {
+    const c = C(s.course_name), l = LV[lvOf(c)];
+    return `<tr data-s="${s.id}" tabindex="0"><td class="nw">${esc(fmtDate(s.session_date))}</td><td class="nw">${t5(s.start_time)}</td><td>${esc(agent(s))}</td><td>${esc(s.school_name)}</td><td><i class="lv" style="background:${l[1]}"></i>${esc(s.course_name)}</td><td><span class="badge ${esc(s.status)}">${esc(s.status)}</span></td></tr>`;
+  }).join('');
+  $('#emp').hidden = rows.length > 0;
+  $('#count').textContent = rows.length === D.sessions.length ? `${rows.length} session${rows.length === 1 ? '' : 's'}` : `${rows.length} of ${D.sessions.length} sessions`;
+  $('#more').hidden = rows.length <= shown;
+  $('#more').textContent = `Show more (${rows.length - shown} remaining)`;
+}
+
+function agents() {
+  const td = iso(new Date()), by = new Map();
+  for (const id of D.agents.keys()) by.set(id, []);
+  for (const s of D.sessions) { if (!by.has(s.transformer_id)) by.set(s.transformer_id, []); by.get(s.transformer_id).push(s) }
+  const R = [...by].map(([id, L]) => {
+    const n = k => L.filter(s => s.status === k).length, live = L.filter(s => s.status !== 'cancelled');
+    const lv = [...new Set(live.map(s => lvOf(C(s.course_name))))].sort();
+    const nx = live.filter(s => s.status === 'planned' && s.session_date >= td).sort((a, b) => (a.session_date + a.start_time).localeCompare(b.session_date + b.start_time))[0];
+    return { id, name: D.agents.get(id), p: n('planned'), c: n('completed'), x: n('cancelled'), lv, nx };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+  $('#ab').innerHTML = R.map(r => `<tr data-ag="${r.id}" style="cursor:pointer"><td><strong>${esc(r.name)}</strong>${D.ho && (D.rec.get(r.id) || {}).district ? `<br><span class="muted" style="font-size:.72rem">${esc(D.rec.get(r.id).district)}</span>` : ''}</td><td>${esc((D.rec.get(r.id) || {}).ta_school || '')}</td><td class="num">${r.p}</td><td class="num">${r.c}</td><td class="num">${r.x}</td><td>${r.lv.length ? r.lv.map(i => `<span style="white-space:nowrap;margin-right:10px"><i class="lv" style="background:${LV[i][1]}"></i>${LV[i][0]}</span>`).join('') : '<span class="muted">None</span>'}</td><td class="nw">${r.nx ? esc(fmtDate(r.nx.session_date)) + ' · ' + t5(r.nx.start_time) : '<span class="muted">Nothing upcoming</span>'}</td></tr>`).join('');
+  $('#aemp').hidden = R.length > 0;
+}
+
+function sessDlg(id) {
+  const s = D.sessions.find(x => x.id === id); if (!s) return;
+  const c = C(s.course_name), d = district(s), home = (D.rec.get(s.transformer_id) || {}).ta_school, sc = D.schools.get(s.school_name) || {};
+  $('#dlg').innerHTML = `<h3>Session details</h3><dl><dt>Agent</dt><dd>${esc(agent(s))}</dd><dt>Session</dt><dd>${esc(s.course_name)}</dd><dt>Level</dt><dd>${esc(c.developmental_level || '')}</dd><dt>School</dt><dd>${esc(s.school_name)}</dd>${sc.Circuit ? `<dt>Circuit</dt><dd>${esc(sc.Circuit)}</dd>` : ''}${d ? `<dt>Agent district</dt><dd>${esc(d)}</dd>` : ''}${home ? `<dt>Agent school</dt><dd>${esc(home)}</dd>` : ''}<dt>Date</dt><dd>${esc(fmtDate(s.session_date))}</dd><dt>Time</dt><dd>${t5(s.start_time)}${c.programme_duration ? '–' + hm(mins(t5(s.start_time)) + c.programme_duration) : ''}</dd><dt>Status</dt><dd><span class="badge ${esc(s.status)}">${esc(s.status)}</span></dd><dt>Planned on</dt><dd>${esc(new Date(s.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }))}</dd></dl><div class="row"><button class="ghost" data-close="1">Close</button></div>`;
+  $('#dlg').showModal();
+}
+
+function tab(t) { document.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t)); $('#v-sessions').hidden = t !== 'sessions'; $('#v-agents').hidden = t !== 'agents' }
+
+// CSV: quoted, and cells starting with = + - @ are neutralised so spreadsheets never run them as formulas
+const cell = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"' };
+function csv() {
+  const H = ['Date', 'Start time', 'Transformation Agent', 'School', 'Agent district', 'Agent home school', 'Session', 'Level', 'Status'];
+  const L = rows.map(s => [s.session_date, t5(s.start_time), agent(s), s.school_name, district(s), (D.rec.get(s.transformer_id) || {}).ta_school || '', s.course_name, C(s.course_name).developmental_level || '', s.status]);
+  const blob = new Blob(['\ufeff' + [H, ...L].map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ta-planned-sessions-' + iso(new Date()) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+document.addEventListener('click', e => {
+  const t = e.target, q = s => t.closest(s);
+  if (q('[data-t]')) return tab(q('[data-t]').dataset.t);
+  if (q('[data-st]')) { F.st = q('[data-st]').dataset.st; shown = PAGE; return render() }
+  if (q('[data-pd]')) { F.pd = q('[data-pd]').dataset.pd; shown = PAGE; return render() }
+  if (q('#sort')) { sortDir = -sortDir; return render() }
+  if (q('#more')) { shown += PAGE; return render() }
+  if (q('#csv')) return csv();
+  if (q('#refresh')) { const b = $('#refresh'); b.disabled = true; return start().catch(err => toast('Could not refresh: ' + (err.message || 'unknown error'))).finally(() => b.disabled = false) }
+  if (q('#reset')) { F = { q: '', ag: '', di: '', lv: '', from: '', to: '', st: 'all', pd: 'all' }; shown = PAGE; ['f-q', 'f-ag', 'f-di', 'f-lv', 'f-from', 'f-to'].forEach(i => $('#' + i).value = ''); return render() }
+  if (q('[data-close]')) return $('#dlg').close();
+  if (q('tr[data-ag]')) { F.ag = q('tr[data-ag]').dataset.ag; $('#f-ag').value = F.ag; shown = PAGE; tab('sessions'); return render() }
+  if (q('tr[data-s]')) return sessDlg(+q('tr[data-s]').dataset.s);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('tr[data-s]')) sessDlg(+e.target.dataset.s) });
+const bind = (id, k) => $('#' + id).addEventListener(k === 'q' ? 'input' : 'change', e => { F[k] = e.target.value; shown = PAGE; render() });
+bind('f-q', 'q'); bind('f-ag', 'ag'); bind('f-di', 'di'); bind('f-lv', 'lv'); bind('f-from', 'from'); bind('f-to', 'to');
+
+// ---- Login: identical to the 4P tool (login_advisor RPC, profile kept via js/session.js) ----
+let pendingReset = null; // held in memory only, never stored
+function begin(profile) {
+  advisor = { id: profile.id, full_name: profile.full_name, email: profile.email, district: profile.district };
+  saveSession(advisor);
+  return start().catch(err => { console.error(err); toast('We could not load the sessions: ' + (err.message || 'unknown error')); logout() });
+}
+function logout() {
+  clearSession(); advisor = null; pendingReset = null;
+  $('#app').hidden = true; $('#change').hidden = true; $('#login').hidden = false;
+  $('#email').value = ''; $('#pw').value = ''; $('#lerr').textContent = '';
+}
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault(); $('#lerr').textContent = '';
+  const email = $('#email').value.trim().toLowerCase(), password = $('#pw').value;
+  if (!email || !password) { $('#lerr').textContent = 'Please enter both email and password.'; return }
+  $('#go').disabled = true;
+  const { data, error } = await sb.rpc('login_advisor', { p_email: email, p_password: password });
+  $('#go').disabled = false;
+  const profile = Array.isArray(data) ? data[0] : data;
+  if (error || !profile) { $('#lerr').textContent = 'Invalid email or password.'; return }
+  if (profile.must_change_password) { pendingReset = { email, password }; $('#login').hidden = true; $('#change').hidden = false; $('#np').focus(); return }
+  begin(profile);
+});
+$('#cform').addEventListener('submit', async e => {
+  e.preventDefault(); $('#cerr').textContent = '';
+  if (!pendingReset) return logout();
+  const next = $('#np').value;
+  if (next.length < 10) { $('#cerr').textContent = 'Your password must be at least 10 characters.'; return }
+  if (next !== $('#cp').value) { $('#cerr').textContent = 'Passwords do not match.'; return }
+  $('#cgo').disabled = true;
+  try {
+    const { error } = await sb.rpc('change_password', { p_email: pendingReset.email, p_current_password: pendingReset.password, p_new_password: next });
+    if (error) { $('#cerr').textContent = error.message || 'Could not change password.'; return }
+    const { data, error: le } = await sb.rpc('login_advisor', { p_email: pendingReset.email, p_password: next });
+    const profile = Array.isArray(data) ? data[0] : data;
+    if (le || !profile) { logout(); $('#lerr').textContent = 'Password saved, but sign-in failed. Please sign in again.'; return }
+    pendingReset = null; $('#np').value = ''; $('#cp').value = '';
+    begin(profile);
+  } finally { $('#cgo').disabled = false }
+});
+$('#out').addEventListener('click', logout);
+
+// Anyone already signed in to the 4P tool in this browser is signed in here too.
+const existing = getSession();
+if (existing) { advisor = existing; begin(existing) } else { $('#login').hidden = false; $('#email').focus() }
+</script>
+</body>
+</html>
