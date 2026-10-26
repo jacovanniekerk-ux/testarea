@@ -5,109 +5,273 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Transformation Agent Planner</title>
 <link rel="icon" href="../favicon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
 <style>
-:root{--blue:#001489;--bright:#007DBA;--pink:#C8126E;--yellow:#FFC600;--ink:#1c2033;--muted:#4a5068;--line:#d5dae8;--bg:#f3f5fa}
+:root{--bg:#f4f5f9;--card:#fff;--ink:#1c2033;--muted:#6a7088;--line:#e6e8f0;--blue:#001489;--bright:#007DBA;--pink:#C8126E;--yellow:#FFC600;--hover:#eef1fa;--sh:0 4px 18px rgba(20,30,90,.08)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,Helvetica,sans-serif;min-height:100vh;display:flex;flex-direction:column}
-header{background:#fff;border-bottom:4px solid var(--blue);padding:12px 24px}
-header img{display:block;height:auto;width:100%;max-width:520px}
-main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px}
-.card{background:#fff;border:1px solid var(--line);border-top:6px solid var(--yellow);width:100%;max-width:440px;padding:32px 28px;display:flex;flex-direction:column;gap:18px}
-h1{margin:0;font-size:1.6rem;line-height:1.2;color:var(--blue)}
-p{margin:0;line-height:1.5;color:var(--muted)}
-label{font-weight:700;font-size:.95rem}
-input{width:100%;height:52px;border:2px solid #6b7186;padding:0 14px;font-size:1.15rem;letter-spacing:.05em;border-radius:4px}
-input:focus,button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-color:var(--blue)}
-button{height:52px;border:0;border-radius:4px;background:var(--blue);color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer}
-button:hover{background:var(--bright)}
-button:disabled{opacity:.6;cursor:wait}
-button.secondary{background:#fff;color:var(--blue);border:2px solid var(--blue)}
-button.secondary:hover{background:var(--blue);color:#fff}
-.error{color:var(--pink);font-weight:600;min-height:1.4em}
-.small{font-size:.85rem}
-[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,"Segoe UI",Arial,sans-serif;font-size:14px}
+header{background:#fff;padding:6px 20px;border-bottom:4px solid var(--blue)}header img{display:block;width:100%;max-width:340px;height:auto}
+.wrap{max-width:1280px;margin:0 auto;padding:10px 16px 24px}
+.card{background:var(--card);border-radius:14px;box-shadow:var(--sh);padding:14px;margin-bottom:12px}
+h2,h3{margin:0}h2{font-size:1.1rem}h3{font-size:.95rem;margin-bottom:10px}
+button,select,input{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.muted{color:var(--muted)}
+.ghost{background:none;border:2px solid var(--blue);color:var(--blue);border-radius:10px;padding:6px 12px;font-weight:700}.ghost:hover{background:var(--hover)}
+.primary{background:var(--blue);color:#fff;border:0;border-radius:12px;height:46px;font-weight:700;width:100%}.primary:hover{background:var(--bright)}.primary:disabled{opacity:.6;cursor:wait}
+.login{max-width:420px;margin:32px auto;border-top:6px solid var(--yellow);display:flex;flex-direction:column;gap:14px}.login h1{margin:0;font-size:1.4rem;color:var(--blue)}.login p{margin:0;color:var(--muted);line-height:1.5}
+.spk{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px 12px 4px 8px;font-weight:700;font-size:.78rem}.spk img{width:22px;height:22px;object-fit:contain}.spk img.no,.sp img.no{filter:grayscale(1);opacity:.35}
+.sp{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.8rem;font-weight:600}.sp:last-child{border:0}.sp img{width:28px;height:28px;object-fit:contain}.sp>span:last-child{margin-left:auto;font-weight:400;color:var(--muted)}
+.gold{background:linear-gradient(90deg,#FFC600,#FF9F1C);color:#1c2033;font-size:.65rem;font-weight:700;border-radius:99px;padding:2px 9px}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}@media(max-width:700px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{border-radius:12px;text-align:center;padding:7px 6px;background:color-mix(in srgb,var(--lc,#8a90a8) 13%,#fff)}.tile b{display:block;font-size:1.25rem;line-height:1.2;color:var(--n,var(--ink))}.tile span{font-size:.7rem;color:var(--muted)}
+.tabbar{background:var(--blue);border-radius:14px;padding:5px;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tabbar button{border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:.8rem;background:rgba(255,255,255,.18);color:#fff}.tabbar button.on{background:#fff;color:var(--blue)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:12px}.ch h2{flex:1;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.dh{font-size:.72rem;font-weight:700;color:var(--muted);padding:6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center}
+.day{min-height:78px;padding:4px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:3px}.day:hover{background:var(--hover)}.day.wk{background:#f8f9fc}.day.o{opacity:.4}
+.n{font-size:.78rem;font-weight:700;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%}.day.today .n{background:var(--blue);color:#fff}
+.chip{border:0;border-radius:6px;text-align:left;font-size:.68rem;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;font-weight:600}.chip.cancelled{text-decoration:line-through;opacity:.5}.chip.completed::before{content:"✓ "}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:.75rem}.legend i,.rw i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.banner{border-radius:14px;padding:12px;color:#fff;background:linear-gradient(110deg,#001489,#C8126E);margin-bottom:12px}.banner h3{color:#fff}
+.steps{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.st{border:1px solid rgba(255,255,255,.5);border-radius:12px;padding:8px;font-size:.75rem;font-weight:700;background:rgba(255,255,255,.14)}.st em{display:block;font-style:normal;font-weight:400;font-size:.68rem}.st.gap{border-style:dashed;background:none;opacity:.75}
+label{display:block;font-size:.78rem;font-weight:700;margin:12px 0 4px}
+select,input[type=date],input[type=search],input[type=text],input[inputmode]{width:100%;height:44px;border:1px solid #b9bed0;border-radius:12px;padding:0 12px;background:#fff}
+.warn{color:var(--pink);font-weight:600;font-size:.8rem;margin-top:8px}.hint{color:var(--muted);font-size:.8rem;margin:0 0 12px}
+dl{margin:0;display:grid;grid-template-columns:80px 1fr;gap:6px 10px}dt{color:var(--muted)}dd{margin:0;font-weight:600}.row{display:flex;gap:8px;margin-top:10px}.row button{flex:1}
+.fbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.fbar input{flex:1;min-width:200px}
+.fl{border:2px solid var(--line);background:none;border-radius:99px;padding:6px 14px;font-weight:600;font-size:.78rem}.fl.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.cg{background:var(--card);border-radius:14px;box-shadow:var(--sh);overflow:hidden}
+.rw{display:grid;grid-template-columns:minmax(0,1fr) 130px 70px;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:9px 14px;font-size:.85rem}.rw:hover{background:var(--hover)}.rw.h{font-size:.7rem;font-weight:700;color:var(--muted)}.rw.h:hover{background:none}.rw span:first-child{font-weight:600}
+@media(max-width:600px){.rw{grid-template-columns:minmax(0,1fr) 60px}.rw>:nth-child(2){display:none}}
+dialog{border:0;border-radius:20px;padding:22px;max-width:520px;width:calc(100% - 32px);background:#fff;color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(0,10,60,.5)}
+.lk{display:block;border:2px solid var(--blue);color:var(--blue);border-radius:12px;padding:9px 14px;font-weight:700;text-decoration:none;margin-top:8px;font-size:.85rem}.lk.off{background:var(--hover);border-color:transparent;color:var(--muted);opacity:.6;cursor:not-allowed}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--pink);color:#fff;padding:10px 18px;border-radius:12px;font-weight:600;max-width:90%;z-index:9}
 </style>
 </head>
 <body>
 <header><img src="../header.png" alt="Western Cape Government for you. eLearning Teacher Professional Development"></header>
-<main>
-  <section class="card" id="login" hidden>
-    <h1>Transformation Agent Planner</h1>
-    <p>Enter your PERSAL number to plan your sessions. You will stay signed in on this device.</p>
-    <form id="form" style="display:flex;flex-direction:column;gap:18px" novalidate>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label for="persal">PERSAL number</label>
-        <input id="persal" inputmode="numeric" autocomplete="off" required>
-      </div>
-      <div class="error" id="error" role="alert"></div>
-      <button type="submit" id="go">Continue</button>
-    </form>
-    <p class="small">Trouble signing in? Contact your District eLearning Advisory team.</p>
-  </section>
+<div class="wrap">
+<section class="card login" id="login" hidden>
+  <h1>Transformation Agent Planner</h1>
+  <p>Enter your PERSAL number to plan your sessions. You will stay signed in on this device.</p>
+  <form id="form" style="display:flex;flex-direction:column;gap:12px" novalidate>
+    <label for="persal" style="margin:0">PERSAL number</label>
+    <input id="persal" inputmode="numeric" autocomplete="off" required>
+    <div class="warn" id="lerr" role="alert" style="min-height:1.2em;margin:0"></div>
+    <button class="primary" id="go" type="submit">Continue</button>
+  </form>
+  <p style="font-size:.8rem">Trouble signing in? Contact your District eLearning Advisory team.</p>
+</section>
 
-  <section class="card" id="app" hidden>
-    <h1 id="welcome">Welcome</h1>
-    <p>You are signed in. Your session planner will appear here.</p>
-    <button type="button" class="secondary" id="signout">Sign out</button>
-  </section>
-</main>
+<div id="app" hidden>
+  <div class="bar"><div><strong id="who"></strong> <span class="muted" id="home"></span></div>
+    <div style="display:flex;gap:8px;align-items:center"><button class="spk" id="spk" aria-expanded="false" aria-controls="spp"></button><button class="ghost" id="out">Sign out</button></div></div>
+  <section class="card" id="spp" hidden></section>
+  <section class="card" id="stats"></section>
+  <div class="tabbar"><button data-t="plan" class="on">Planner</button><button data-t="content">Content</button></div>
+  <div id="v-plan"><div class="layout">
+    <section class="card"><div class="ch"><button class="ghost" id="prev" aria-label="Previous month">‹</button><h2 id="mt"></h2><button class="ghost" id="next" aria-label="Next month">›</button><button class="ghost" id="td">Today</button></div><div class="grid" id="grid"></div><div class="legend" id="legend"></div></section>
+    <aside id="side"></aside></div></div>
+  <div id="v-content" hidden><div class="fbar"><input type="search" id="q" placeholder="Search sessions" aria-label="Search sessions"><span id="fl"></span></div><div class="cg" id="cg"></div></div>
+</div>
+</div>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="alert" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-// CONFIGURATION (the anon key is designed to be public; access is protected by row-level security)
-const SUPABASE_URL = "https://cftpufjzwpmhgzdcgpjb.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmdHB1Zmp6d3BtaGd6ZGNncGpiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTMxNzUxNywiZXhwIjoyMTAwODkzNTE3fQ.EpaLeYyTNQycuVGCl9cRBFoLyMYMvHRgYfBffuxqKQg";
+// CONFIGURATION (the anon key is public by design; access is protected by row-level security)
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+// SPARK RULES: edit here if the rules change. Names must match attendance "Session Name".
+const KEY_SPARKS = [['Digital Skills Course','digital'],['Facilitator Think Tank','edvance'],['Adoption Strategy','adoption'],['Cyber Effect Ambassador Initiation Course','cyber']];
+const DOVETAIL = ['ePedagogy: Building a Digital Lesson','Integrating digital resources from the ePortal','Google Fundamentals 1: Account and Google Chrome','Office Online Fundamentals','Improved Presentation Skills','Ease of Access with QR Codes and Bit.ly links','Teaching with Videos','Orientation to Google Forms','AI In Education: Work Smarter, not Harder','Introduction to Cyber Wellness Education'];
+const DOVETAIL_NEEDED = 5;
+const icon = n => '../imgs/icons/' + n + '.png';
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, storageKey: "ta-planner-auth" }
-});
-const $ = id => document.getElementById(id);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: "ta-planner-auth" } });
+const $ = s => document.querySelector(s), pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const add = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x };
+const wkd = d => { while (d.getDay() % 6 == 0) d = add(d, 1); return d };
+const mins = t => +t.slice(0, 2) * 60 + +t.slice(3, 5), hm = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const LV = [['Foundation','#5E7D0A','#fff','#7C9A12'],['I Can Do It','#FFC600','#1c2033','#E0A800'],['Better','#C8126E','#fff','#C8126E'],['Summit','#001489','#fff','#001489'],['Other','#6a7088','#fff','#6a7088']];
+const lvOf = c => { const s = norm(c.developmental_level); return s.includes('foundation') ? 0 : s.includes('can do') ? 1 : s.includes('better') ? 2 : s.includes('summit') ? 3 : 4 };
+const live = s => s.status !== 'cancelled';
+const t5 = t => String(t).slice(0, 5);
+const toast = m => { const t = $('#toast'); t.textContent = m; t.hidden = false; setTimeout(() => t.hidden = true, 5000) };
 
-function show(which) {
-  $("login").hidden = which !== "login";
-  $("app").hidden = which !== "app";
-  if (which === "login") $("persal").focus();
+let D = { courses: [], schools: [], names: new Set(), sessions: [], attended: [], home: '', tid: null };
+const C = n => D.courses.find(c => c.course_name === n) || { course_name: n };
+const dur = c => c.programme_duration || 60;
+const today = new Date();
+let view = new Date(today.getFullYear(), today.getMonth(), 1), sel = {}, cf = { q: '', lv: -1 }, pathS = '';
+
+async function fetchAll(q) { let all = [], from = 0; for (;;) { const { data, error } = await q().range(from, from + 999); if (error) throw error; all = all.concat(data); if (data.length < 1000) return all; from += 1000 } }
+
+async function start() {
+  const { data: { session } } = await sb.auth.getSession();
+  D.tid = session.user.app_metadata.transformer_id;
+  const [co, sc, se, at, ho] = await Promise.all([
+    sb.from('courses').select('course_name,developmental_level,session_desciption,session_outcomes,programme_duration,outline_link,presentation_link,recording_link').eq('active', true).eq('ta_eligible', true),
+    fetchAll(() => sb.from('schools').select('School_Name,Education_District,Circuit').order('School_Name')),
+    sb.from('ta_planned_sessions').select('*').order('session_date'),
+    sb.rpc('ta_my_sessions_attended'), sb.rpc('ta_my_school')]);
+  for (const r of [co, se, at, ho]) if (r.error) throw r.error;
+  D.courses = co.data.sort((a, b) => lvOf(a) - lvOf(b) || a.course_name.localeCompare(b.course_name));
+  D.schools = sc; D.names = new Set(sc.map(s => s.School_Name));
+  D.sessions = se.data;
+  D.attended = (at.data || []).map(x => typeof x === 'string' ? x : Object.values(x)[0]);
+  D.home = ho.data || '';
+  const n = localStorage.getItem('ta_name');
+  $('#who').textContent = n ? 'Welcome, ' + n : 'Welcome';
+  $('#home').textContent = D.home ? '· ' + D.home : '· Home school not set yet';
+  const hs = D.schools.find(s => s.School_Name === D.home);
+  sel = { date: iso(wkd(today)), course: D.courses[0] ? D.courses[0].course_name : '', time: '08:00', scope: hs ? 'own' : 'all', school: D.home };
+  pathS = D.home;
+  $('#login').hidden = true; $('#app').hidden = false;
+  sparks(); all(); content();
 }
-function showApp() {
-  const name = localStorage.getItem("ta_name");
-  $("welcome").textContent = name ? "Welcome, " + name : "Welcome";
-  show("app");
+
+function sparks() {
+  const A = new Set(D.attended.map(norm)), dv = DOVETAIL.filter(n => A.has(norm(n))).length;
+  const R = KEY_SPARKS.map(([n, i]) => [n, i, A.has(norm(n)), '']).concat([['Dovetail Essentials', 'dovetail', dv >= DOVETAIL_NEEDED, dv + ' of ' + DOVETAIL_NEEDED + ' required sessions done']]);
+  const n = R.filter(x => x[2]).length;
+  $('#spk').innerHTML = R.map(x => `<img alt="" class="${x[2] ? '' : 'no'}" src="${icon(x[1])}">`).join('') + `<b style="margin-left:4px">${n} of 5</b>`;
+  $('#spk').setAttribute('aria-label', n + ' of 5 Sparks earned. Show details');
+  $('#spp').innerHTML = R.map(x => `<div class="sp"><img alt="" class="${x[2] ? '' : 'no'}" src="${icon(x[1])}"><span>${esc(x[0])}</span><span>${x[2] ? '<span class="gold">★ Spark Earned</span>' : esc(x[3] || 'Not yet earned')}</span></div>`).join('');
 }
-
-$("form").addEventListener("submit", async e => {
-  e.preventDefault();
-  const persal = $("persal").value.replace(/\D/g, "");
-  $("error").textContent = "";
-  if (!persal) { $("error").textContent = "Please enter your PERSAL number."; return; }
-
-  $("go").disabled = true;
-  const { data, error } = await sb.functions.invoke("ta-login", { body: { persal } });
-  $("go").disabled = false;
-
-  if (error) {
-    const status = error.context && error.context.status;
-    $("error").textContent = status === 404
-      ? "We cannot find that PERSAL number. Check it and try again, or contact your District eLearning Advisory team."
-      : "Something went wrong. Please try again in a moment.";
-    return;
+function stats() {
+  const L = D.sessions.filter(live);
+  $('#stats').innerHTML = `<div class="tiles"><div class="tile"><b>${L.length}</b><span>Sessions planned</span></div>${LV.slice(0, 4).map((l, i) => `<div class="tile" style="--lc:${l[1]};--n:${l[3]}"><b>${L.filter(s => lvOf(C(s.course_name)) === i).length}</b><span>${l[0]}</span></div>`).join('')}</div>`;
+}
+function cal() {
+  const y = view.getFullYear(), m = view.getMonth(); $('#mt').textContent = MON[m] + ' ' + y;
+  let h = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<div class="dh">${d}</div>`).join('');
+  const st = add(new Date(y, m, 1), -((new Date(y, m, 1).getDay() + 6) % 7));
+  for (let i = 0; i < 42; i++) {
+    const d = add(st, i), k = iso(d); if (i >= 35 && d.getMonth() !== m) break;
+    const ch = D.sessions.filter(s => s.session_date === k).map(s => { const l = LV[lvOf(C(s.course_name))]; return `<button class="chip ${s.status}" data-s="${s.id}" style="background:${l[1]};color:${l[2]}" title="${esc(s.course_name)} at ${esc(s.school_name)}">${t5(s.start_time)} ${esc(s.school_name)}</button>` }).join('');
+    h += `<div class="day ${d.getDay() % 6 == 0 ? 'wk' : ''} ${d.getMonth() !== m ? 'o' : ''} ${k === iso(today) ? 'today' : ''}" data-d="${k}"><span class="n">${d.getDate()}</span>${ch}</div>`;
   }
-  const { error: sessErr } = await sb.auth.setSession(data.session);
-  if (sessErr) { $("error").textContent = "Something went wrong. Please try again in a moment."; return; }
-  localStorage.setItem("ta_name", data.name || "");
-  showApp();
-});
+  $('#grid').innerHTML = h;
+}
+function side() {
+  const n = LV.map((l, i) => D.sessions.filter(s => live(s) && s.school_name === pathS && lvOf(C(s.course_name)) === i).length), g = n.findIndex((x, i) => i < 4 && !x);
+  $('#side').innerHTML = pathS ? `<section class="banner"><h3>Pathway at ${esc(pathS)}</h3><div class="steps">${LV.slice(0, 4).map((l, i) => `<div class="st ${n[i] ? '' : 'gap'}">${n[i] ? '✓ ' : ''}${l[0]}<em>${n[i] ? n[i] + ' planned' : 'Not planned yet'}</em></div>`).join('')}</div><p style="font-size:.78rem;margin:12px 0 0">${g < 0 ? 'Every level is covered at this school.' : 'Next gap: <strong>' + LV[g][0] + '</strong>'}</p></section><p class="hint">Click a day on the calendar to plan a session.</p>` : '<p class="hint">Click a day on the calendar to plan a session. Choose a school to see its pathway.</p>';
+}
+const all = () => { stats(); cal(); side() };
 
-$("signout").addEventListener("click", async () => {
-  await sb.auth.signOut();
-  localStorage.removeItem("ta_name");
-  $("persal").value = "";
-  show("login");
-});
+function schoolList() {
+  const hs = D.schools.find(s => s.School_Name === D.home);
+  const f = sel.scope === 'own' ? s => s.School_Name === D.home : sel.scope === 'circuit' ? s => hs && s.Education_District === hs.Education_District && s.Circuit === hs.Circuit : sel.scope === 'district' ? s => hs && s.Education_District === hs.Education_District : () => true;
+  return D.schools.filter(f).map(s => s.School_Name);
+}
+const opts = (a, v) => a.map(x => `<option value="${esc(x[0])}" ${x[0] == v ? 'selected' : ''}>${esc(x[1])}</option>`).join('');
+function clash() { const c = C(sel.course), a = mins(sel.time), b = a + dur(c); return D.sessions.find(s => s.session_date === sel.date && live(s) && mins(t5(s.start_time)) < b && a < mins(t5(s.start_time)) + dur(C(s.course_name))) }
+function form() {
+  const c = C(sel.course), k = clash(), T = []; for (let t = 420; t <= 960; t += 30) T.push([hm(t), hm(t)]);
+  const hs = D.schools.find(s => s.School_Name === D.home);
+  const sc = hs ? [['own', 'My school only'], ['circuit', 'My circuit'], ['district', 'My district'], ['all', 'All schools']] : [['all', 'All schools']];
+  return `<h3>Plan a session</h3><label for="f-d">Date</label><input type="date" id="f-d" value="${sel.date}">
+<label for="f-sc">Show schools in</label><select id="f-sc">${opts(sc, sel.scope)}</select>
+<label for="f-s">School</label><input type="text" id="f-s" list="sl" value="${esc(sel.school)}" autocomplete="off" placeholder="Start typing a school name"><datalist id="sl">${schoolList().map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+<label for="f-c">Course</label><select id="f-c">${LV.map((l, i) => { const g = D.courses.filter(x => lvOf(x) === i); return g.length ? `<optgroup label="${l[0]}">${opts(g.map(x => [x.course_name, x.course_name + (x.programme_duration ? ' (' + x.programme_duration + ' min)' : '')]), sel.course)}</optgroup>` : '' }).join('')}</select>
+<label for="f-t">Start time</label><select id="f-t">${opts(T, sel.time)}</select>
+<p class="hint" style="margin:10px 0 0">${c.programme_duration ? 'Ends at <strong>' + hm(mins(sel.time) + c.programme_duration) + '</strong>' : 'Duration to be confirmed'}</p>
+${k ? `<div class="warn">You already have ${esc(k.course_name)} at ${t5(k.start_time)} on this day.</div>` : ''}<div class="warn" id="ferr" role="alert"></div>
+<div style="margin-top:14px"><button class="primary" data-a="save">Add to my plan</button></div><div class="row"><button class="ghost" data-close="1">Cancel</button></div>`;
+}
+function planDlg() { $('#dlg').innerHTML = form(); if (!$('#dlg').open) $('#dlg').showModal() }
+function sessDlg(id) {
+  const s = D.sessions.find(x => x.id === id), c = C(s.course_name); pathS = s.school_name;
+  $('#dlg').innerHTML = `<h3>Session details</h3><dl><dt>Course</dt><dd>${esc(s.course_name)}</dd><dt>Level</dt><dd>${esc(c.developmental_level || '')}</dd><dt>School</dt><dd>${esc(s.school_name)}</dd><dt>Date</dt><dd>${s.session_date}</dd><dt>Time</dt><dd>${t5(s.start_time)}${c.programme_duration ? '–' + hm(mins(t5(s.start_time)) + c.programme_duration) : ''}</dd><dt>Status</dt><dd style="text-transform:capitalize">${s.status}</dd></dl>${s.status === 'planned' ? `<div class="row"><button class="ghost" data-st="completed" data-id="${s.id}">Mark complete</button><button class="ghost" data-st="cancelled" data-id="${s.id}">Cancel session</button></div>` : ''}<div class="row"><button class="ghost" data-close="1">Close</button></div>`;
+  $('#dlg').showModal(); side();
+}
+async function save() {
+  const school = sel.school.trim(), fe = m => $('#ferr').textContent = m;
+  if (!D.names.has(school)) return fe('Please choose a school from the list.');
+  if (!sel.course || !sel.date) return fe('Please choose a date and a course.');
+  if (clash() && !confirm('This overlaps another session. Add it anyway?')) return;
+  const { data, error } = await sb.from('ta_planned_sessions').insert({ transformer_id: D.tid, course_name: sel.course, school_name: school, session_date: sel.date, start_time: sel.time, status: 'planned' }).select().single();
+  if (error) return fe('Could not save: ' + error.message);
+  D.sessions.push(data); pathS = school; $('#dlg').close(); all(); toast_ok('Session added to your plan.');
+}
+const toast_ok = m => { const t = $('#toast'); t.style.background = '#001489'; toast(m); setTimeout(() => t.style.background = '', 5100) };
+async function setStatus(id, st) {
+  const { error } = await sb.from('ta_planned_sessions').update({ status: st }).eq('id', id);
+  if (error) return toast('Could not update: ' + error.message);
+  D.sessions.find(s => s.id === id).status = st; $('#dlg').close(); all();
+}
 
-(async () => {
-  const { data } = await sb.auth.getSession();
-  data.session ? showApp() : show("login");
-})();
+function content() {
+  $('#fl').innerHTML = [['All', -1], ...LV.slice(0, 4).map((l, i) => [l[0], i])].map(x => `<button class="fl ${cf.lv === x[1] ? 'on' : ''}" data-lv="${x[1]}">${x[0]}</button>`).join(' ');
+  const L = D.courses.map((c, i) => [c, i]).filter(x => (cf.lv < 0 || lvOf(x[0]) === cf.lv) && norm(x[0].course_name).includes(cf.q));
+  $('#cg').innerHTML = '<div class="rw h"><span>Session</span><span>Level</span><span>Duration</span></div>' + (L.map(([c, i]) => `<button class="rw" data-open="${i}"><span>${esc(c.course_name)}</span><span><i style="background:${LV[lvOf(c)][1]}"></i>${esc(c.developmental_level || '')}</span><span>${c.programme_duration ? c.programme_duration + ' min' : 'TBC'}</span></button>`).join('') || '<p style="padding:14px">No sessions match.</p>');
+}
+function openCourse(i) {
+  const c = D.courses[i], ok = u => /^https?:\/\//i.test(u || '');
+  $('#dlg').innerHTML = `<h2 style="margin:0 0 4px">${esc(c.course_name)}</h2><p class="muted" style="margin:0;font-size:.8rem">${esc(c.developmental_level || '')} · ${c.programme_duration ? c.programme_duration + ' minutes' : 'duration to be confirmed'}</p>
+${c.session_desciption ? `<p style="white-space:pre-line">${esc(c.session_desciption)}</p>` : ''}${c.session_outcomes ? `<h3>Outcomes</h3><p style="white-space:pre-line;margin:0 0 12px">${esc(c.session_outcomes)}</p>` : ''}
+${[['Outline', c.outline_link], ['Presentation', c.presentation_link], ['Recording', c.recording_link]].map(l => ok(l[1]) ? `<a class="lk" href="${esc(l[1])}" target="_blank" rel="noopener">${l[0]} ↗</a>` : `<span class="lk off" aria-disabled="true" title="Not available yet">${l[0]}</span>`).join('')}
+<div class="row" style="margin-top:16px"><button class="primary" data-plan="${i}">Plan this session</button><button class="ghost" data-close="1" style="flex:0 0 auto">Close</button></div>`;
+  $('#dlg').showModal();
+}
+function tab(t) { document.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t)); $('#v-plan').hidden = t !== 'plan'; $('#v-content').hidden = t !== 'content' }
+$('#legend').innerHTML = LV.slice(0, 4).map(l => `<span><i style="background:${l[1]}"></i>${l[0]}</span>`).join('');
+
+document.addEventListener('click', e => {
+  const t = e.target, q = s => t.closest(s);
+  if (q('#spk')) { const p = $('#spp'); p.hidden = !p.hidden; $('#spk').setAttribute('aria-expanded', !p.hidden); return }
+  if (q('[data-t]')) return tab(q('[data-t]').dataset.t);
+  if (t.dataset.lv !== undefined) { cf.lv = +t.dataset.lv; return content() }
+  if (q('[data-open]')) return openCourse(+q('[data-open]').dataset.open);
+  if (t.dataset.close) return $('#dlg').close();
+  if (t.dataset.plan) { sel.course = D.courses[+t.dataset.plan].course_name; tab('plan'); return planDlg() }
+  if (t.dataset.st) return setStatus(+t.dataset.id, t.dataset.st);
+  if (t.dataset.a === 'save') return save();
+  if (q('.chip')) return sessDlg(+q('.chip').dataset.s);
+  if (q('.day')) { sel.date = q('.day').dataset.d; return planDlg() }
+  if (t.id === 'prev') view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
+  else if (t.id === 'next') view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+  else if (t.id === 'td') { view = new Date(today.getFullYear(), today.getMonth(), 1) }
+  else return;
+  cal();
+});
+document.addEventListener('change', e => {
+  const i = e.target.id, v = e.target.value; if (!i || i === 'q' || i === 'persal') return;
+  if (i === 'f-s') { sel.school = v; if (D.names.has(v.trim())) { pathS = v.trim(); side() } return }
+  if (i === 'f-d') sel.date = v; if (i === 'f-sc') sel.scope = v; if (i === 'f-c') sel.course = v; if (i === 't' || i === 'f-t') sel.time = v;
+  $('#dlg').innerHTML = form();
+});
+$('#q').addEventListener('input', e => { cf.q = norm(e.target.value); content() });
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const persal = $('#persal').value.replace(/\D/g, ''); $('#lerr').textContent = '';
+  if (!persal) { $('#lerr').textContent = 'Please enter your PERSAL number.'; return }
+  $('#go').disabled = true;
+  const { data, error } = await sb.functions.invoke('ta-login', { body: { persal } });
+  $('#go').disabled = false;
+  if (error) { const st = error.context && error.context.status; $('#lerr').textContent = st === 404 ? 'We cannot find that PERSAL number. Check it and try again, or contact your District eLearning Advisory team.' : 'Something went wrong. Please try again in a moment.'; return }
+  const { error: se } = await sb.auth.setSession(data.session);
+  if (se) { $('#lerr').textContent = 'Something went wrong. Please try again in a moment.'; return }
+  localStorage.setItem('ta_name', data.name || '');
+  boot();
+});
+$('#out').addEventListener('click', async () => { await sb.auth.signOut(); localStorage.removeItem('ta_name'); $('#app').hidden = true; $('#login').hidden = false; $('#persal').value = ''; $('#persal').focus() });
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $('#login').hidden = false; $('#persal').focus(); return }
+  try { await start() } catch (err) { console.error(err); toast('We could not load your planner: ' + (err.message || 'unknown error')); $('#login').hidden = false }
+}
+boot();
 </script>
 </body>
 </html>
